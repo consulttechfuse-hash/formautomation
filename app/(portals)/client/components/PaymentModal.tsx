@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements, EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -47,18 +47,8 @@ function CheckoutForm({ clientId, clientEmail, onSuccess, onClose }: PaymentModa
       <PaymentElement />
       {error && <div className="text-red-600 text-sm">{error}</div>}
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onClose}
-          className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={!stripe || loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
+        <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+        <button type="submit" disabled={!stripe || loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
           {loading ? 'Processing...' : 'Pay R400'}
         </button>
       </div>
@@ -70,21 +60,18 @@ export default function PaymentModal({ clientId, clientEmail, onSuccess, onClose
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
-    fetch('/api/payment/create-intent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId, clientEmail, amount: 40000 }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        setClientSecret(data.clientSecret);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error creating payment intent:', err);
-        setLoading(false);
+  useEffect(() => {
+    const initPayment = async () => {
+      const response = await fetch('/api/payment/create-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, clientEmail, amount: 40000 }),
       });
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      setLoading(false);
+    };
+    initPayment();
   }, [clientId, clientEmail]);
 
   if (loading) {

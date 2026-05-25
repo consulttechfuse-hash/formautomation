@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 export default function ClientDashboard() {
   const [progress, setProgress] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null)
   const router = useRouter()
   
@@ -27,7 +27,7 @@ export default function ClientDashboard() {
       return
     }
 
-    setUserId(session.user.id)
+    setUserId(session.user.id || null)
 
     const { data: userData, error } = await supabase
       .from('users')
