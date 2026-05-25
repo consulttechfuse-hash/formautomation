@@ -3,8 +3,16 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+interface AgentStat {
+  id: string;
+  email: string;
+  totalClients: number;
+  completedClients: number;
+  completionRatio: number;
+}
+
 export default function AdminAgentPerformanceReport() {
-  const [agents, setAgents] = useState([]);
+  const [agents, setAgents] = useState<AgentStat[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -22,7 +30,7 @@ export default function AdminAgentPerformanceReport() {
       .eq('role', 'agent')
       .eq('admin_id', user.id);
 
-    const stats = await Promise.all((agentsData || []).map(async (agent) => {
+    const stats: AgentStat[] = await Promise.all((agentsData || []).map(async (agent) => {
       const { data: clients } = await supabase
         .from('users')
         .select('*')
