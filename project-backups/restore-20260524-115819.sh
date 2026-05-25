@@ -1,0 +1,16 @@
+#!/bin/bash
+echo "=========================================="
+echo "Techfuse DocControl Restore Script"
+echo "=========================================="
+echo ""
+echo "Available backups:"
+ls -la project-backups/*.zip
+echo ""
+echo "To restore full project:"
+echo "unzip project-backups/techfuse-project-full-TIMESTAMP.zip -d restore-folder/"
+echo ""
+echo "To restore specific component:"
+echo "unzip project-backups/techfuse-portals-TIMESTAMP.zip -d ."
+echo "unzip project-backups/techfuse-forms-TIMESTAMP.zip -d ."
+echo "unzip project-backups/techfuse-auth-pages-TIMESTAMP.zip -d ."
+echo "unzip project-backups/techfuse-components-TIMESTAMP.zip -d ."

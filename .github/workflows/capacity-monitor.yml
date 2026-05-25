@@ -1,0 +1,15 @@
+name: Capacity Monitor
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase Edge Function
+        run: |
+          curl -X GET \
+            "https://tmwwvpjetfndyfknxlfl.supabase.co/functions/v1/swift-responder"
