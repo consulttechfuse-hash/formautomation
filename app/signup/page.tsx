@@ -31,20 +31,36 @@ export default function SignUpPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/set-password`,
-          captchaToken: captchaToken,
-        }
+      // First, verify the Turnstile token
+      const verifyRes = await fetch('/api/auth/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
       })
 
-      if (error) throw error
+      const verifyData = await verifyRes.json()
+      if (!verifyRes.ok) {
+        setError(verifyData.error || 'Security verification failed')
+        setCaptchaToken(null)
+        setLoading(false)
+        return
+      }
 
-      setMagicLinkSent(true)
-    } catch (err: any) {
-      console.error('Magic link error:', err)
-      setError(err.message || 'Failed to send magic link')
+      // If verified, send magic link via Supabase
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setMagicLinkSent(true)
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -77,14 +93,11 @@ export default function SignUpPage() {
           <p className="text-amber-600 text-sm mb-4">
             ⚠️ If you don't see the email, please check your spam/junk folder.
           </p>
-          <p className="text-gray-500 text-sm mb-6">
-            Click the link in the email to set your password and complete signup.
-          </p>
           <button
-            onClick={() => setMagicLinkSent(false)}
+            onClick={() => router.push('/login')}
             className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            ← Back to sign up
+            Back to Login
           </button>
         </div>
       </div>
@@ -95,15 +108,9 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Techfuse DocControl</h1>
-          <p className="text-gray-500 mt-2">Create an account</p>
+          <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
+          <p className="text-gray-600 mt-2">Sign up with magic link</p>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleMagicLinkSignup} className="space-y-4">
           <div>
@@ -114,8 +121,8 @@ export default function SignUpPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -127,6 +134,12 @@ export default function SignUpPage() {
               onError={onTurnstileError}
               options={{ theme: 'light', size: 'normal' }}
             />
+          )}
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+              {error}
+            </div>
           )}
 
           <button
@@ -142,10 +155,6 @@ export default function SignUpPage() {
           <Link href="/login" className="text-sm text-blue-600 hover:text-blue-800">
             Already have an account? Sign In
           </Link>
-        </div>
-
-        <div className="mt-6 text-center text-xs text-gray-400">
-          <p>Questions? Contact support@techfuseconsulting.online</p>
         </div>
       </div>
     </div>
