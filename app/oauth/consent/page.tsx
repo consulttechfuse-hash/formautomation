@@ -1,102 +1,61 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function OAuthConsentPage() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const searchParams = useSearchParams()
+function ConsentContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const clientName = searchParams.get('client_name') || 'Application';
+  const scope = searchParams.get('scope') || 'Profile, Email';
 
-  useEffect(() => {
-    handleCallback()
-  }, [])
+  const handleAllow = () => {
+    // Handle consent approval
+    router.push('/oauth/callback?status=approved');
+  };
 
-  async function handleCallback() {
-    try {
-      const code = searchParams.get('code')
-      const next = searchParams.get('next') || '/client/dashboard'
-      
-      console.log('Callback received. Code:', code ? 'Present' : 'Missing')
-      
-      if (!code) {
-        setError('No authorization code received')
-        setLoading(false)
-        return
-      }
-      
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const apiKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
-      // Exchange code for session
-      const tokenUrl = `${supabaseUrl}/auth/v1/token?grant_type=authorization_code&code=${code}`
-      console.log('Exchanging code at:', tokenUrl)
-      
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'apikey': apiKey!,
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Token exchange failed:', response.status, errorText)
-        throw new Error(`Token exchange failed: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      console.log('Token exchange successful')
-      
-      // Store session
-      localStorage.setItem('supabase.auth.token', JSON.stringify({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: Date.now() + (data.expires_in || 3600) * 1000
-      }))
-      
-      // Also store in sessionStorage for redundancy
-      sessionStorage.setItem('supabase.auth.token', JSON.stringify({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token
-      }))
-      
-      // Redirect to dashboard
-      router.push(next)
-      
-    } catch (err: any) {
-      console.error('Callback error:', err)
-      setError(err.message || 'Authentication failed')
-      setLoading(false)
-    }
-  }
+  const handleDeny = () => {
+    router.push('/oauth/callback?status=denied');
+  };
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md p-6">
-          <div className="text-red-600 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Authentication Failed</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+  return (
+    <div className="max-w-md mx-auto p-6 mt-10">
+      <div className="bg-white rounded-lg shadow p-6">
+        <h1 className="text-2xl font-bold mb-4">Authorization Request</h1>
+        <p className="text-gray-600 mb-4">
+          <strong>{clientName}</strong> is requesting access to your account.
+        </p>
+        <div className="bg-gray-50 p-4 rounded mb-4">
+          <p className="font-medium mb-2">This application will be able to:</p>
+          <ul className="list-disc list-inside text-sm text-gray-600">
+            {scope.split(' ').map((s, i) => (
+              <li key={i}>Access your {s.toLowerCase()} information</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex gap-3">
           <button
-            onClick={() => router.push('/login')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            onClick={handleAllow}
+            className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
           >
-            Try Again
+            Allow
+          </button>
+          <button
+            onClick={handleDeny}
+            className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
+          >
+            Deny
           </button>
         </div>
       </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Completing sign in...</p>
-      </div>
     </div>
-  )
+  );
+}
+
+export default function ConsentPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <ConsentContent />
+    </Suspense>
+  );
 }
