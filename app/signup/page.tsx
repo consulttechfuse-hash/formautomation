@@ -15,7 +15,7 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const redirectUrl = 'https://reply.techfuseconsult.online/api/auth/verify';
+  const redirectUrl = 'https://reply.techfuseconsult.online/api/auth/callback';
 
   async function handleMagicLinkSignup(e: React.FormEvent) {
     e.preventDefault();
