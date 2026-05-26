@@ -1,79 +1,65 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Turnstile } from '@marsidev/react-turnstile'
-import Link from 'next/link'
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
+import { Turnstile } from '@marsidev/react-turnstile';
+import Link from 'next/link';
 
 export default function SignUpPage() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const [magicLinkSent, setMagicLinkSent] = useState(false)
-  const router = useRouter()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const router = useRouter();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   async function handleMagicLinkSignup(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
     if (!email) {
-      setError('Please enter your email address')
-      return
+      setError('Please enter your email address');
+      return;
     }
     if (!captchaToken) {
-      setError('Please complete the security check')
-      return
+      setError('Please complete the security check');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      // First, verify the Turnstile token
-      const verifyRes = await fetch('/api/auth/verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: captchaToken }),
-      })
-
-      const verifyData = await verifyRes.json()
-      if (!verifyRes.ok) {
-        setError(verifyData.error || 'Security verification failed')
-        setCaptchaToken(null)
-        setLoading(false)
-        return
-      }
-
-      // If verified, send magic link via Supabase
+      // Send magic link with captcha token directly to Supabase
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          captchaToken: captchaToken,  // ← Pass token to Supabase
         },
-      })
+      });
 
       if (error) {
-        setError(error.message)
+        setError(error.message);
       } else {
-        setMagicLinkSent(true)
+        setMagicLinkSent(true);
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.')
+      setError('Something went wrong. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const onTurnstileSuccess = (token: string) => {
-    setCaptchaToken(token)
-    setError(null)
-  }
+    setCaptchaToken(token);
+    setError(null);
+  };
 
   const onTurnstileError = () => {
-    setError('Security verification failed. Please refresh and try again.')
-  }
+    setError('Security verification failed. Please refresh and try again.');
+  };
 
   if (magicLinkSent) {
     return (
@@ -101,15 +87,15 @@ export default function SignUpPage() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Create Account</h1>
-          <p className="text-gray-600 mt-2">Sign up with magic link</p>
+          <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
+          <p className="text-gray-600 mt-2">Sign up to get started</p>
         </div>
 
         <form onSubmit={handleMagicLinkSignup} className="space-y-4">
@@ -121,7 +107,7 @@ export default function SignUpPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="you@example.com"
               required
             />
@@ -158,5 +144,5 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
