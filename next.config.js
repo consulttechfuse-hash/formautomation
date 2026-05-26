@@ -1,9 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'reply.techfuseconsult.online',
+          },
+        ],
+        destination: 'https://techfuseconsult.online/:path*',
+        permanent: true,
+      },
+    ];
   },
-  output: 'standalone',
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
