@@ -6,9 +6,8 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const token = requestUrl.searchParams.get('token');
   const email = requestUrl.searchParams.get('email');
-  const type = requestUrl.searchParams.get('type');
 
-  if (!token || !email || !type) {
+  if (!token || !email) {
     return NextResponse.redirect(new URL('/login?error=invalid_link', request.url));
   }
 
@@ -32,7 +31,7 @@ export async function GET(request: Request) {
     }
   );
 
-  // Verify the OTP token
+  // Verify the OTP token (no captcha needed here - already verified at signup)
   const { error } = await supabase.auth.verifyOtp({
     email: email,
     token: token,
@@ -41,10 +40,9 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error('Verification error:', error);
-    return NextResponse.redirect(new URL('/login?error=verification_failed', request.url));
+    return NextResponse.redirect(new URL(`/login?error=${error.message}`, request.url));
   }
 
-  // Successful verification - redirect to dashboard
   // Get user role to determine dashboard
   const { data: { user } } = await supabase.auth.getUser();
   
