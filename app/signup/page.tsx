@@ -15,7 +15,7 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const redirectUrl = 'https://formautomation-taupe.vercel.app/auth/callback';
+  const redirectUrl = 'https://reply.techfuseconsult.online/auth/callback''https://formautomation-taupe.vercel.app/auth/callback';
 
   async function handleMagicLinkSignup(e: React.FormEvent) {
     e.preventDefault();

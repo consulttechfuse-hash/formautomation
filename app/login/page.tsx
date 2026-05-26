@@ -83,7 +83,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: 'https://reply.techfuseconsult.online/reset-password'`${window.location.origin}/reset-password`,
         captchaToken: resetCaptchaToken,  // ← Pass token to Supabase
       });
 
