@@ -8,3 +8,16 @@
   Creating an optimized production build ...
 ✓ Compiled successfully in 39.1s
   Running TypeScript ...
+Failed to type check.
+
+./app/(portals)/client/forms/[formNumber]/page.tsx:65:23
+Type error: Parameter 'match' implicitly has an 'any' type.
+
+  [90m63 |[0m     
+  [90m64 |[0m     [36mif[0m (matches) {
+[31m[1m>[0m [90m65 |[0m       matches.forEach(match => {
+  [90m   |[0m                       [31m[1m^[0m
+  [90m66 |[0m         [36mconst[0m key = match.replace([35m/{{/g[0m, [32m''[0m).replace([35m/}}/g[0m, [32m''[0m).trim()
+  [90m67 |[0m         [36mconst[0m value = formData ? (formData[key] || [32m''[0m) : [32m''[0m
+  [90m68 |[0m         html = html.replace([36mnew[0m [33mRegExp[0m(match.replace([35m/[.*+?^${}()|[\]\\]/g[0m, [32m'\\$&'[0m), [32m'g'[0m),...
+Next.js build worker exited with code: 1 and signal: null

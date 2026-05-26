@@ -32,20 +32,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only admins can invite agents' }, { status: 403 });
     }
 
-    // Check if user exists in auth
+    // Check if user exists in auth by listing users
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const userExists = existingUsers?.users?.some(user => user.email === email);
     
     if (userExists) {
-      // User exists - update their admin_id and send reset email
-      const { data: { user } } = await supabase.auth.admin.getUserByEmail(email);
+      // User exists - find their ID by listing users
+      const existingUser = existingUsers?.users?.find(u => u.email === email);
       
-      if (user) {
-        // Update admin_id for existing agent
+      if (existingUser) {
         await supabase
           .from('users')
           .update({ admin_id: currentUser.id })
-          .eq('id', user.id);
+          .eq('id', existingUser.id);
       }
       
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
@@ -89,7 +88,7 @@ export async function POST(request: Request) {
             id: newUser.user.id,
             email: email,
             role: 'agent',
-            admin_id: currentUser.id,  // ← Set the inviting admin's ID
+            admin_id: currentUser.id,
             status: 'pending',
             created_at: new Date().toISOString(),
             has_paid: false,

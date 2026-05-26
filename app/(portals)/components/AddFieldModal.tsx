@@ -3,7 +3,12 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function AddFieldModal({ onClose, onFieldAdded }) {
+interface AddFieldModalProps {
+  onClose: () => void;
+  onFieldAdded: (field: { fieldName: string; fieldLabel: string; fieldType: string }) => void;
+}
+
+export default function AddFieldModal({ onClose, onFieldAdded }: AddFieldModalProps) {
   const [fieldLabel, setFieldLabel] = useState('');
   const [fieldName, setFieldName] = useState('');
   const [fieldType, setFieldType] = useState('TEXT');
@@ -11,12 +16,10 @@ export default function AddFieldModal({ onClose, onFieldAdded }) {
   const [error, setError] = useState('');
   const supabase = createClient();
 
-  const generateFieldName = (label: string) => {
-    // Convert label to lowercase, replace spaces with underscores, remove special chars
+  const generateFieldName = (label: string): string => {
     let name = label.toLowerCase()
       .replace(/[^a-z0-9\s]/g, '')
       .replace(/\s+/g, '_');
-    // Limit to 50 characters
     if (name.length > 50) name = name.substring(0, 50);
     return name;
   };
@@ -38,15 +41,15 @@ export default function AddFieldModal({ onClose, onFieldAdded }) {
     setError('');
 
     try {
-      // Add column to form01_data table
+      // Add column to form01_data table using RPC
       const { error: sqlError } = await supabase.rpc('exec_sql', {
         sql: `ALTER TABLE form01_data ADD COLUMN IF NOT EXISTS "${fieldName}" ${fieldType};`
       });
 
       if (sqlError) throw new Error(sqlError.message);
 
-      // Also store the field metadata somewhere (optional - could use a separate table)
-      const { error: insertError } = await supabase
+      // Store field metadata
+      await supabase
         .from('form_custom_fields')
         .insert({
           field_name: fieldName,
@@ -55,16 +58,11 @@ export default function AddFieldModal({ onClose, onFieldAdded }) {
           section: 'other_info'
         });
 
-      if (insertError && insertError.code !== '42P01') {
-        // Table might not exist yet
-        console.log('Metadata storage skipped - table not created yet');
-      }
-
       alert(`Field "${fieldLabel}" added successfully!`);
       onFieldAdded({ fieldName, fieldLabel, fieldType });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -79,17 +77,17 @@ export default function AddFieldModal({ onClose, onFieldAdded }) {
         </div>
         <div className="p-4">
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Field Label (e.g., "Mother's Sister Name")</label>
+            <label className="block text-sm font-medium mb-1">Field Label</label>
             <input
               type="text"
               value={fieldLabel}
               onChange={(e) => handleLabelChange(e.target.value)}
-              placeholder="Enter display label"
+              placeholder="e.g., Mother's Sister Name"
               className="w-full border rounded p-2"
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Database Field Name (e.g., "mother_sister_name")</label>
+            <label className="block text-sm font-medium mb-1">Database Field Name</label>
             <input
               type="text"
               value={fieldName}

@@ -2,16 +2,31 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import FormViewer from '../components/FormViewer';
+import FormViewer from '../../components/FormViewer';
+import { getFormData } from '../../components/getFormData';
+
+interface Client {
+  id: string;
+  email: string;
+  admin_id: string;
+  has_paid: boolean;
+  has_consented: boolean;
+  onboarding_submitted: boolean;
+  fn_t1: string;
+  srn_t1: string;
+  idp_t1: string;
+  created_at: string;
+  status?: string;
+}
 
 export default function ClientManagement() {
   const [searchEmail, setSearchEmail] = useState('');
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedForm, setSelectedForm] = useState('');
-  const [formData, setFormData] = useState(null);
+  const [formData, setFormData] = useState<any>(null);
   const [viewingForm, setViewingForm] = useState(false);
   const supabase = createClient();
 
@@ -25,7 +40,7 @@ export default function ClientManagement() {
       .eq('role', 'client')
       .ilike('email', `%${searchEmail}%`);
     
-    setClients(data || []);
+    setClients(data as Client[] || []);
     setShowResults(true);
     setLoading(false);
   };
@@ -38,7 +53,7 @@ export default function ClientManagement() {
       .select('*')
       .eq('role', 'client');
     
-    setClients(data || []);
+    setClients(data as Client[] || []);
     setShowResults(true);
     setLoading(false);
   };
@@ -53,7 +68,7 @@ export default function ClientManagement() {
     setSelectedForm('');
   };
 
-  const handleViewForm = async (client, formNumber) => {
+  const handleViewForm = async (client: Client, formNumber: string) => {
     setSelectedClient(client);
     setSelectedForm(formNumber);
     setLoading(true);
@@ -69,13 +84,7 @@ export default function ClientManagement() {
         .single();
       data = form01;
     } else {
-      const { data: form } = await supabase
-        .from('generated_forms')
-        .select('*')
-        .eq('user_id', client.id)
-        .eq('form_number', formNum)
-        .single();
-      data = form;
+      data = await getFormData(client.id, formNum);
     }
     
     setFormData(data);
@@ -190,21 +199,16 @@ export default function ClientManagement() {
               <h2 className="text-xl font-bold">
                 Form {selectedForm} - {selectedClient?.email}
               </h2>
-              <button onClick={closeFormView} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+              <button onClick={closeFormView} className="text-gray-500 text-2xl">&times;</button>
             </div>
             <div className="p-4">
               <FormViewer 
                 formData={formData} 
                 formNumber={selectedForm} 
-                clientEmail={selectedClient?.email}
+                clientEmail={selectedClient?.email || ''} 
+                showEditButton={true} 
+                showAddField={false} 
               />
-              {parseInt(selectedForm) === 1 && (
-                <div className="mt-6 flex justify-end sticky bottom-0 bg-white pt-4 border-t">
-                  <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                    ✏️ Edit Form-01
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

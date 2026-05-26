@@ -6,8 +6,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
+interface RevenueData {
+  name: string;
+  revenue: number;
+}
+
 export default function RevenueByAdminChart() {
-  const [data, setData] = useState<{ name: string; revenue: number }[]>([]);
+  const [data, setData] = useState<RevenueData[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
@@ -21,7 +26,8 @@ export default function RevenueByAdminChart() {
       .select('id, email')
       .eq('role', 'admin');
 
-    const revenueData = await Promise.all((admins || []).map(async (admin) => {
+    const revenueData: RevenueData[] = [];
+    for (const admin of (admins || [])) {
       const { data: clients } = await supabase
         .from('users')
         .select('*')
@@ -30,13 +36,15 @@ export default function RevenueByAdminChart() {
         .eq('has_paid', true);
 
       const revenue = (clients?.length || 0) * 400;
-      return {
-        name: admin.email.split('@')[0],
-        revenue,
-      };
-    }));
+      if (revenue > 0) {
+        revenueData.push({
+          name: admin.email.split('@')[0],
+          revenue,
+        });
+      }
+    }
 
-    setData(revenueData.filter(d => d.revenue > 0));
+    setData(revenueData);
     setLoading(false);
   };
 
@@ -50,6 +58,8 @@ export default function RevenueByAdminChart() {
       </div>
     );
   }
+
+  const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -70,10 +80,11 @@ export default function RevenueByAdminChart() {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => [`R${value.toLocaleString()}`, 'Revenue']} />
+          <Tooltip formatter={(value) => [`R${(value as number).toLocaleString()}`, 'Revenue']} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
+      <p className="text-center text-sm text-gray-500 mt-2">Total Revenue: R{totalRevenue.toLocaleString()}</p>
     </div>
   );
 }

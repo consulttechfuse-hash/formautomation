@@ -3,9 +3,24 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+interface UnlockRequest {
+  id: string;
+  client_id: string;
+  requested_by: string;
+  reason: string;
+  form_number: number;
+  status: string;
+  created_at: string;
+  users?: {
+    email: string;
+    role: string;
+  };
+}
+
 export default function RequestsStats() {
   const [stats, setStats] = useState({ total: 0, approved: 0, declined: 0, pending: 0 });
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState<UnlockRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
@@ -13,21 +28,31 @@ export default function RequestsStats() {
   }, []);
 
   const loadRequests = async () => {
-    // Get unlock requests
-    const { data: unlockRequests } = await supabase
-      .from('unlock_requests')
-      .select('*, users!unlock_requests_user_id_fkey(email, role)')
-      .order('created_at', { ascending: false });
+    setLoading(true);
+    try {
+      const { data: unlockRequests } = await supabase
+        .from('unlock_requests')
+        .select('*, users!unlock_requests_requested_by_fkey(email, role)')
+        .order('created_at', { ascending: false });
 
-    if (unlockRequests) {
-      const total = unlockRequests.length;
-      const approved = unlockRequests.filter(r => r.status === 'approved').length;
-      const declined = unlockRequests.filter(r => r.status === 'declined').length;
-      const pending = unlockRequests.filter(r => r.status === 'pending' || !r.status).length;
-      setStats({ total, approved, declined, pending });
-      setRequests(unlockRequests);
+      if (unlockRequests) {
+        const total = unlockRequests.length;
+        const approved = unlockRequests.filter(r => r.status === 'approved').length;
+        const declined = unlockRequests.filter(r => r.status === 'declined').length;
+        const pending = unlockRequests.filter(r => r.status === 'pending' || !r.status).length;
+        setStats({ total, approved, declined, pending });
+        setRequests(unlockRequests as UnlockRequest[]);
+      }
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return <div className="bg-white rounded-lg shadow p-4">Loading requests...</div>;
+  }
 
   return (
     <div className="space-y-6">
