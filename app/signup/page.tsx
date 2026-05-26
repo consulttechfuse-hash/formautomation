@@ -15,7 +15,7 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const redirectUrl = 'https://reply.techfuseconsult.online/api/auth/callback';
+  const redirectUrl = 'https://techfuseconsult.online/api/auth/callback';
 
   async function handleMagicLinkSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -33,14 +33,13 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      // CORRECT: captchaToken at root level, NOT inside options
+      // captchaToken goes inside options
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
+          captchaToken: captchaToken,
         },
-      }, {
-        captchaToken: captchaToken,  // ← Second parameter for captcha
       });
 
       if (error) {

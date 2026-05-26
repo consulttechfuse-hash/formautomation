@@ -6,12 +6,13 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const token = requestUrl.searchParams.get('token');
   const email = requestUrl.searchParams.get('email');
+  const type = requestUrl.searchParams.get('type');
 
-  if (!token || !email) {
+  if (!token || !email || !type) {
     return NextResponse.redirect(new URL('/login?error=invalid_link', request.url));
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,11 +32,11 @@ export async function GET(request: Request) {
     }
   );
 
-  // Verify the OTP token (no captcha needed here - already verified at signup)
+  // Verify the OTP token
   const { error } = await supabase.auth.verifyOtp({
     email: email,
     token: token,
-    type: 'magiclink',
+    type: type as 'magiclink' | 'signup' | 'invite' | 'recovery' | 'email_change',
   });
 
   if (error) {
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${error.message}`, request.url));
   }
 
-  // Get user role to determine dashboard
+  // Get user role for dashboard redirect
   const { data: { user } } = await supabase.auth.getUser();
   
   if (user) {

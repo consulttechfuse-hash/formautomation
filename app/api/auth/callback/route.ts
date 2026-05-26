@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login?error=invalid_link', request.url));
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -38,7 +38,7 @@ export default function LoginPage() {
         email: email,
         password: password,
         options: {
-          captchaToken: captchaToken,  // ← Pass token to Supabase
+          captchaToken: captchaToken,
         }
       });
 
@@ -83,8 +83,8 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://reply.techfuseconsult.online/reset-password'`${window.location.origin}/reset-password`,
-        captchaToken: resetCaptchaToken,  // ← Pass token to Supabase
+        redirectTo: 'https://techfuseconsult.online/reset-password',
+        captchaToken: resetCaptchaToken,
       });
 
       if (error) throw error;
@@ -265,7 +265,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-6 text-center text-xs text-gray-400">
-          <p>Questions? Contact support@techfuseconsulting.online</p>
+          <p>Questions? Contact support@techfuseconsult.online</p>
         </div>
       </div>
     </div>
