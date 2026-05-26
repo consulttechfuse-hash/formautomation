@@ -33,13 +33,14 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      // Pass captcha token directly to Supabase - it will verify with Cloudflare
+      // CORRECT: captchaToken at root level, NOT inside options
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
         },
-        captchaToken: captchaToken,
+      }, {
+        captchaToken: captchaToken,  // ← Second parameter for captcha
       });
 
       if (error) {
