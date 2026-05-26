@@ -15,9 +15,15 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const redirectUrl = 'https://formautomation-taupe.vercel.app/auth/callback';
 
   async function handleMagicLinkSignup(e: React.FormEvent) {
     e.preventDefault();
+    
+    console.log("Starting signup flow");
+    console.log("Email:", email);
+    console.log("Captcha token present:", !!captchaToken);
+    
     if (!email) {
       setError('Please enter your email address');
       return;
@@ -31,33 +37,57 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      // Send magic link with captcha token directly to Supabase
+      // First, verify the Turnstile token with your API
+      console.log("Verifying Turnstile token...");
+      const verifyRes = await fetch('/api/auth/verify-turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captchaToken }),
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        console.error("Turnstile verification failed:", verifyData.error);
+        setError(verifyData.error || 'Security verification failed');
+        setCaptchaToken(null);
+        setLoading(false);
+        return;
+      }
+      console.log("Turnstile verified successfully");
+
+      // Now send the magic link with the same token
+      console.log("Sending magic link to Supabase...");
       const { error } = await supabase.auth.signInWithOtp({
-        email,
+        email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          captchaToken: captchaToken,  // ← Pass token to Supabase
+          emailRedirectTo: redirectUrl,
+          captchaToken: captchaToken,
         },
       });
 
       if (error) {
+        console.error("Supabase error:", error);
         setError(error.message);
       } else {
+        console.log("Magic link sent successfully");
         setMagicLinkSent(true);
       }
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error("Exception:", err);
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   const onTurnstileSuccess = (token: string) => {
+    console.log("Turnstile success, token received");
     setCaptchaToken(token);
     setError(null);
   };
 
   const onTurnstileError = () => {
+    console.error("Turnstile error");
     setError('Security verification failed. Please refresh and try again.');
   };
 
