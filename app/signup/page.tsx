@@ -5,9 +5,15 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Declare Turnstile for window object
 declare global {
   interface Window {
-    turnstile: any;
+    turnstile: {
+      render: (container: HTMLElement, params: any) => string;
+      execute: (widgetId: string) => void;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+    };
   }
 }
 
@@ -44,7 +50,6 @@ export default function SignUpPage() {
           callback: (token: string) => {
             setCaptchaToken(token);
             setError(null);
-            // Auto-submit after token received
             handleSubmitWithToken(token);
           },
           'error-callback': () => {
@@ -110,7 +115,6 @@ export default function SignUpPage() {
     setLoading(true);
     setError(null);
 
-    // Execute Turnstile challenge
     if (widgetIdRef.current && window.turnstile) {
       window.turnstile.execute(widgetIdRef.current);
     } else {
@@ -172,7 +176,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Invisible Turnstile container */}
           <div ref={turnstileRef} />
 
           {error && (
