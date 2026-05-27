@@ -28,11 +28,10 @@ export default function SignUpPage() {
       document.head.appendChild(script);
     }
 
-    // Render widget when script is ready
     const initTurnstile = () => {
-      const win = window as any;
-      if (win.turnstile && turnstileRef.current && !widgetIdRef.current) {
-        widgetIdRef.current = win.turnstile.render(turnstileRef.current, {
+      const anyWindow = window as any;
+      if (anyWindow.turnstile && turnstileRef.current && !widgetIdRef.current) {
+        widgetIdRef.current = anyWindow.turnstile.render(turnstileRef.current, {
           sitekey: siteKey,
           mode: 'invisible',
           execution: 'execute',
@@ -49,13 +48,12 @@ export default function SignUpPage() {
       }
     };
 
-    // Check if turnstile is already loaded
-    const win = window as any;
-    if (win.turnstile) {
+    const anyWindow = window as any;
+    if (anyWindow.turnstile) {
       initTurnstile();
     } else {
       const checkInterval = setInterval(() => {
-        if (win.turnstile) {
+        if (anyWindow.turnstile) {
           clearInterval(checkInterval);
           initTurnstile();
         }
@@ -105,9 +103,9 @@ export default function SignUpPage() {
     setLoading(true);
     setError(null);
 
-    const win = window as any;
-    if (widgetIdRef.current && win.turnstile) {
-      win.turnstile.execute(widgetIdRef.current);
+    const anyWindow = window as any;
+    if (widgetIdRef.current && anyWindow.turnstile) {
+      anyWindow.turnstile.execute(widgetIdRef.current);
     } else {
       setError('Security verification not ready. Please refresh the page.');
       setLoading(false);
