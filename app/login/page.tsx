@@ -17,30 +17,59 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
-      setError(error.message);
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
       return;
     }
 
-    // Get user role for redirect
+    // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user?.id)
-      .single();
+    
+    if (!user) {
+      setError('User not found');
+      setLoading(false);
+      return;
+    }
 
-    const role = profile?.role;
+    // Try to get role from user_roles table first
+    let role = 'client'; // default
+    
+    const { data: userRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (userRole?.role) {
+      role = userRole.role;
+    } else {
+      // Fallback to users table role
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.role) {
+        role = profile.role;
+      }
+    }
+    
+    console.log(`User ${user.email} logged in with role: ${role}`);
+    
+    // Redirect based on role
     if (role === 'owner') router.push('/owner/dashboard');
     else if (role === 'admin') router.push('/admin/dashboard');
     else if (role === 'agent') router.push('/agent/dashboard');
     else router.push('/client/dashboard');
+    
+    setLoading(false);
   };
 
   return (
