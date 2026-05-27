@@ -5,18 +5,6 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Declare Turnstile for window object
-declare global {
-  interface Window {
-    turnstile: {
-      render: (container: HTMLElement, params: any) => string;
-      execute: (widgetId: string) => void;
-      reset: (widgetId: string) => void;
-      remove: (widgetId: string) => void;
-    };
-  }
-}
-
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +30,9 @@ export default function SignUpPage() {
 
     // Render widget when script is ready
     const initTurnstile = () => {
-      if (window.turnstile && turnstileRef.current && !widgetIdRef.current) {
-        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+      const win = window as any;
+      if (win.turnstile && turnstileRef.current && !widgetIdRef.current) {
+        widgetIdRef.current = win.turnstile.render(turnstileRef.current, {
           sitekey: siteKey,
           mode: 'invisible',
           execution: 'execute',
@@ -61,11 +50,12 @@ export default function SignUpPage() {
     };
 
     // Check if turnstile is already loaded
-    if (window.turnstile) {
+    const win = window as any;
+    if (win.turnstile) {
       initTurnstile();
     } else {
       const checkInterval = setInterval(() => {
-        if (window.turnstile) {
+        if (win.turnstile) {
           clearInterval(checkInterval);
           initTurnstile();
         }
@@ -115,8 +105,9 @@ export default function SignUpPage() {
     setLoading(true);
     setError(null);
 
-    if (widgetIdRef.current && window.turnstile) {
-      window.turnstile.execute(widgetIdRef.current);
+    const win = window as any;
+    if (widgetIdRef.current && win.turnstile) {
+      win.turnstile.execute(widgetIdRef.current);
     } else {
       setError('Security verification not ready. Please refresh the page.');
       setLoading(false);
