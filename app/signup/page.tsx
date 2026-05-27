@@ -26,7 +26,6 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      // For testing, bypass Turnstile
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
