@@ -1,10 +1,13 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Turnstile } from '@marsidev/react-turnstile';
 import Link from 'next/link';
+
+declare global {
+  interface Window {
+    turnstile: any;
+  }
+}
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
@@ -12,57 +15,106 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const redirectUrl = 'https://techfuseconsult.online/api/auth/callback';
+  const redirectUrl = 'https://techfuseconsult.online/set-password';
 
-  async function handleMagicLinkSignup(e: React.FormEvent) {
-    e.preventDefault();
-    
+  useEffect(() => {
+    // Load Turnstile script
+    if (!document.querySelector('script[src*="turnstile"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    // Render widget when script is ready
+    const initTurnstile = () => {
+      if (window.turnstile && turnstileRef.current && !widgetIdRef.current) {
+        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: siteKey,
+          mode: 'invisible',
+          execution: 'execute',
+          callback: (token: string) => {
+            setCaptchaToken(token);
+            setError(null);
+            // Auto-submit after token received
+            handleSubmitWithToken(token);
+          },
+          'error-callback': () => {
+            setError('Security verification failed. Please try again.');
+            setLoading(false);
+          },
+        });
+      }
+    };
+
+    // Check if turnstile is already loaded
+    if (window.turnstile) {
+      initTurnstile();
+    } else {
+      const checkInterval = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkInterval);
+          initTurnstile();
+        }
+      }, 100);
+      return () => clearInterval(checkInterval);
+    }
+  }, [siteKey]);
+
+  const handleSubmitWithToken = async (token: string) => {
     if (!email) {
       setError('Please enter your email address');
+      setLoading(false);
       return;
     }
-    if (!captchaToken) {
-      setError('Please complete the security check');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
 
     try {
-      // captchaToken goes inside options
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
-          captchaToken: captchaToken,
+          captchaToken: token,
         },
       });
 
       if (error) {
         console.error("Supabase error:", error);
         setError(error.message);
+        setLoading(false);
       } else {
         setMagicLinkSent(true);
       }
     } catch (err: any) {
       console.error("Exception:", err);
       setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
       setLoading(false);
     }
-  }
-
-  const onTurnstileSuccess = (token: string) => {
-    setCaptchaToken(token);
-    setError(null);
   };
 
-  const onTurnstileError = () => {
-    setError('Security verification failed. Please refresh and try again.');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    // Execute Turnstile challenge
+    if (widgetIdRef.current && window.turnstile) {
+      window.turnstile.execute(widgetIdRef.current);
+    } else {
+      setError('Security verification not ready. Please refresh the page.');
+      setLoading(false);
+    }
   };
 
   if (magicLinkSent) {
@@ -102,7 +154,7 @@ export default function SignUpPage() {
           <p className="text-gray-600 mt-2">Sign up to get started</p>
         </div>
 
-        <form onSubmit={handleMagicLinkSignup} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email Address
@@ -114,17 +166,12 @@ export default function SignUpPage() {
               className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="you@example.com"
               required
+              disabled={loading}
             />
           </div>
 
-          {siteKey && (
-            <Turnstile
-              siteKey={siteKey}
-              onSuccess={onTurnstileSuccess}
-              onError={onTurnstileError}
-              options={{ theme: 'light', size: 'normal' }}
-            />
-          )}
+          {/* Invisible Turnstile container */}
+          <div ref={turnstileRef} />
 
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
