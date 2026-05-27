@@ -26,6 +26,7 @@ export default function SignUpPage() {
     setError(null);
 
     try {
+      // No captcha token needed since captcha is disabled in Supabase
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -63,7 +64,7 @@ export default function SignUpPage() {
             We sent a magic link to <strong>{email}</strong>.
           </p>
           <p className="text-amber-600 text-sm mb-4">
-            ⚠️ If you don't see the email, please check your spam/junk folder.
+            If you don't see the email, please check your spam/junk folder.
           </p>
           <button
             onClick={() => router.push('/login')}
