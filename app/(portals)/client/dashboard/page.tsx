@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [progress, setProgress] = useState<any>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,11 +45,18 @@ export default function ClientDashboard() {
       
       // Only clients should see this page
       if (role !== 'client') {
-        console.warn(`User ${authUser.email} with role ${role} attempted to access client dashboard`);
         router.push('/unauthorized');
         return;
       }
       
+      // Get user progress
+      const { data: userProgress } = await supabase
+        .from('user_roles')
+        .select('has_consented, onboarding_complete, onboarding_submitted, has_paid, assigned_admin_id')
+        .eq('user_id', authUser.id)
+        .single();
+      
+      setProgress(userProgress);
       setUser(authUser);
       setLoading(false);
     };
@@ -56,24 +64,72 @@ export default function ClientDashboard() {
     checkAccess();
   }, [router, supabase]);
 
+  const steps = [
+    { id: 1, name: 'Sign up', path: null, completed: true },
+    { id: 2, name: 'Sign in', path: null, completed: true },
+    { id: 3, name: 'Consent & Declaration', path: '/client/consent', completed: progress?.has_consented === true },
+    { id: 4, name: 'Choose Your National Admin', path: '/client/select-admin', completed: progress?.assigned_admin_id !== null },
+    { id: 5, name: 'Make Payment', path: '/client/select-payment', completed: progress?.has_paid === true },
+    { id: 6, name: 'Complete Form-01', path: '/client/form-01', completed: progress?.onboarding_complete === true },
+    { id: 7, name: 'Form Check & Submit', path: '/forms/check-submit', completed: progress?.onboarding_submitted === true },
+  ];
+
+  const currentStep = steps.find(step => step.completed === false && step.path !== null);
+  const isSubmitted = progress?.onboarding_submitted === true;
+
   if (loading) {
-    return <div className="p-8">Loading...</div>;
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Client Dashboard</h1>
-      <p>Welcome, {user?.email}</p>
-      {/* Rest of your client dashboard content */}
-      <button
-        onClick={async () => {
-          await supabase.auth.signOut();
-          router.push('/login');
-        }}
-        className="mt-4 bg-red-600 text-white px-4 py-2 rounded"
-      >
-        Sign Out
-      </button>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-primary text-primary-foreground p-4 mb-8 rounded-lg shadow-md flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Welcome to Techfuse DocControl</h1>
+          <p className="text-primary-foreground/80 mt-1">Follow the steps below to complete your application.</p>
+        </div>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            router.push('/login');
+          }}
+          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {steps.map((step) => (
+          <div
+            key={step.id}
+            className={`border rounded-lg p-4 flex justify-between items-center ${
+              step.completed ? 'bg-green-50 border-green-200' : 'bg-white'
+            }`}
+          >
+            <div>
+              <h3 className="font-semibold text-lg">{step.name}</h3>
+              {step.completed && <p className="text-sm text-green-600">✓ Completed</p>}
+            </div>
+            {!step.completed && step.path && (
+              <button
+                onClick={() => router.push(step.path)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Start
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {currentStep && (
+        <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+          <p className="text-primary">
+            <strong>Next step:</strong> {currentStep.name}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
