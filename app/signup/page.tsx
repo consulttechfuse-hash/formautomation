@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -9,72 +9,28 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
   const router = useRouter();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
-  useEffect(() => {
-    // Load Turnstile script
-    if (!document.querySelector('script[src*="turnstile"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    const initTurnstile = () => {
-      const anyWindow = window as any;
-      if (anyWindow.turnstile && turnstileRef.current && !widgetIdRef.current) {
-        widgetIdRef.current = anyWindow.turnstile.render(turnstileRef.current, {
-          sitekey: siteKey,
-          mode: 'invisible',
-          execution: 'execute',
-          callback: (token: string) => {
-            setCaptchaToken(token);
-            setError(null);
-            handleSubmitWithToken(token);
-          },
-          'error-callback': () => {
-            setError('Security verification failed. Please try again.');
-            setLoading(false);
-          },
-        });
-      }
-    };
-
-    const anyWindow = window as any;
-    if (anyWindow.turnstile) {
-      initTurnstile();
-    } else {
-      const checkInterval = setInterval(() => {
-        if (anyWindow.turnstile) {
-          clearInterval(checkInterval);
-          initTurnstile();
-        }
-      }, 100);
-      return () => clearInterval(checkInterval);
-    }
-  }, [siteKey]);
-
-  const handleSubmitWithToken = async (token: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!email) {
       setError('Please enter your email address');
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
+      // For testing, bypass Turnstile
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
-          captchaToken: token,
         },
       });
 
@@ -88,26 +44,6 @@ export default function SignUpPage() {
     } catch (err: any) {
       console.error("Exception:", err);
       setError(err.message || 'Something went wrong. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const anyWindow = window as any;
-    if (widgetIdRef.current && anyWindow.turnstile) {
-      anyWindow.turnstile.execute(widgetIdRef.current);
-    } else {
-      setError('Security verification not ready. Please refresh the page.');
       setLoading(false);
     }
   };
@@ -164,8 +100,6 @@ export default function SignUpPage() {
               disabled={loading}
             />
           </div>
-
-          <div ref={turnstileRef} />
 
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
