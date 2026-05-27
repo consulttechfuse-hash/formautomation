@@ -25,7 +25,6 @@ export async function GET(request: Request) {
     }
   );
 
-  // Verify the OTP token
   const { error } = await supabase.auth.verifyOtp({
     email: email,
     token: token,
@@ -37,54 +36,65 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${error.message}`, request.url));
   }
 
-  // Get the user
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
     return NextResponse.redirect(new URL('/login?error=no_user', request.url));
   }
 
-  // Check if user exists in your users table
-  let { data: profile, error: profileError } = await supabase
-    .from('users')
+  // Check if user exists in user_roles table
+  const { data: existingUserRole } = await supabase
+    .from('user_roles')
     .select('role')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
-  // If user doesn't exist, create them as CLIENT (this is the only way they can get a role)
-  if (!profile) {
+  if (!existingUserRole) {
+    // Create records in BOTH tables for new users
     console.log(`Creating new client user: ${user.email}`);
     
-    const { error: insertError } = await supabase
+    // Insert into users table
+    await supabase
       .from('users')
       .insert({
         id: user.id,
         email: user.email,
-        role: 'client',  // ← ALL new signups are clients
+        role: 'client',
         status: 'pending',
         created_at: new Date().toISOString(),
-        has_paid: false,
+      });
+    
+    // Insert into user_roles table
+    await supabase
+      .from('user_roles')
+      .insert({
+        user_id: user.id,
+        email: user.email,
+        role: 'client',
         has_consented: false,
         onboarding_complete: false,
         onboarding_submitted: false,
+        has_paid: false,
+        created_at: new Date().toISOString(),
       });
     
-    if (insertError) {
-      console.error('Failed to create user record:', insertError);
-      return NextResponse.redirect(new URL('/login?error=account_creation_failed', request.url));
-    }
-    
-    // New client users go to set-password
+    // New client goes to set password
     return NextResponse.redirect(new URL('/set-password', request.url));
   }
 
-  // Existing user - redirect based on stored role
-  const role = profile.role;
+  // Existing user - get role from user_roles
+  const { data: userRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single();
   
+  const role = userRole?.role || 'client';
+  
+  // Redirect based on role
   if (role === 'owner') return NextResponse.redirect(new URL('/owner/dashboard', request.url));
   if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   if (role === 'agent') return NextResponse.redirect(new URL('/agent/dashboard', request.url));
   
-  // Default to client dashboard (for clients or any other role)
   return NextResponse.redirect(new URL('/client/dashboard', request.url));
 }
