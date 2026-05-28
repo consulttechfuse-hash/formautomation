@@ -4,13 +4,11 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
 
@@ -26,7 +24,6 @@ export default function SignUpPage() {
       return;
     }
     
-    if (!captchaToken) {
       setError('Please complete the security check');
       return;
     }
@@ -39,7 +36,6 @@ export default function SignUpPage() {
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
-          captchaToken: captchaToken,
         },
       });
 
@@ -55,12 +51,10 @@ export default function SignUpPage() {
     }
   };
 
-  const onTurnstileSuccess = (token: string) => {
     setCaptchaToken(token);
     setError(null);
   };
 
-  const onTurnstileError = () => {
     setError('Security verification failed. Please refresh and try again.');
   };
 
@@ -115,10 +109,7 @@ export default function SignUpPage() {
           </div>
 
           {siteKey && (
-            <Turnstile
               siteKey={siteKey}
-              onSuccess={onTurnstileSuccess}
-              onError={onTurnstileError}
               options={{ theme: 'light' }}
             />
           )}
@@ -131,7 +122,6 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            disabled={loading || !captchaToken}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Sign up with Magic Link'}
