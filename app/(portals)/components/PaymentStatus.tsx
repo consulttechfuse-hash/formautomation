@@ -38,22 +38,29 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
     let query = supabase.from('manual_payment_requests').select('*');
 
     if (role === 'owner') {
-      // Owner sees all payment requests
       query = query.order('requested_at', { ascending: false });
     } 
     else if (role === 'admin' && adminId) {
-      // Admin sees payments for clients under their admin_id
-      // First, get all client IDs under this admin
       const { data: clients } = await supabase
         .from('users')
         .select('id')
-        .eq('role', 'client')
-        .eq('admin_id', adminId);
+        .eq('admin_id', adminId)
+        .eq('role', 'client');
       
-      const clientIds = clients?.map(c => c.id) || [];
+      const { data: userRoleClients } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('assigned_admin_id', adminId);
       
-      if (clientIds.length > 0) {
-        query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
+      const allClientIds = [
+        ...(clients?.map(c => c.id) || []),
+        ...(userRoleClients?.map(c => c.user_id) || [])
+      ];
+      
+      const uniqueClientIds = [...new Set(allClientIds)];
+      
+      if (uniqueClientIds.length > 0) {
+        query = query.in('client_id', uniqueClientIds).order('requested_at', { ascending: false });
       } else {
         setPayments([]);
         setPendingCount(0);
@@ -62,8 +69,6 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       }
     }
     else if (role === 'agent' && agentId) {
-      // Agent sees payments for clients assigned to them
-      // First, get the agent's admin_id
       const { data: agentData } = await supabase
         .from('users')
         .select('admin_id')
@@ -73,12 +78,11 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       const agentAdminId = agentData?.admin_id;
       
       if (agentAdminId) {
-        // Get clients under this admin (since agents work under admin)
         const { data: clients } = await supabase
           .from('users')
           .select('id')
-          .eq('role', 'client')
-          .eq('admin_id', agentAdminId);
+          .eq('admin_id', agentAdminId)
+          .eq('role', 'client');
         
         const clientIds = clients?.map(c => c.id) || [];
         
@@ -232,7 +236,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                       </div>
                     </td>
                   )}
-                </table>
+                </tr>
               ))}
             </tbody>
           </table>
