@@ -14,20 +14,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Get the current user (admin sending the invite)
     const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = authHeader.substring(7);
     const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if current user is admin
     const { data: adminData } = await supabase
       .from('users')
       .select('role')
@@ -40,55 +38,45 @@ export async function POST(request: Request) {
 
     // Check if user exists in auth
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const userExists = existingUsers?.users?.some(u => u.email === email);
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
     
-    if (userExists) {
-      // User exists - update role to agent in BOTH tables
-      const { data: { user } } = await supabase.auth.admin.getUserByEmail(email);
+    if (existingUser) {
+      // User exists - update role to agent
+      await supabase
+        .from('users')
+        .update({ role: 'agent', admin_id: currentUser.id })
+        .eq('id', existingUser.id);
       
-      if (user) {
-        // Update users table
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', existingUser.id)
+        .single();
+      
+      if (existingRole) {
         await supabase
-          .from('users')
-          .update({ role: 'agent', admin_id: currentUser.id })
-          .eq('id', user.id);
-        
-        // Update or insert into user_roles table
-        const { data: existingRole } = await supabase
           .from('user_roles')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (existingRole) {
-          await supabase
-            .from('user_roles')
-            .update({ role: 'agent' })
-            .eq('user_id', user.id);
-        } else {
-          await supabase
-            .from('user_roles')
-            .insert({
-              user_id: user.id,
-              email: email,
-              role: 'agent',
-              created_at: new Date().toISOString(),
-            });
-        }
+          .update({ role: 'agent' })
+          .eq('user_id', existingUser.id);
+      } else {
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: existingUser.id,
+            email: email,
+            role: 'agent',
+            created_at: new Date().toISOString(),
+          });
       }
       
-      // Send password reset email
       await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/set-password`
       });
       
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Agent role updated in both tables. Password reset email sent.'
-      });
+      return NextResponse.json({ success: true, message: 'Agent role updated' });
       
     } else {
-      // Create new user in auth
+      // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: email,
         email_confirm: true,
@@ -98,12 +86,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: createError.message }, { status: 500 });
       }
       
-      // Send invite email
       await supabase.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/accept-invite`
       });
       
-      // Insert into users table
       await supabase
         .from('users')
         .insert({
@@ -115,7 +101,6 @@ export async function POST(request: Request) {
           created_at: new Date().toISOString(),
         });
       
-      // Insert into user_roles table
       await supabase
         .from('user_roles')
         .insert({
@@ -125,10 +110,7 @@ export async function POST(request: Request) {
           created_at: new Date().toISOString(),
         });
       
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Agent invited successfully. Records created in both tables.'
-      });
+      return NextResponse.json({ success: true, message: 'Agent invited successfully' });
     }
 
   } catch (error) {
