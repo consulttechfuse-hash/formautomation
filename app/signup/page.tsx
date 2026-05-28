@@ -4,14 +4,17 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
 
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,31 +24,43 @@ export default function SignUpPage() {
       setError('Please enter your email address');
       return;
     }
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      // No captcha token needed since captcha is disabled in Supabase
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
+          captchaToken: captchaToken,
         },
       });
 
       if (error) {
-        console.error("Supabase error:", error);
         setError(error.message);
         setLoading(false);
       } else {
         setMagicLinkSent(true);
       }
     } catch (err: any) {
-      console.error("Exception:", err);
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'Something went wrong');
       setLoading(false);
     }
+  };
+
+  const onTurnstileSuccess = (token: string) => {
+    setCaptchaToken(token);
+    setError(null);
+  };
+
+  const onTurnstileError = () => {
+    setError('Security verification failed. Please refresh and try again.');
   };
 
   if (magicLinkSent) {
@@ -61,10 +76,7 @@ export default function SignUpPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Check your email</h1>
           <p className="text-gray-600 mb-2">
-            We sent a magic link to <strong>{email}</strong>.
-          </p>
-          <p className="text-amber-600 text-sm mb-4">
-            If you don't see the email, please check your spam/junk folder.
+            We sent a magic link to <strong>{email}</strong>
           </p>
           <button
             onClick={() => router.push('/login')}
@@ -101,6 +113,15 @@ export default function SignUpPage() {
             />
           </div>
 
+          {siteKey && (
+            <Turnstile
+              siteKey={siteKey}
+              onSuccess={onTurnstileSuccess}
+              onError={onTurnstileError}
+              options={{ theme: 'light' }}
+            />
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -109,7 +130,7 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Sign up with Magic Link'}

@@ -4,22 +4,35 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: captchaToken,
+      },
     });
 
     if (signInError) {
@@ -28,7 +41,6 @@ export default function LoginPage() {
       return;
     }
 
-    // Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -37,39 +49,30 @@ export default function LoginPage() {
       return;
     }
 
-    // Try to get role from user_roles table first
-    let role = 'client'; // default
-    
+    // Get role from user_roles table
     const { data: userRole } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
       .single();
     
-    if (userRole?.role) {
-      role = userRole.role;
-    } else {
-      // Fallback to users table role
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile?.role) {
-        role = profile.role;
-      }
-    }
+    const role = userRole?.role || 'client';
     
-    console.log(`User ${user.email} logged in with role: ${role}`);
-    
-    // Redirect based on role
     if (role === 'owner') router.push('/owner/dashboard');
     else if (role === 'admin') router.push('/admin/dashboard');
     else if (role === 'agent') router.push('/agent/dashboard');
     else router.push('/client/dashboard');
     
     setLoading(false);
+  };
+
+  const onTurnstileSuccess = (token: string) => {
+    setCaptchaToken(token);
+    setError(null);
+  };
+
+  const onTurnstileError = () => {
+    setError('Security verification failed. Please refresh and try again.');
   };
 
   return (
@@ -111,6 +114,15 @@ export default function LoginPage() {
             />
           </div>
 
+          {siteKey && (
+            <Turnstile
+              siteKey={siteKey}
+              onSuccess={onTurnstileSuccess}
+              onError={onTurnstileError}
+              options={{ theme: 'light' }}
+            />
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -119,7 +131,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
