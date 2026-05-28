@@ -12,8 +12,6 @@ export default function SignUpPage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  // CORRECT: Redirect to set-password page
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,10 +19,6 @@ export default function SignUpPage() {
     
     if (!email) {
       setError('Please enter your email address');
-      return;
-    }
-    
-      setError('Please complete the security check');
       return;
     }
 
@@ -49,13 +43,6 @@ export default function SignUpPage() {
       setError(err.message || 'Something went wrong');
       setLoading(false);
     }
-  };
-
-    setCaptchaToken(token);
-    setError(null);
-  };
-
-    setError('Security verification failed. Please refresh and try again.');
   };
 
   if (magicLinkSent) {
@@ -108,12 +95,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {siteKey && (
-              siteKey={siteKey}
-              options={{ theme: 'light' }}
-            />
-          )}
-
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -122,6 +103,7 @@ export default function SignUpPage() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Sign up with Magic Link'}
