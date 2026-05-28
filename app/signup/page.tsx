@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  // CORRECT: Redirect to set-password page
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
