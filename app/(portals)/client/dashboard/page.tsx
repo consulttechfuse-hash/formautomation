@@ -20,16 +20,44 @@ export default function ClientDashboard() {
         return;
       }
       
-      // Check user's role from user_roles table
-      const { data: userRole } = await supabase
+      // Try to get role from user_roles table
+      let { data: userRole } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', authUser.id)
         .single();
       
-      const role = userRole?.role;
+      let role = userRole?.role;
       
-      // If user is not a client, redirect to their correct dashboard
+      // If no role in user_roles, check users table
+      if (!role) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', authUser.id)
+          .single();
+        role = profile?.role;
+      }
+      
+      // If still no role, assume client (new user)
+      if (!role) {
+        role = 'client';
+        // Create user_roles record for this user
+        await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authUser.id,
+            email: authUser.email,
+            role: 'client',
+            has_consented: false,
+            onboarding_complete: false,
+            onboarding_submitted: false,
+            has_paid: false,
+            created_at: new Date().toISOString(),
+          });
+      }
+      
+      // Redirect based on role
       if (role === 'owner') {
         router.push('/owner/dashboard');
         return;
@@ -40,12 +68,6 @@ export default function ClientDashboard() {
       }
       if (role === 'agent') {
         router.push('/agent/dashboard');
-        return;
-      }
-      
-      // Only clients should see this page
-      if (role !== 'client') {
-        router.push('/unauthorized');
         return;
       }
       
@@ -75,7 +97,6 @@ export default function ClientDashboard() {
   ];
 
   const currentStep = steps.find(step => step.completed === false && step.path !== null);
-  const isSubmitted = progress?.onboarding_submitted === true;
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
