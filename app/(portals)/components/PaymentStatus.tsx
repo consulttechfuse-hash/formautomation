@@ -26,6 +26,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   const [payments, setPayments] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'rejected'>('pending');
+  const [pendingCount, setPendingCount] = useState(0);
   const supabase = createClient();
 
   useEffect(() => {
@@ -36,40 +37,70 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
     setLoading(true);
     let query = supabase.from('manual_payment_requests').select('*');
 
-    if (role === 'admin' && adminId) {
+    if (role === 'owner') {
+      // Owner sees all payment requests
+      query = query.order('requested_at', { ascending: false });
+    } 
+    else if (role === 'admin' && adminId) {
+      // Admin sees payments for clients under their admin_id
+      // First, get all client IDs under this admin
       const { data: clients } = await supabase
         .from('users')
         .select('id')
-        .eq('admin_id', adminId)
-        .eq('role', 'client');
+        .eq('role', 'client')
+        .eq('admin_id', adminId);
       
       const clientIds = clients?.map(c => c.id) || [];
+      
       if (clientIds.length > 0) {
-        query = query.in('client_id', clientIds);
+        query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
       } else {
         setPayments([]);
+        setPendingCount(0);
         setLoading(false);
         return;
       }
-    } else if (role === 'agent' && agentId) {
-      const { data: clients } = await supabase
+    }
+    else if (role === 'agent' && agentId) {
+      // Agent sees payments for clients assigned to them
+      // First, get the agent's admin_id
+      const { data: agentData } = await supabase
         .from('users')
-        .select('id')
-        .eq('agent_id', agentId)
-        .eq('role', 'client');
+        .select('admin_id')
+        .eq('id', agentId)
+        .single();
       
-      const clientIds = clients?.map(c => c.id) || [];
-      if (clientIds.length > 0) {
-        query = query.in('client_id', clientIds);
+      const agentAdminId = agentData?.admin_id;
+      
+      if (agentAdminId) {
+        // Get clients under this admin (since agents work under admin)
+        const { data: clients } = await supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'client')
+          .eq('admin_id', agentAdminId);
+        
+        const clientIds = clients?.map(c => c.id) || [];
+        
+        if (clientIds.length > 0) {
+          query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
+        } else {
+          setPayments([]);
+          setPendingCount(0);
+          setLoading(false);
+          return;
+        }
       } else {
         setPayments([]);
+        setPendingCount(0);
         setLoading(false);
         return;
       }
     }
 
-    const { data } = await query.order('requested_at', { ascending: false });
+    const { data } = await query;
     setPayments(data || []);
+    setPendingCount(data?.filter(p => p.status === 'pending').length || 0);
     setLoading(false);
   };
 
@@ -102,19 +133,13 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
     if (filter === 'all') return true;
     return p.status === filter;
   });
-  
-  const pendingCount = payments.filter(p => p.status === 'pending').length;
-
-  if (loading) {
-    return <div className="p-4 text-center">Loading payment status...</div>;
-  }
 
   return (
     <div className="space-y-4">
       {pendingCount > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <p className="text-sm text-yellow-800">
-            ⚠️ {pendingCount} payment request(s) pending verification
+            ⚠️ {pendingCount} new payment request(s) pending verification
           </p>
         </div>
       )}
@@ -175,7 +200,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                             await fetch('/api/send-payment-confirmation', { 
                               method: 'POST', 
                               headers: { 'Content-Type': 'application/json' }, 
-                              body: JSON.stringify({ email: payment.client_email, clientId: payment.client_id }) 
+                              body: JSON.stringify({ email: payment.client_email, clientId: payment.client_id, status: 'approved' }) 
                             });
                             alert(`Payment confirmed for ${payment.client_email}`);
                             loadPayments();
@@ -192,6 +217,11 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                               status: 'rejected', 
                               admin_notes: reason 
                             }).eq('id', payment.id);
+                            await fetch('/api/send-payment-confirmation', { 
+                              method: 'POST', 
+                              headers: { 'Content-Type': 'application/json' }, 
+                              body: JSON.stringify({ email: payment.client_email, clientId: payment.client_id, status: 'rejected', adminNotes: reason }) 
+                            });
                             alert(`Payment rejected for ${payment.client_email}`);
                             loadPayments();
                           }}
@@ -202,7 +232,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                       </div>
                     </td>
                   )}
-                </tr>
+                </table>
               ))}
             </tbody>
           </table>
