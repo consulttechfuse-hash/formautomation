@@ -5,23 +5,33 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const router = useRouter();
 
-  const redirectUrl = 'https://techfuseconsult.online/set-password';
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const redirectUrl = 'https://techfuseconsult.online/reset-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
+      captchaToken: captchaToken,
     });
 
     if (error) {
@@ -30,6 +40,15 @@ function ForgotPasswordForm() {
     } else {
       setSent(true);
     }
+  };
+
+  const onTurnstileSuccess = (token: string) => {
+    setCaptchaToken(token);
+    setError(null);
+  };
+
+  const onTurnstileError = () => {
+    setError('Security verification failed. Please refresh and try again.');
   };
 
   if (sent) {
@@ -82,6 +101,15 @@ function ForgotPasswordForm() {
             />
           </div>
 
+          {siteKey && (
+            <Turnstile
+              siteKey={siteKey}
+              onSuccess={onTurnstileSuccess}
+              onError={onTurnstileError}
+              options={{ theme: 'light' }}
+            />
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -90,7 +118,7 @@ function ForgotPasswordForm() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
