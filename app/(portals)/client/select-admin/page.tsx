@@ -68,7 +68,7 @@ export default function SelectAdminPage() {
 
     setSaving(false);
     // Direct to payment page
-    router.push('/client/payment');
+    router.push('/client/select-payment');
   }
 
   if (loading) {
