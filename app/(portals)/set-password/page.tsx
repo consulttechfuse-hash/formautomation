@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-function SetPasswordForm() {
+export default function SetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -20,9 +19,6 @@ function SetPasswordForm() {
     const verify = async () => {
       const token = searchParams.get('token');
       const urlEmail = searchParams.get('email');
-      
-      console.log('Token from URL:', token);
-      console.log('Email from URL:', urlEmail);
       
       if (!token || !urlEmail) {
         setError('Invalid invitation link');
@@ -39,13 +35,11 @@ function SetPasswordForm() {
       });
       
       if (verifyError) {
-        console.error('Verify error:', verifyError);
         setError(verifyError.message);
         setIsVerifying(false);
         return;
       }
       
-      console.log('Token verified successfully');
       setIsVerifying(false);
     };
     
@@ -74,12 +68,12 @@ function SetPasswordForm() {
     });
 
     if (updateError) {
-      console.error('Update error:', updateError);
       setError(updateError.message);
       setLoading(false);
       return;
     }
 
+    // Redirect to client dashboard (new users are always clients)
     router.push('/client/dashboard');
   };
 
@@ -149,13 +143,5 @@ function SetPasswordForm() {
         </form>
       </div>
     </div>
-  );
-}
-
-export default function SetPasswordPage() {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
-      <SetPasswordForm />
-    </Suspense>
   );
 }

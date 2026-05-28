@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation';
 
 export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    const checkAccess = async () => {
+    const loadDashboard = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
       if (!authUser) {
@@ -20,29 +19,15 @@ export default function ClientDashboard() {
         return;
       }
       
-      // Try to get role from user_roles table
-      let { data: userRole } = await supabase
+      // Get user progress from user_roles
+      let { data: userProgress } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('has_consented, onboarding_complete, onboarding_submitted, has_paid, assigned_admin_id')
         .eq('user_id', authUser.id)
         .single();
       
-      let role = userRole?.role;
-      
-      // If no role in user_roles, check users table
-      if (!role) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', authUser.id)
-          .single();
-        role = profile?.role;
-      }
-      
-      // If still no role, assume client (new user)
-      if (!role) {
-        role = 'client';
-        // Create user_roles record for this user
+      // If no record exists, create one
+      if (!userProgress) {
         await supabase
           .from('user_roles')
           .insert({
@@ -55,35 +40,21 @@ export default function ClientDashboard() {
             has_paid: false,
             created_at: new Date().toISOString(),
           });
+        
+        userProgress = {
+          has_consented: false,
+          onboarding_complete: false,
+          onboarding_submitted: false,
+          has_paid: false,
+          assigned_admin_id: null,
+        };
       }
-      
-      // Redirect based on role
-      if (role === 'owner') {
-        router.push('/owner/dashboard');
-        return;
-      }
-      if (role === 'admin') {
-        router.push('/admin/dashboard');
-        return;
-      }
-      if (role === 'agent') {
-        router.push('/agent/dashboard');
-        return;
-      }
-      
-      // Get user progress
-      const { data: userProgress } = await supabase
-        .from('user_roles')
-        .select('has_consented, onboarding_complete, onboarding_submitted, has_paid, assigned_admin_id')
-        .eq('user_id', authUser.id)
-        .single();
       
       setProgress(userProgress);
-      setUser(authUser);
       setLoading(false);
     };
     
-    checkAccess();
+    loadDashboard();
   }, [router, supabase]);
 
   const steps = [
