@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import Image from 'next/image';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -113,57 +115,76 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-2xl font-bold text-gray-800">Reset Password</h1>
-        <p className="mb-4 text-gray-600">
-          Set a new password for: <strong>{email}</strong>
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        {/* Logo Section - Clickable to Home */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Techfuse Consulting"
+              width={120}
+              height={60}
+              className="mx-auto"
+              priority
+            />
+          </Link>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Reset Password</h1>
+          <p className="text-gray-600 mt-2">Set a new password for <strong>{email}</strong></p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               New Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
               required
               minLength={6}
             />
           </div>
 
-          <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Confirm New Password
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
               required
             />
           </div>
 
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Resetting Password...' : 'Reset Password'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push('/login')}
-            className="text-sm text-blue-600 hover:underline"
-          >
+        <div className="mt-6 text-center">
+          <Link href="/login" className="text-sm text-blue-600 hover:text-blue-800">
             Back to Sign In
-          </button>
+          </Link>
         </div>
       </div>
     </div>
