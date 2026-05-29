@@ -26,13 +26,13 @@ function AcceptInviteForm() {
         return;
       }
       
-      // Verify the invitation token
+      // Verify the invitation token from user_roles table
       const { data: invitation, error: inviteError } = await supabase
-        .from('invitations')
+        .from('user_roles')
         .select('*')
-        .eq('token', token)
-        .eq('accepted_at', null)
-        .gt('expires_at', new Date().toISOString())
+        .eq('invitation_token', token)
+        .is('accepted_at', null)
+        .gt('invitation_expires_at', new Date().toISOString())
         .single();
       
       if (inviteError || !invitation) {
@@ -51,7 +51,6 @@ function AcceptInviteForm() {
         // User is already logged in, accept the invitation
         await acceptInvitation(session.user.id, invitation);
       } else {
-        // Send magic link to accept invitation
         setLoading(false);
       }
     };
@@ -60,25 +59,30 @@ function AcceptInviteForm() {
   }, [token]);
   
   const acceptInvitation = async (userId: string, invitation: any) => {
-    // Update user's role in public.users
+    // Update user_roles with user_id and mark as accepted
     const { error: updateError } = await supabase
-      .from('users')
+      .from('user_roles')
       .update({ 
-        role: invitation.role,
-        assigned_agent_id: invitation.assigned_to_id
+        user_id: userId,
+        accepted_at: new Date().toISOString()
       })
-      .eq('id', userId);
+      .eq('invitation_token', token);
     
     if (updateError) {
       setError('Failed to accept invitation');
       return false;
     }
     
-    // Mark invitation as accepted
+    // Also update public.users table if it exists separately
     await supabase
-      .from('invitations')
-      .update({ accepted_at: new Date().toISOString(), user_id: userId })
-      .eq('id', invitation.id);
+      .from('users')
+      .upsert({
+        id: userId,
+        email: invitation.email,
+        role: invitation.role,
+        invited_by: invitation.invited_by,
+        assigned_admin_id: invitation.role === 'agent' ? invitation.invited_by : null
+      });
     
     return true;
   };
