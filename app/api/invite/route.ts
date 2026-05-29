@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
@@ -29,8 +28,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only admins or owners can invite agents' }, { status: 403 });
     }
     
-    // Create invitation token
-    const token = uuidv4();
+    // Create invitation token using built-in crypto
+    const token = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
