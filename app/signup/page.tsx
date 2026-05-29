@@ -24,9 +24,10 @@ export default function SignUpPage() {
         setMessage('Check your email for the magic link!');
         alert('Magic link sent!');
       }
-    } catch (err) {
-      setMessage('Exception: ' + err.message);
-      alert('Exception: ' + err.message);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setMessage('Exception: ' + errorMessage);
+      alert('Exception: ' + errorMessage);
     }
   };
 
