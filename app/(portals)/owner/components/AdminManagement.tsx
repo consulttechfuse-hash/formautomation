@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 
 interface Admin {
   id: string;
+  user_id: string;
   email: string;
   role: string;
   created_at: string;
@@ -12,15 +13,19 @@ interface Admin {
 
 interface Agent {
   id: string;
+  user_id: string;
   email: string;
-  admin_id: string;
+  role: string;
+  assigned_admin_id: string;
   created_at: string;
 }
 
 interface Client {
   id: string;
+  user_id: string;
   email: string;
-  admin_id: string;
+  role: string;
+  assigned_admin_id: string;
   has_paid: boolean;
   created_at: string;
 }
@@ -28,7 +33,9 @@ interface Client {
 interface PendingInvite {
   id: string;
   email: string;
-  status: string;
+  role: string;
+  invitation_token: string;
+  invitation_expires_at: string;
   created_at: string;
 }
 
@@ -51,40 +58,50 @@ export default function AdminManagement() {
 
   useEffect(() => {
     if (selectedAdmin) {
-      loadAdminData(selectedAdmin.id);
+      loadAdminData(selectedAdmin.user_id);
     }
   }, [selectedAdmin]);
 
   const loadAdmins = async () => {
+    // Query from user_roles table
     const { data } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('*')
-      .eq('role', 'admin');
+      .eq('role', 'admin')
+      .not('user_id', 'is', null);
     setAdmins(data || []);
     if (data && data.length > 0) setSelectedAdmin(data[0]);
   };
 
   const loadPendingInvites = async () => {
+    // Query pending invites from user_roles table
     const { data } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('*')
-      .eq('status', 'pending');
+      .eq('role', 'admin')
+      .is('user_id', null)
+      .is('accepted_at', null)
+      .not('invitation_token', 'is', null);
     setPendingInvites(data || []);
   };
 
-  const loadAdminData = async (adminId: string) => {
+  const loadAdminData = async (adminUserId: string) => {
+    // Load agents assigned to this admin
     const { data: agents } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('*')
       .eq('role', 'agent')
-      .eq('admin_id', adminId);
+      .eq('assigned_admin_id', adminUserId)
+      .not('user_id', 'is', null);
     setAdminAgents(agents || []);
 
+    // Load clients assigned to this admin
     const { data: clients } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('*')
       .eq('role', 'client')
-      .eq('admin_id', adminId);
+      .eq('assigned_admin_id', adminUserId)
+      .not('user_id', 'is', null);
     setAdminClients(clients || []);
   };
 
@@ -114,22 +131,32 @@ export default function AdminManagement() {
     }
   };
 
-  const handleDeleteAdmin = async (admin: Admin) => {
-    if (!confirm(`Remove ${admin.email} as admin?`)) return;
-    try {
-      const response = await fetch('/api/owner/remove-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminId: admin.id }),
-      });
-      if (response.ok) {
-        loadAdmins();
-        alert('Admin removed successfully');
-      } else {
-        alert('Failed to remove admin');
-      }
-    } catch (error) {
-      alert('Failed to remove admin');
+  const handleResendInvite = async (email: string) => {
+    const response = await fetch('/api/owner/invite-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (response.ok) {
+      alert('Invitation resent successfully');
+      loadPendingInvites();
+    } else {
+      const data = await response.json();
+      alert(data.error || 'Failed to resend invitation');
+    }
+  };
+
+  const handleCancelInvite = async (id: string) => {
+    if (!confirm('Cancel this invitation?')) return;
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      alert('Invitation cancelled');
+      loadPendingInvites();
+    } else {
+      alert('Failed to cancel invitation');
     }
   };
 
@@ -154,15 +181,15 @@ export default function AdminManagement() {
       <div className="bg-white rounded-lg shadow p-4">
         <label className="block text-sm font-medium mb-2">Select Admin</label>
         <select
-          value={selectedAdmin?.id || ''}
+          value={selectedAdmin?.user_id || ''}
           onChange={(e) => {
-            const admin = admins.find(a => a.id === e.target.value);
+            const admin = admins.find(a => a.user_id === e.target.value);
             setSelectedAdmin(admin || null);
           }}
           className="w-full p-2 border rounded"
         >
           {admins.map(admin => (
-            <option key={admin.id} value={admin.id}>{admin.email}</option>
+            <option key={admin.id} value={admin.user_id}>{admin.email}</option>
           ))}
         </select>
       </div>
@@ -208,6 +235,7 @@ export default function AdminManagement() {
         </div>
       )}
 
+      {/* Pending Invites Section */}
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="font-semibold mb-2">Pending Invites</h3>
         {pendingInvites.length === 0 ? (
@@ -216,14 +244,34 @@ export default function AdminManagement() {
           <div className="space-y-2">
             {pendingInvites.map(invite => (
               <div key={invite.id} className="flex justify-between items-center border-b pb-2">
-                <span>{invite.email}</span>
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                <div>
+                  <span>{invite.email}</span>
+                  <p className="text-xs text-gray-500">
+                    Expires: {new Date(invite.invitation_expires_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                  <button
+                    onClick={() => handleResendInvite(invite.email)}
+                    className="text-blue-600 hover:text-blue-800 text-xs"
+                  >
+                    Resend
+                  </button>
+                  <button
+                    onClick={() => handleCancelInvite(invite.id)}
+                    className="text-red-600 hover:text-red-800 text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
