@@ -36,7 +36,6 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      // Sign up with email confirmation required
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -53,6 +52,27 @@ export default function SignUpPage() {
           setError('User already exists. Please sign in instead.');
           setLoading(false);
         } else {
+          // Create user role record
+          if (data.user) {
+            await supabase.from('users').insert({
+              id: data.user.id,
+              email: email,
+              role: 'client',
+              status: 'pending',
+              created_at: new Date().toISOString(),
+            });
+            
+            await supabase.from('user_roles').insert({
+              user_id: data.user.id,
+              email: email,
+              role: 'client',
+              has_consented: false,
+              onboarding_complete: false,
+              onboarding_submitted: false,
+              has_paid: false,
+              created_at: new Date().toISOString(),
+            });
+          }
           setSuccess(true);
         }
       }
