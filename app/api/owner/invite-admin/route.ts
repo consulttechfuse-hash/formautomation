@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { sendInvitationEmail } from '@/lib/email';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -11,7 +13,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if current user is owner
     const { data: currentUser } = await supabase
       .from('user_roles')
       .select('role, email')
@@ -28,55 +29,76 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Use built-in crypto.randomUUID()
     const invitationToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // Check if user already exists in user_roles
-    const { data: existingUser } = await supabase
+    // Create invitation record
+    const { error: insertError } = await supabase
       .from('user_roles')
-      .select('user_id')
-      .eq('email', email)
-      .single();
+      .insert({
+        email: email,
+        role: 'admin',
+        invited_by: session.user.id,
+        invitation_token: invitationToken,
+        invitation_expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString(),
+      });
     
-    if (existingUser?.user_id) {
-      // User exists, update role
-      await supabase
-        .from('user_roles')
-        .update({ role: 'admin', invited_by: session.user.id })
-        .eq('email', email);
-    } else {
-      // Create invitation record
-      await supabase
-        .from('user_roles')
-        .insert({
-          email: email,
-          role: 'admin',
-          invited_by: session.user.id,
-          invitation_token: invitationToken,
-          invitation_expires_at: expiresAt.toISOString(),
-          created_at: new Date().toISOString(),
-        });
+    if (insertError) {
+      console.error('Insert error:', insertError);
+      return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
     }
     
-    // Send invitation email
+    // Send email
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${invitationToken}`;
     
-    const emailResult = await sendInvitationEmail({
-      toEmail: email,
-      role: 'admin',
-      inviteLink: inviteLink,
-      invitedByEmail: currentUser?.email,
-      expiresAt: expiresAt,
-    });
+    console.log('Attempting to send email to:', email);
+    console.log('Invite link:', inviteLink);
+    console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
     
-    if (!emailResult.success) {
-      console.error('Email send failed:', emailResult.error);
-      // Still return success since the invitation was created
+    try {
+      const emailResult = await resend.emails.send({
+        from: 'Techfuse <noreply@techfuseconsult.online>',
+        to: email,
+        subject: 'You have been invited as an Admin - Techfuse DocControl',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background-color: #1e3a8a; color: white; padding: 20px; text-align: center;">
+              <h1 style="margin: 0;">Techfuse Consulting</h1>
+              <p>Admin Invitation</p>
+            </div>
+            <div style="padding: 20px; border: 1px solid #e5e7eb;">
+              <p>You have been invited to become an <strong>Admin</strong>.</p>
+              <p>Click the link below to accept:</p>
+              <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; display: inline-block; margin: 20px 0;">Accept Invitation</a>
+              <p>This link expires in 7 days.</p>
+            </div>
+          </div>
+        `,
+      });
+      
+      console.log('Email send result:', emailResult);
+      
+      if (emailResult.error) {
+        console.error('Resend error details:', emailResult.error);
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Invitation created but email failed. Check Resend logs.',
+          emailError: emailResult.error 
+        });
+      }
+      
+      return NextResponse.json({ success: true, message: 'Admin invited and email sent' });
+      
+    } catch (emailError) {
+      console.error('Email sending exception:', emailError);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Invitation created but email failed to send',
+        error: String(emailError)
+      });
     }
-    
-    return NextResponse.json({ success: true, message: 'Admin invited successfully', inviteLink });
     
   } catch (error) {
     console.error('Error:', error);
