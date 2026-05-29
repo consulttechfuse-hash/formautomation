@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import FormViewer from '../../components/FormViewer';
-import { getFormData } from '../../components/getFormData';
+import FormViewer from './FormViewer';
 
 interface Client {
   id: string;
@@ -13,8 +12,9 @@ interface Client {
   has_consented: boolean;
   onboarding_submitted: boolean;
   fn_t1: string;
-  srn_t1: string;
+  fln_t1: string;
   idp_t1: string;
+  cnt_1: string;
   created_at: string;
   status?: string;
 }
@@ -25,8 +25,7 @@ export default function ClientManagement() {
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedForm, setSelectedForm] = useState('');
-  const [formData, setFormData] = useState<any>(null);
+  const [selectedForm, setSelectedForm] = useState<number | null>(null);
   const [viewingForm, setViewingForm] = useState(false);
   const supabase = createClient();
 
@@ -35,12 +34,35 @@ export default function ClientManagement() {
     setLoading(true);
     
     const { data } = await supabase
-      .from('users')
-      .select('*')
+      .from('user_roles')
+      .select('user_id, email, role, has_paid, has_consented, onboarding_submitted, created_at')
       .eq('role', 'client')
       .ilike('email', `%${searchEmail}%`);
     
-    setClients(data as Client[] || []);
+    // Get additional form01 data
+    const enrichedClients = await Promise.all((data || []).map(async (client) => {
+      const { data: form01 } = await supabase
+        .from('form01_data')
+        .select('fn_t1, fln_t1, idp_t1, cnt_1')
+        .eq('user_id', client.user_id)
+        .single();
+      
+      return {
+        id: client.user_id,
+        email: client.email,
+        admin_id: '',
+        has_paid: client.has_paid || false,
+        has_consented: client.has_consented || false,
+        onboarding_submitted: client.onboarding_submitted || false,
+        fn_t1: form01?.fn_t1 || '',
+        fln_t1: form01?.fln_t1 || '',
+        idp_t1: form01?.idp_t1 || '',
+        cnt_1: form01?.cnt_1 || '',
+        created_at: client.created_at
+      };
+    }));
+    
+    setClients(enrichedClients as Client[]);
     setShowResults(true);
     setLoading(false);
   };
@@ -49,11 +71,34 @@ export default function ClientManagement() {
     setLoading(true);
     
     const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('role', 'client');
+      .from('user_roles')
+      .select('user_id, email, role, has_paid, has_consented, onboarding_submitted, created_at')
+      .eq('role', 'client')
+      .order('created_at', { ascending: false });
     
-    setClients(data as Client[] || []);
+    const enrichedClients = await Promise.all((data || []).map(async (client) => {
+      const { data: form01 } = await supabase
+        .from('form01_data')
+        .select('fn_t1, fln_t1, idp_t1, cnt_1')
+        .eq('user_id', client.user_id)
+        .single();
+      
+      return {
+        id: client.user_id,
+        email: client.email,
+        admin_id: '',
+        has_paid: client.has_paid || false,
+        has_consented: client.has_consented || false,
+        onboarding_submitted: client.onboarding_submitted || false,
+        fn_t1: form01?.fn_t1 || '',
+        fln_t1: form01?.fln_t1 || '',
+        idp_t1: form01?.idp_t1 || '',
+        cnt_1: form01?.cnt_1 || '',
+        created_at: client.created_at
+      };
+    }));
+    
+    setClients(enrichedClients as Client[]);
     setShowResults(true);
     setLoading(false);
   };
@@ -63,39 +108,25 @@ export default function ClientManagement() {
     setClients([]);
     setShowResults(false);
     setSelectedClient(null);
-    setFormData(null);
     setViewingForm(false);
-    setSelectedForm('');
+    setSelectedForm(null);
   };
 
-  const handleViewForm = async (client: Client, formNumber: string) => {
+  const handleViewForm = (client: Client, formNumber: number) => {
     setSelectedClient(client);
     setSelectedForm(formNumber);
-    setLoading(true);
-    
-    const formNum = parseInt(formNumber);
-    let data = null;
-    
-    if (formNum === 1) {
-      const { data: form01 } = await supabase
-        .from('form01_data')
-        .select('*')
-        .eq('user_id', client.id)
-        .single();
-      data = form01;
-    } else {
-      data = await getFormData(client.id, formNum);
-    }
-    
-    setFormData(data);
     setViewingForm(true);
-    setLoading(false);
   };
 
   const closeFormView = () => {
     setViewingForm(false);
-    setFormData(null);
-    setSelectedForm('');
+    setSelectedClient(null);
+    setSelectedForm(null);
+  };
+
+  const getFormStatus = (client: Client, formNumber: number): 'completed' | 'pending' | 'locked' => {
+    // This would check generated_forms for completion status
+    return 'pending';
   };
 
   return (
@@ -103,26 +134,26 @@ export default function ClientManagement() {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-bold mb-4">Client Management</h2>
         
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
           <input
             type="text"
             placeholder="Search by email..."
             value={searchEmail}
             onChange={(e) => setSearchEmail(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="flex-1 p-2 border rounded"
+            className="flex-1 p-2 border rounded min-w-[200px]"
           />
           <button
             onClick={handleSearch}
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
             Search
           </button>
           <button
             onClick={handleShowAll}
             disabled={loading}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
           >
             Show All Clients
           </button>
@@ -142,38 +173,45 @@ export default function ClientManagement() {
               <div className="bg-yellow-50 p-4 rounded text-center">No clients found</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full border-collapse">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="p-2 text-left">Email</th>
-                      <th className="p-2 text-left">Form</th>
-                      <th className="p-2 text-left">Actions</th>
+                      <th className="p-2 text-left border">Email</th>
+                      <th className="p-2 text-left border">Name</th>
+                      <th className="p-2 text-left border">Phone</th>
+                      <th className="p-2 text-left border">Forms</th>
+                      <th className="p-2 text-left border">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {clients.map((client) => (
-                      <tr key={client.id} className="border-t">
-                        <td className="p-2">{client.email}</td>
-                        <td className="p-2">
-                          <select
-                            onChange={(e) => setSelectedForm(e.target.value)}
-                            className="p-1 border rounded text-sm"
-                            defaultValue=""
-                          >
-                            <option value="" disabled>Select Form</option>
-                            {[...Array(17)].map((_, i) => (
-                              <option key={i + 1} value={i + 1}>
-                                Form {(i + 1).toString().padStart(2, '0')}
-                              </option>
+                      <tr key={client.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2 border">{client.email}</td>
+                        <td className="p-2 border">{client.fn_t1} {client.fln_t1}</td>
+                        <td className="p-2 border">{client.cnt_1 || '-'}</td>
+                        <td className="p-2 border">
+                          <div className="flex gap-1 flex-wrap">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22].map((num) => (
+                              <span
+                                key={num}
+                                onClick={() => handleViewForm(client, num)}
+                                className={`cursor-pointer text-xs px-2 py-1 rounded transition-colors ${
+                                  getFormStatus(client, num) === 'completed'
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              >
+                                {num}
+                              </span>
                             ))}
-                          </select>
+                          </div>
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 border">
                           <button
-                            onClick={() => handleViewForm(client, selectedForm || '1')}
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                            onClick={() => handleViewForm(client, 1)}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
                           >
-                            View Form
+                            View Data
                           </button>
                         </td>
                       </tr>
@@ -184,34 +222,17 @@ export default function ClientManagement() {
             )}
           </>
         )}
-
-        {!showResults && (
-          <div className="bg-gray-50 p-8 rounded text-center text-gray-500">
-            🔍 Enter an email and click Search, or click Show All Clients
-          </div>
-        )}
       </div>
 
-      {viewingForm && formData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto">
-            <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white">
-              <h2 className="text-xl font-bold">
-                Form {selectedForm} - {selectedClient?.email}
-              </h2>
-              <button onClick={closeFormView} className="text-gray-500 text-2xl">&times;</button>
-            </div>
-            <div className="p-4">
-              <FormViewer 
-                formData={formData} 
-                formNumber={selectedForm} 
-                clientEmail={selectedClient?.email || ''} 
-                showEditButton={true} 
-                showAddField={false} 
-              />
-            </div>
-          </div>
-        </div>
+      {/* Form Viewer Modal */}
+      {viewingForm && selectedClient && selectedForm && (
+        <FormViewer
+          clientId={selectedClient.id}
+          formNumber={selectedForm}
+          userRole="owner"
+          onClose={closeFormView}
+          onSave={handleShowAll}
+        />
       )}
     </div>
   );
