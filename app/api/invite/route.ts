@@ -1,11 +1,10 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -14,9 +13,9 @@ export async function POST(request: Request) {
     
     // Get current user's role
     const { data: currentUser } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('user_id', session.user.id)
       .single();
     
     const { email, role, assigned_to_id } = await request.json();
@@ -30,37 +29,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only admins or owners can invite agents' }, { status: 403 });
     }
     
-    if (role === 'agent' && !assigned_to_id && currentUser?.role === 'admin') {
-      // If admin invites agent, assign to themselves
-      const assignedTo = assigned_to_id || session.user.id;
-    }
-    
     // Create invitation token
     const token = uuidv4();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+    expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // Store invitation
-    const { data: invitation, error } = await supabase
-      .from('invitations')
+    // Store invitation in user_roles table
+    const { error } = await supabase
+      .from('user_roles')
       .insert({
         email,
         role,
         invited_by: session.user.id,
-        assigned_to_id: role === 'agent' ? (assigned_to_id || session.user.id) : null,
-        token,
-        expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
+        assigned_admin_id: role === 'agent' ? (assigned_to_id || session.user.id) : null,
+        invitation_token: token,
+        invitation_expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString(),
+      });
     
     if (error) throw error;
     
     // Send invitation email
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${token}`;
     
-    // TODO: Send email using Resend
-    // await sendInvitationEmail(email, inviteLink, role);
+    console.log('Invite link:', inviteLink);
     
     return NextResponse.json({ success: true, inviteLink });
   } catch (error) {

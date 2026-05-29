@@ -1,10 +1,10 @@
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -28,19 +28,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Check if user already exists in auth
-    const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email);
-    
     const invitationToken = uuidv4();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    if (existingUser?.user) {
-      // User exists, just update role
+    // Check if user already exists in user_roles
+    const { data: existingUser } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('email', email)
+      .single();
+    
+    if (existingUser?.user_id) {
+      // User exists, update role
       await supabase
         .from('user_roles')
         .update({ role: 'admin', invited_by: session.user.id })
-        .eq('user_id', existingUser.user.id);
+        .eq('email', email);
     } else {
       // Create invitation record
       await supabase
@@ -58,19 +62,10 @@ export async function POST(request: Request) {
     // Send invitation email
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${invitationToken}`;
     
-    // TODO: Send email with Resend
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     from: 'noreply@techfuseconsult.online',
-    //     to: email,
-    //     subject: 'You have been invited as an Admin',
-    //     html: `<p>Click <a href="${inviteLink}">here</a> to accept your invitation.</p>`
-    //   })
-    // });
+    // TODO: Send email with Resend - add this later
+    console.log('Invite link:', inviteLink);
     
-    return NextResponse.json({ success: true, message: 'Admin invited successfully' });
+    return NextResponse.json({ success: true, message: 'Admin invited successfully', inviteLink });
     
   } catch (error) {
     console.error('Error:', error);
