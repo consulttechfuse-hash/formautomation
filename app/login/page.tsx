@@ -18,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -26,8 +26,35 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
-      router.push('/client/dashboard');
+      return;
+    }
+
+    if (data?.user) {
+      // Fetch user role from user_roles table
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (roleError) {
+        console.error('Role fetch error:', roleError);
+        router.push('/client/dashboard');
+        return;
+      }
+
+      const role = userRole?.role || 'client';
+      
+      // Redirect based on role
+      if (role === 'owner') {
+        router.push('/owner/dashboard');
+      } else if (role === 'admin') {
+        router.push('/admin/dashboard');
+      } else if (role === 'agent') {
+        router.push('/agent/dashboard');
+      } else {
+        router.push('/client/dashboard');
+      }
     }
   };
 
