@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,39 +36,60 @@ export default function SignUpPage() {
     setError(null);
 
     try {
+      // Sign up with email confirmation required
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: 'https://techfuseconsult.online/login?verified=true',
+        },
       });
 
       if (error) {
         setError(error.message);
         setLoading(false);
       } else {
-        // Create user role record
-        if (data.user) {
-          await supabase.from('users').insert({
-            id: data.user.id,
-            email: email,
-            role: 'client',
-            status: 'active',
-            created_at: new Date().toISOString(),
-          });
-          
-          await supabase.from('user_roles').insert({
-            user_id: data.user.id,
-            email: email,
-            role: 'client',
-            created_at: new Date().toISOString(),
-          });
+        if (data.user?.identities?.length === 0) {
+          setError('User already exists. Please sign in instead.');
+          setLoading(false);
+        } else {
+          setSuccess(true);
         }
-        router.push('/client/dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="mb-4">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Check your email</h1>
+          <p className="text-gray-600 mb-2">
+            We sent a confirmation link to <strong>{email}</strong>
+          </p>
+          <p className="text-sm text-gray-500 mb-4">
+            Please verify your email address before signing in.
+          </p>
+          <button
+            onClick={() => router.push('/login')}
+            className="text-blue-600 hover:text-blue-800"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
@@ -86,7 +108,8 @@ export default function SignUpPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="you@example.com"
               required
               disabled={loading}
             />
@@ -100,7 +123,8 @@ export default function SignUpPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
               required
               disabled={loading}
               minLength={6}
@@ -115,7 +139,8 @@ export default function SignUpPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="••••••••"
               required
               disabled={loading}
             />
@@ -130,7 +155,7 @@ export default function SignUpPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700"
+            className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
