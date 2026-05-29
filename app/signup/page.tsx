@@ -12,8 +12,6 @@ export default function SignUpPage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  // CORRECT: Redirect to set-password page
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,10 +19,6 @@ export default function SignUpPage() {
     
     if (!email) {
       setError('Please enter your email address');
-      return;
-    }
-    
-      setError('Please complete the security check');
       return;
     }
 
@@ -51,13 +45,6 @@ export default function SignUpPage() {
     }
   };
 
-    setCaptchaToken(token);
-    setError(null);
-  };
-
-    setError('Security verification failed. Please refresh and try again.');
-  };
-
   if (magicLinkSent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
@@ -72,6 +59,9 @@ export default function SignUpPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Check your email</h1>
           <p className="text-gray-600 mb-2">
             We sent a magic link to <strong>{email}</strong>
+          </p>
+          <p className="text-amber-600 text-sm mb-4">
+            Click the link in your email to set up your account.
           </p>
           <button
             onClick={() => router.push('/login')}
@@ -108,12 +98,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {siteKey && (
-              siteKey={siteKey}
-              options={{ theme: 'light' }}
-            />
-          )}
-
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -122,6 +106,7 @@ export default function SignUpPage() {
 
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Sign up with Magic Link'}
