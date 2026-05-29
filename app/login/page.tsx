@@ -5,22 +5,35 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const router = useRouter();
+
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        captchaToken: captchaToken,
+      },
     });
 
     if (error) {
@@ -30,48 +43,36 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
-      // Fetch user role from user_roles table
-      const { data: userRole, error: roleError } = await supabase
+      const { data: userRole } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', data.user.id)
         .single();
 
-      if (roleError) {
-        console.error('Role fetch error:', roleError);
-        router.push('/client/dashboard');
-        return;
-      }
-
       const role = userRole?.role || 'client';
       
-      // Redirect based on role
-      if (role === 'owner') {
-        router.push('/owner/dashboard');
-      } else if (role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (role === 'agent') {
-        router.push('/agent/dashboard');
-      } else {
-        router.push('/client/dashboard');
-      }
+      if (role === 'owner') router.push('/owner/dashboard');
+      else if (role === 'admin') router.push('/admin/dashboard');
+      else if (role === 'agent') router.push('/agent/dashboard');
+      else router.push('/client/dashboard');
     }
+  };
+
+  const onTurnstileSuccess = (token: string) => {
+    setCaptchaToken(token);
+    setError(null);
+  };
+
+  const onTurnstileError = () => {
+    setError('Security verification failed. Please refresh and try again.');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        {/* Logo Section - Clickable to Home */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
-            <Image
-              src="/logo.png"
-              alt="Techfuse Consulting"
-              width={120}
-              height={60}
-              className="mx-auto"
-              priority
-            />
+            <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
           </Link>
         </div>
 
@@ -117,6 +118,17 @@ export default function LoginPage() {
             </Link>
           </div>
 
+          {siteKey && (
+            <div className="flex justify-center">
+              <Turnstile
+                siteKey={siteKey}
+                onSuccess={onTurnstileSuccess}
+                onError={onTurnstileError}
+                options={{ theme: 'light' }}
+              />
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -125,7 +137,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}

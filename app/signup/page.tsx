@@ -5,14 +5,17 @@ import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
 
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,6 +23,11 @@ export default function SignUpPage() {
     
     if (!email) {
       setError('Please enter your email address');
+      return;
+    }
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
       return;
     }
 
@@ -31,6 +39,7 @@ export default function SignUpPage() {
         email: email,
         options: {
           emailRedirectTo: redirectUrl,
+          captchaToken: captchaToken,
         },
       });
 
@@ -46,10 +55,24 @@ export default function SignUpPage() {
     }
   };
 
+  const onTurnstileSuccess = (token: string) => {
+    setCaptchaToken(token);
+    setError(null);
+  };
+
+  const onTurnstileError = () => {
+    setError('Security verification failed. Please refresh and try again.');
+  };
+
   if (magicLinkSent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-center mb-6">
+            <Link href="/" className="inline-block">
+              <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
+            </Link>
+          </div>
           <div className="mb-4">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,9 +83,6 @@ export default function SignUpPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Check your email</h1>
           <p className="text-gray-600 mb-2">
             We sent a magic link to <strong>{email}</strong>
-          </p>
-          <p className="text-amber-600 text-sm mb-4">
-            Click the link in your email to set up your account.
           </p>
           <button
             onClick={() => router.push('/login')}
@@ -78,17 +98,9 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        {/* Logo Section - Clickable to Home */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
-            <Image
-              src="/logo.png"
-              alt="Techfuse Consulting"
-              width={120}
-              height={60}
-              className="mx-auto"
-              priority
-            />
+            <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
           </Link>
         </div>
 
@@ -113,6 +125,17 @@ export default function SignUpPage() {
             />
           </div>
 
+          {siteKey && (
+            <div className="flex justify-center">
+              <Turnstile
+                siteKey={siteKey}
+                onSuccess={onTurnstileSuccess}
+                onError={onTurnstileError}
+                options={{ theme: 'light' }}
+              />
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -121,7 +144,7 @@ export default function SignUpPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !captchaToken}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Sign up with Magic Link'}
