@@ -5,24 +5,25 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Turnstile } from '@marsidev/react-turnstile';
+import Image from 'next/image';
 
 function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const router = useRouter();
 
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const redirectUrl = 'https://techfuseconsult.online/reset-password';
+  
+  // Button is enabled when email is not empty AND not loading
+  const isButtonEnabled = email.trim() !== '' && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!captchaToken) {
-      setError('Please complete the security check');
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
@@ -31,7 +32,6 @@ function ForgotPasswordForm() {
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
-      captchaToken: captchaToken,
     });
 
     if (error) {
@@ -42,19 +42,22 @@ function ForgotPasswordForm() {
     }
   };
 
-  const onTurnstileSuccess = (token: string) => {
-    setCaptchaToken(token);
-    setError(null);
-  };
-
-  const onTurnstileError = () => {
-    setError('Security verification failed. Please refresh and try again.');
-  };
-
   if (sent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="text-center mb-6">
+            <Link href="/" className="inline-block">
+              <Image
+                src="/logo.png"
+                alt="Techfuse Consulting"
+                width={120}
+                height={60}
+                className="mx-auto"
+                priority
+              />
+            </Link>
+          </div>
           <div className="mb-4">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,6 +83,20 @@ function ForgotPasswordForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        {/* Logo Section - Clickable to Home */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Techfuse Consulting"
+              width={120}
+              height={60}
+              className="mx-auto"
+              priority
+            />
+          </Link>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Reset Password</h1>
           <p className="text-gray-600 mt-2">Enter your email to receive a reset link</p>
@@ -101,15 +118,6 @@ function ForgotPasswordForm() {
             />
           </div>
 
-          {siteKey && (
-            <Turnstile
-              siteKey={siteKey}
-              onSuccess={onTurnstileSuccess}
-              onError={onTurnstileError}
-              options={{ theme: 'light' }}
-            />
-          )}
-
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -118,8 +126,12 @@ function ForgotPasswordForm() {
 
           <button
             type="submit"
-            disabled={loading || !captchaToken}
-            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50"
+            disabled={!isButtonEnabled}
+            className={`w-full rounded-lg px-4 py-2 transition-colors ${
+              isButtonEnabled
+                ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             {loading ? 'Sending...' : 'Send Reset Link'}
           </button>

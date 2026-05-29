@@ -4,67 +4,56 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (signInError) {
-      setError(signInError.message);
+    if (error) {
+      setError(error.message);
       setLoading(false);
-      return;
+    } else {
+      router.push('/client/dashboard');
     }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      setError('User not found');
-      setLoading(false);
-      return;
-    }
-
-    // Get role from user_roles table
-    let role = 'client';
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (userRole?.role) {
-      role = userRole.role;
-    }
-    
-    if (role === 'owner') router.push('/owner/dashboard');
-    else if (role === 'admin') router.push('/admin/dashboard');
-    else if (role === 'agent') router.push('/agent/dashboard');
-    else router.push('/client/dashboard');
-    
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        {/* Logo Section - Clickable to Home */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Techfuse Consulting"
+              width={120}
+              height={60}
+              className="mx-auto"
+              priority
+            />
+          </Link>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Welcome Back</h1>
           <p className="text-gray-600 mt-2">Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email Address
@@ -95,6 +84,12 @@ export default function LoginPage() {
             />
           </div>
 
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+              Forgot password?
+            </Link>
+          </div>
+
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -110,19 +105,10 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center space-y-2">
-          <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800 block">
-            Forgot Password?
+        <div className="mt-6 text-center">
+          <Link href="/signup" className="text-sm text-blue-600 hover:text-blue-800">
+            Don't have an account? Sign Up
           </Link>
-          <Link href="/signup" className="text-sm text-blue-600 hover:text-blue-800 block">
-            Create Account
-          </Link>
-        </div>
-
-        <div className="mt-6 pt-6 border-t text-center">
-          <p className="text-xs text-gray-500">
-            Questions? Contact support@techfuseconsult.online
-          </p>
         </div>
       </div>
     </div>

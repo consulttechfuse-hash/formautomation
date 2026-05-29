@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
@@ -80,12 +81,14 @@ export default function SignUpPage() {
         {/* Logo Section - Clickable to Home */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">T</span>
-              </div>
-              <span className="text-xl font-bold text-gray-800">Techfuse Consulting</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="Techfuse Consulting"
+              width={120}
+              height={60}
+              className="mx-auto"
+              priority
+            />
           </Link>
         </div>
 
