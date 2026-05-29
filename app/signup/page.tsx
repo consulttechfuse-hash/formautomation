@@ -77,6 +77,18 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+        {/* Logo Section - Clickable to Home */}
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">T</span>
+              </div>
+              <span className="text-xl font-bold text-gray-800">Techfuse Consulting</span>
+            </div>
+          </Link>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
           <p className="text-gray-600 mt-2">Sign up to get started</p>
