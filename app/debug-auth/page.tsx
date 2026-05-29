@@ -29,8 +29,8 @@ export default function DebugAuthPage() {
       } else {
         setResult({ message: 'OTP sent successfully!', data });
       }
-    } catch (err) {
-      setError({ message: err.message, stack: err.stack });
+    } catch (err: any) {
+      setError({ message: err?.message || String(err), stack: err?.stack });
     } finally {
       setLoading(false);
     }
