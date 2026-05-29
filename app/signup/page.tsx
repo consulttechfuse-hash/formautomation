@@ -8,27 +8,17 @@ import Link from 'next/link';
 export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const router = useRouter();
+
+  const redirectUrl = 'https://techfuseconsult.online/set-password';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      setError('Please enter email and password');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!email) {
+      setError('Please enter your email address');
       return;
     }
 
@@ -36,53 +26,28 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
         options: {
-          emailRedirectTo: 'https://techfuseconsult.online/login?verified=true',
+          emailRedirectTo: redirectUrl,
         },
       });
 
       if (error) {
+        console.error("Supabase error:", error);
         setError(error.message);
         setLoading(false);
       } else {
-        if (data.user?.identities?.length === 0) {
-          setError('User already exists. Please sign in instead.');
-          setLoading(false);
-        } else {
-          // Create user role record
-          if (data.user) {
-            await supabase.from('users').insert({
-              id: data.user.id,
-              email: email,
-              role: 'client',
-              status: 'pending',
-              created_at: new Date().toISOString(),
-            });
-            
-            await supabase.from('user_roles').insert({
-              user_id: data.user.id,
-              email: email,
-              role: 'client',
-              has_consented: false,
-              onboarding_complete: false,
-              onboarding_submitted: false,
-              has_paid: false,
-              created_at: new Date().toISOString(),
-            });
-          }
-          setSuccess(true);
-        }
+        setMagicLinkSent(true);
       }
     } catch (err: any) {
+      console.error("Exception:", err);
       setError(err.message || 'Something went wrong');
       setLoading(false);
     }
   };
 
-  if (success) {
+  if (magicLinkSent) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
@@ -95,16 +60,16 @@ export default function SignUpPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Check your email</h1>
           <p className="text-gray-600 mb-2">
-            We sent a confirmation link to <strong>{email}</strong>
+            We sent a magic link to <strong>{email}</strong>
           </p>
-          <p className="text-sm text-gray-500 mb-4">
-            Please verify your email address before signing in.
+          <p className="text-amber-600 text-sm mb-4">
+            Click the link in your email to set up your account.
           </p>
           <button
             onClick={() => router.push('/login')}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 hover:text-blue-800 text-sm"
           >
-            Go to Login
+            Back to Login
           </button>
         </div>
       </div>
@@ -135,37 +100,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              minLength={6}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-            />
-          </div>
-
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
@@ -177,7 +111,7 @@ export default function SignUpPage() {
             disabled={loading}
             className="w-full bg-green-600 text-white rounded-lg px-4 py-2 hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            {loading ? 'Creating account...' : 'Sign Up'}
+            {loading ? 'Sending...' : 'Sign up with Magic Link'}
           </button>
         </form>
 
