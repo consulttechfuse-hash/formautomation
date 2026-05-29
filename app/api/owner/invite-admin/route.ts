@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { sendInvitationEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
     // Check if current user is owner
     const { data: currentUser } = await supabase
       .from('user_roles')
-      .select('role')
+      .select('role, email')
       .eq('user_id', session.user.id)
       .single();
     
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Use built-in crypto.randomUUID() instead of uuid package
+    // Use built-in crypto.randomUUID()
     const invitationToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -62,8 +63,18 @@ export async function POST(request: Request) {
     // Send invitation email
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${invitationToken}`;
     
-    // TODO: Send email with Resend - add this later
-    console.log('Invite link:', inviteLink);
+    const emailResult = await sendInvitationEmail({
+      toEmail: email,
+      role: 'admin',
+      inviteLink: inviteLink,
+      invitedByEmail: currentUser?.email,
+      expiresAt: expiresAt,
+    });
+    
+    if (!emailResult.success) {
+      console.error('Email send failed:', emailResult.error);
+      // Still return success since the invitation was created
+    }
     
     return NextResponse.json({ success: true, message: 'Admin invited successfully', inviteLink });
     
