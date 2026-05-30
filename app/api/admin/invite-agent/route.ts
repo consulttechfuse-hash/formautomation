@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    // Regular client for reading user_roles (uses anon key)
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -10,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the logged-in user's email and ID directly from session
+    // Get the logged-in user's email directly from session
     const loggedInUserEmail = session.user.email;
     const loggedInUserId = session.user.id;
     
@@ -36,8 +38,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Use Supabase's built-in invite user functionality
-    const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+    // Create ADMIN client with service role key (for creating users)
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    // Use Supabase's built-in invite user functionality with admin client
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: 'https://techfuseconsult.online/accept-invite'
     });
     
