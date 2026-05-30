@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    // Regular client for reading user_roles (uses anon key)
     const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -24,7 +23,6 @@ export async function POST(request: Request) {
       .single();
     
     if (roleError || !currentUser) {
-      console.error('Role check error:', roleError);
       return NextResponse.json({ error: 'User role not found' }, { status: 403 });
     }
     
@@ -38,15 +36,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Create ADMIN client with service role key (for creating users)
+    // Create ADMIN client with service role key
     const supabaseAdmin = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // Use Supabase's built-in invite user functionality with admin client
+    // CHECK: Does user already exist in auth.users?
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+    const existingAuthUser = users?.find(u => u.email === email);
+    
+    if (existingAuthUser) {
+      // User already exists - return error to admin
+      return NextResponse.json({ 
+        error: `User with email ${email} already exists. Please use a different email address.` 
+      }, { status: 409 });
+    }
+    
+    // CHECK: Does user already have a pending invitation in user_roles?
+    const { data: existingInvite } = await supabase
+      .from('user_roles')
+      .select('id, accepted_at')
+      .eq('email', email)
+      .eq('role', 'agent')
+      .single();
+    
+    if (existingInvite && !existingInvite.accepted_at) {
+      return NextResponse.json({ 
+        error: `A pending invitation already exists for ${email}. Please wait for them to accept or cancel the existing invitation.` 
+      }, { status: 409 });
+    }
+    
+    // Create the user in auth.users with invite
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: 'https://techfuseconsult.online/accept-invite'
+      redirectTo: 'https://techfuseconsult.online/set-password'
     });
     
     if (inviteError) {
@@ -59,28 +82,28 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // Check if user already exists in user_roles
-    const { data: existingUser } = await supabase
+    // Create or update user_roles record
+    const { data: existingUserRole } = await supabase
       .from('user_roles')
-      .select('user_id')
+      .select('id')
       .eq('email', email)
       .single();
     
-    if (existingUser?.user_id) {
-      // User already exists, update role to agent
+    if (existingUserRole) {
       await supabase
         .from('user_roles')
         .update({
+          user_id: userId,
           role: 'agent',
           invited_by: loggedInUserId,
           assigned_admin_id: loggedInUserId,
           invitation_token: invitationToken,
           invitation_expires_at: expiresAt.toISOString(),
+          accepted_at: null,
           updated_at: new Date().toISOString()
         })
         .eq('email', email);
     } else {
-      // Create user_roles record linked to the new auth user
       await supabase
         .from('user_roles')
         .insert({
@@ -97,7 +120,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Invitation sent successfully'
+      message: `Invitation sent successfully to ${email}`
     });
     
   } catch (error) {
