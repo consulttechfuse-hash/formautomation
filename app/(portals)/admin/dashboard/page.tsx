@@ -197,6 +197,7 @@ export default function AdminDashboard() {
     { id: 'agentStats', name: '📈 Agent Performance' },
     { id: 'clients', name: '👤 Clients' },
     { id: 'paymentStatus', name: '💰 Payment Status' },
+    { id: 'profile', name: '👤 My Profile' },
   ];
 
   const formatDate = (dateString: string) => {
@@ -383,10 +384,10 @@ export default function AdminDashboard() {
                         <td className="p-2">
                           <button className="text-blue-600 hover:text-blue-800">View</button>
                         </td>
-                      </tr>
+                       </tr>
                     ))}
                 </tbody>
-              </table>
+               </table>
             </div>
           </div>
         )}
@@ -409,7 +410,7 @@ export default function AdminDashboard() {
                       <th className="p-3 text-left">Invite Accepted</th>
                       <th className="p-3 text-left">Last Login</th>
                       <th className="p-3 text-left">Forms Completed</th>
-                    </tr>
+                     </tr>
                   </thead>
                   <tbody>
                     {agents.map((agent) => (
@@ -427,7 +428,7 @@ export default function AdminDashboard() {
                             <span className="text-gray-600">{agent.client_count}</span>
                           </div>
                         </td>
-                      </tr>
+                       </tr>
                     ))}
                   </tbody>
                 </table>
@@ -528,7 +529,7 @@ export default function AdminDashboard() {
         
         {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
         
-        {activeSection === 'profile' && <UserProfile userId={adminId} />}
+        {activeSection === 'profile' && <UserProfile />}
       </div>
 
       {/* Invite Modal */}
