@@ -12,7 +12,12 @@ export default function AdminPaymentStatus() {
     const getAdminId = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setAdminId(user.id);
+        const { data } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single();
+        setAdminId(data?.id || '');
       }
     };
     getAdminId();
