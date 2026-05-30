@@ -11,11 +11,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Get the logged-in user's email directly from session
     const loggedInUserEmail = session.user.email;
     const loggedInUserId = session.user.id;
     
-    // Check if the logged-in user is an admin
+    // Check if logged-in user is admin
     const { data: currentUser, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
@@ -36,13 +35,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
     
-    // Create ADMIN client with service role key (for creating users)
+    // CHECK: Is this email already assigned to a different admin?
+    const { data: existingAgent, error: checkError } = await supabase
+      .from('user_roles')
+      .select('assigned_admin_id, invited_by, role')
+      .eq('email', email)
+      .eq('role', 'agent')
+      .single();
+    
+    if (existingAgent && existingAgent.assigned_admin_id !== loggedInUserId) {
+      // Get the other admin's email for error message
+      const { data: otherAdmin } = await supabase
+        .from('user_roles')
+        .select('email')
+        .eq('user_id', existingAgent.assigned_admin_id)
+        .single();
+      
+      return NextResponse.json({ 
+        error: `Agent ${email} is already assigned to admin: ${otherAdmin?.email || 'another admin'}. Please use a different email address.`
+      }, { status: 409 });
+    }
+    
+    // CHECK: Does this email already exist as a client with a different admin?
+    const { data: existingClient } = await supabase
+      .from('user_roles')
+      .select('assigned_admin_id')
+      .eq('email', email)
+      .eq('role', 'client')
+      .single();
+    
+    if (existingClient && existingClient.assigned_admin_id !== loggedInUserId) {
+      return NextResponse.json({ 
+        error: `Email ${email} already exists as a client assigned to another admin. Please use a different email address.`
+      }, { status: 409 });
+    }
+    
+    // Create ADMIN client for auth user creation
     const supabaseAdmin = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // CHECK: Does user already exist in auth.users?
+    // Check if user already exists in auth.users
     const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
     const existingAuthUser = users?.find(u => u.email === email);
     
@@ -61,7 +95,6 @@ export async function POST(request: Request) {
       });
       
       if (createError) {
-        console.error('Create user error:', createError);
         return NextResponse.json({ error: createError.message }, { status: 500 });
       }
       
@@ -111,7 +144,6 @@ export async function POST(request: Request) {
         });
     }
     
-    // Send custom invitation email via Resend
     const inviteLink = `https://techfuseconsult.online/set-password?token=${invitationToken}&email=${encodeURIComponent(email)}&type=invite`;
     
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -133,16 +165,12 @@ export async function POST(request: Request) {
               <p>Agent Invitation</p>
             </div>
             <div style="padding: 20px; border: 1px solid #e5e7eb;">
-              <p>You have been invited to become an <strong>Agent</strong> on the Techfuse DocControl platform.</p>
-              <p>Click the link below to create your password and set up your account:</p>
+              <p>You have been invited to become an <strong>Agent</strong>.</p>
+              <p>Click the link below to create your password:</p>
               <div style="text-align: center; margin: 20px 0;">
-                <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Create Account & Set Password</a>
+                <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Create Account</a>
               </div>
               <p>This link expires in 7 days.</p>
-              <p>If you did not expect this invitation, you can ignore this email.</p>
-            </div>
-            <div style="padding: 20px; text-align: center; font-size: 12px; color: #6b7280;">
-              <p>Techfuse Consulting - Secure Document Control Service</p>
             </div>
           </div>
         `,
