@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       .order('created_at', { ascending: false });
 
     if (agentsData) {
-      const agentsWithStats = await Promise.all(agentsData.map(async (agent) => {
+      const agentsWithStats: AgentStats[] = await Promise.all(agentsData.map(async (agent) => {
         // Get clients assigned to this agent
         const { data: clients } = await supabase
           .from('user_roles')
@@ -168,11 +168,12 @@ export default function AdminDashboard() {
           id: agent.id,
           email: agent.email,
           user_id: agent.user_id,
-          invite_sent_at: agent.invite_sent_at,
-          invite_accepted_at: agent.invite_accepted_at,
-          last_login_at: agent.last_login_at,
+          invite_sent_at: agent.invite_sent_at || '',
+          invite_accepted_at: agent.invite_accepted_at || '',
+          last_login_at: agent.last_login_at || '',
           client_count: clients?.length || 0,
           forms_completed: formsSubmitted,
+          forms_submitted: formsSubmitted,
           forms_pending: (clients?.length || 0) - formsSubmitted
         };
       }));
