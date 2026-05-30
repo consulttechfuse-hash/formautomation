@@ -72,6 +72,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Admin Portal</h1>
@@ -103,10 +104,13 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
+            
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-lg shadow p-6 text-white">
                 <h3 className="text-sm opacity-90">Total Revenue</h3>
@@ -125,11 +129,13 @@ export default function AdminDashboard() {
                 <div className="text-3xl font-bold mt-2">{stats.clientsSignedUp}</div>
               </div>
             </div>
+
+            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AdminClientGrowthChart adminId={adminId} />
-              <PaymentSuccessRateChart adminId={adminId} />
-              <AgentRankingChart adminId={adminId} />
-              <CompletionProgressChart adminId={adminId} />
+              <AdminClientGrowthChart />
+              <PaymentSuccessRateChart />
+              <AgentRankingChart />
+              <CompletionProgressChart />
             </div>
           </div>
         )}
