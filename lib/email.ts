@@ -37,24 +37,15 @@ export async function sendUnlockNotification(params: SendUnlockNotificationParam
       </div>
       <div class="content">
         <p>Dear <strong>${agentName}</strong>,</p>
-        <p>Your unlock request for <strong>${clientName}</strong> has been <span class="${status === 'approved' ? 'status-approved' : 'status-declined'}">${status.toUpperCase()}</span>.</p>
+        <p>Your unlock request for <strong>${clientName}</strong> (Form ${formNumber}) has been <span class="${status === 'approved' ? 'status-approved' : 'status-declined'}">${status.toUpperCase()}</span>.</p>
         
         <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 0 0 10px 0;"><strong>Request Details:</strong></p>
-          <p style="margin: 5px 0;"><strong>Client:</strong> ${clientName}</p>
-          <p style="margin: 5px 0;"><strong>Form:</strong> Form ${formNumber}</p>
-          ${reason ? `<p style="margin: 5px 0;"><strong>Your Reason:</strong> ${reason}</p>` : ''}
+          ${reason ? `<p style="margin: 5px 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
           ${adminNotes ? `<p style="margin: 5px 0;"><strong>Admin Notes:</strong> ${adminNotes}</p>` : ''}
         </div>
         
-        ${status === 'approved' ? `
-          <p>The form has been unlocked. You can now help the client edit the form.</p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL}/agent/clients" class="button">View Client</a>
-        ` : `
-          <p>If you have questions about this decision, please contact your administrator.</p>
-        `}
-        
-        <p style="margin-top: 20px;">Thank you,<br>The Techfuse Team</p>
+        <p>Thank you,<br>The Techfuse Team</p>
       </div>
       <div class="footer">
         <p>This is an automated message from Techfuse DocControl Service. Please do not reply to this email.</p>
