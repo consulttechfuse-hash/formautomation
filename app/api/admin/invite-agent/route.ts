@@ -10,14 +10,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Check if current user is admin
-    const { data: currentUser } = await supabase
+    // Get the logged-in user's email and ID directly from session
+    const loggedInUserEmail = session.user.email;
+    const loggedInUserId = session.user.id;
+    
+    // Check if the logged-in user is an admin by querying user_roles with their email
+    const { data: currentUser, error: roleError } = await supabase
       .from('user_roles')
-      .select('role, email, user_id, fn_t1, srn_t1')
-      .eq('user_id', session.user.id)
+      .select('role')
+      .eq('email', loggedInUserEmail)
       .single();
     
-    if (currentUser?.role !== 'admin') {
+    if (roleError || !currentUser) {
+      console.error('Role check error:', roleError);
+      return NextResponse.json({ error: 'User role not found' }, { status: 403 });
+    }
+    
+    if (currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Only admins can invite agents' }, { status: 403 });
     }
     
@@ -55,8 +64,8 @@ export async function POST(request: Request) {
         .from('user_roles')
         .update({
           role: 'agent',
-          invited_by: session.user.id,
-          assigned_admin_id: session.user.id,
+          invited_by: loggedInUserId,
+          assigned_admin_id: loggedInUserId,
           invitation_token: invitationToken,
           invitation_expires_at: expiresAt.toISOString(),
           updated_at: new Date().toISOString()
@@ -70,8 +79,8 @@ export async function POST(request: Request) {
           user_id: userId,
           email: email,
           role: 'agent',
-          invited_by: session.user.id,
-          assigned_admin_id: session.user.id,
+          invited_by: loggedInUserId,
+          assigned_admin_id: loggedInUserId,
           invitation_token: invitationToken,
           invitation_expires_at: expiresAt.toISOString(),
           created_at: new Date().toISOString(),
