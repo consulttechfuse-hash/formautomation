@@ -31,29 +31,26 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // First, check if user already exists in auth.users
-    const { data: existingAuthUser } = await supabase.auth.admin.getUserByEmail(email);
+    // Check if user already exists in user_roles
+    const { data: existingUser } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('email', email)
+      .single();
     
-    let userId = null;
-    
-    if (existingAuthUser?.user) {
-      // User exists in auth
-      userId = existingAuthUser.user.id;
-      
-      // Update user_roles with existing user_id
+    if (existingUser?.user_id) {
+      // User already exists, update role to agent
       await supabase
         .from('user_roles')
-        .upsert({
-          user_id: userId,
-          email: email,
+        .update({
           role: 'agent',
           invited_by: session.user.id,
           assigned_admin_id: session.user.id,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
-      
+          updated_at: new Date().toISOString()
+        })
+        .eq('email', email);
     } else {
-      // Create invitation record without user_id (pending)
+      // Create invitation record
       await supabase
         .from('user_roles')
         .insert({
@@ -69,7 +66,7 @@ export async function POST(request: Request) {
     
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${invitationToken}`;
     
-    // Try to send email but don't fail if it doesn't work
+    // Try to send email
     try {
       const RESEND_API_KEY = process.env.RESEND_API_KEY;
       await fetch('https://api.resend.com/emails', {
@@ -81,13 +78,27 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           from: 'Techfuse <noreply@techfuseconsult.online>',
           to: email,
-          subject: 'You have been invited as an Agent',
-          html: `<p>Click <a href="${inviteLink}">here</a> to accept your invitation.</p>`,
+          subject: 'You have been invited as an Agent - Techfuse DocControl',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background-color: #1e3a8a; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">Techfuse Consulting</h1>
+                <p>Agent Invitation</p>
+              </div>
+              <div style="padding: 20px; border: 1px solid #e5e7eb;">
+                <p>You have been invited to become an <strong>Agent</strong>.</p>
+                <p>Click the link below to accept your invitation:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                  <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Accept Invitation</a>
+                </div>
+                <p>This link expires in 7 days.</p>
+              </div>
+            </div>
+          `,
         }),
       });
     } catch (emailError) {
       console.error('Email send failed:', emailError);
-      // Don't fail the request
     }
     
     return NextResponse.json({ 
