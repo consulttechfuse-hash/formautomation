@@ -24,6 +24,7 @@ export default function AdminDashboard() {
     paidToDate: 0,
     clientsSignedUp: 0,
   });
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     checkAuthAndLoad();
@@ -74,7 +75,6 @@ export default function AdminDashboard() {
       <div className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Admin Portal</h1>
-          <p className="text-sm text-gray-400 truncate">{adminEmail}</p>
         </div>
         <nav className="flex-1 p-2">
           {navItems.map((item) => (
@@ -89,15 +89,55 @@ export default function AdminDashboard() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-700">
+        
+        {/* Profile Section */}
+        <div className="border-t border-gray-700 p-4 space-y-3">
+          {/* Profile Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="w-full flex items-center justify-between hover:bg-gray-800 transition-colors rounded-lg px-2 py-2"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                  <span className="text-sm font-bold">{adminEmail.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium truncate max-w-[150px]">{adminEmail}</p>
+                  <p className="text-xs text-gray-400">Admin</p>
+                </div>
+              </div>
+              <svg className={`w-4 h-4 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {showProfileMenu && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
+                <button
+                  onClick={() => {
+                    setActiveSection('profile');
+                    setShowProfileMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>⚙️</span>
+                  <span>Settings</span>
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Sign Out Button - Always Visible */}
           <button
             onClick={async () => {
               await supabase.auth.signOut();
               router.push('/login');
             }}
-            className="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-gray-800"
+            className="w-full flex items-center space-x-3 px-2 py-2 rounded-lg text-red-400 hover:bg-gray-800 transition-colors"
           >
-            🚪 Sign Out
+            <span>🚪</span>
+            <span className="text-sm">Sign Out</span>
           </button>
         </div>
       </div>
