@@ -20,17 +20,66 @@ function AcceptInviteForm() {
 
   useEffect(() => {
     const verifyInvitation = async () => {
-      if (!token) {
+      // Check for token in query params (old method)
+      let inviteToken = token;
+      
+      // Also check for access_token in hash fragment (Supabase invite method)
+      if (!inviteToken && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const type = hashParams.get('type');
+        
+        if (accessToken && type === 'invite') {
+          // Set the session using the access token from hash
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || ''
+          });
+          
+          if (sessionError) {
+            setError('Invalid or expired invitation link');
+            setLoading(false);
+            return;
+          }
+          
+          // Get the user from session
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            // Find the invitation by email
+            const { data: invitation, error: inviteError } = await supabase
+              .from('user_roles')
+              .select('*')
+              .eq('email', user.email)
+              .eq('role', 'agent')
+              .is('accepted_at', null)
+              .single();
+            
+            if (inviteError || !invitation) {
+              setError('Invitation not found');
+              setLoading(false);
+              return;
+            }
+            
+            // Accept the invitation
+            await acceptInvitation(user.id, invitation);
+            return;
+          }
+        }
+      }
+      
+      // If no hash token, check for query token (old method)
+      if (!inviteToken) {
         setError('Invalid invitation link');
         setLoading(false);
         return;
       }
       
-      // Verify the invitation token from user_roles table
+      // Verify the invitation token from user_roles table (old method)
       const { data: invitation, error: inviteError } = await supabase
         .from('user_roles')
         .select('*')
-        .eq('invitation_token', token)
+        .eq('invitation_token', inviteToken)
         .is('accepted_at', null)
         .gt('invitation_expires_at', new Date().toISOString())
         .single();
@@ -48,7 +97,6 @@ function AcceptInviteForm() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // User is already logged in, accept the invitation
         await acceptInvitation(session.user.id, invitation);
       } else {
         setLoading(false);
@@ -66,23 +114,22 @@ function AcceptInviteForm() {
         user_id: userId,
         accepted_at: new Date().toISOString()
       })
-      .eq('invitation_token', token);
+      .eq('id', invitation.id);
     
     if (updateError) {
       setError('Failed to accept invitation');
+      setLoading(false);
       return false;
     }
     
-    // Also update public.users table if it exists separately
-    await supabase
-      .from('users')
-      .upsert({
-        id: userId,
-        email: invitation.email,
-        role: invitation.role,
-        invited_by: invitation.invited_by,
-        assigned_admin_id: invitation.role === 'agent' ? invitation.invited_by : null
-      });
+    // Redirect based on role
+    if (invitation.role === 'admin') {
+      router.push('/owner/dashboard');
+    } else if (invitation.role === 'agent') {
+      router.push('/agent/dashboard');
+    } else {
+      router.push('/client/dashboard');
+    }
     
     return true;
   };

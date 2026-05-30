@@ -139,7 +139,6 @@ export default function AgentManagement() {
         </button>
       </div>
 
-      {/* Message */}
       {message && (
         <div className={`p-3 rounded-lg ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
           {message}
