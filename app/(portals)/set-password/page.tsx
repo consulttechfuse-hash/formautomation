@@ -36,7 +36,7 @@ function SetPasswordForm() {
       if (type === 'invite') {
         const { data: invite, error: inviteError } = await supabase
           .from('user_roles')
-          .select('id, invitation_token, invitation_expires_at, accepted_at')
+          .select('id, invitation_token, invitation_expires_at, accepted_at, user_id')
           .eq('invitation_token', token)
           .eq('email', decodeURIComponent(urlEmail))
           .single();
@@ -101,71 +101,40 @@ function SetPasswordForm() {
     }
 
     const type = searchParams.get('type');
+    const urlEmail = searchParams.get('email');
     
     try {
       if (type === 'invite') {
-        // For invites: check if user exists in auth, create if not
-        const { data: { user: existingUser } } = await supabase.auth.getUser();
+        // For invites: The user already exists in auth.users (created by admin)
+        // We need to set their password using the admin API or send a reset email
         
-        if (!existingUser) {
-          // Create new auth user
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-              emailRedirectTo: `https://techfuseconsult.online/set-password?token=${inviteToken}&email=${email}&type=invite`
-            }
-          });
-          
-          if (signUpError) {
-            setError(signUpError.message);
-            setLoading(false);
-            return;
+        // Option 1: Send a password reset email to let them set password
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+          decodeURIComponent(urlEmail || email),
+          {
+            redirectTo: `https://techfuseconsult.online/set-password?token=${inviteToken}&email=${email}&type=invite&step=reset`
           }
-          
-          // Update user_roles with the new user_id
-          await supabase
-            .from('user_roles')
-            .update({ 
-              user_id: signUpData.user?.id,
-              accepted_at: new Date().toISOString()
-            })
-            .eq('invitation_token', inviteToken);
-          
-          // Sign them in
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-          });
-          
-          if (signInError) {
-            setError(signInError.message);
-            setLoading(false);
-            return;
-          }
-        } else {
-          // User exists, just update password
-          const { error: updateError } = await supabase.auth.updateUser({
-            password: password,
-          });
-          
-          if (updateError) {
-            setError(updateError.message);
-            setLoading(false);
-            return;
-          }
-          
-          // Update user_roles
-          await supabase
-            .from('user_roles')
-            .update({ 
-              user_id: existingUser.id,
-              accepted_at: new Date().toISOString()
-            })
-            .eq('invitation_token', inviteToken);
+        );
+        
+        if (resetError) {
+          setError(resetError.message);
+          setLoading(false);
+          return;
         }
+        
+        // Update user_roles to mark as accepted (will be completed after password reset)
+        await supabase
+          .from('user_roles')
+          .update({ 
+            accepted_at: new Date().toISOString()
+          })
+          .eq('invitation_token', inviteToken);
+        
+        setError('Please check your email for a password reset link to complete your account setup.');
+        setLoading(false);
+        return;
       } else {
-        // For magic link flow
+        // For magic link flow (existing)
         const { error: updateError } = await supabase.auth.updateUser({
           password: password,
         });
@@ -198,12 +167,34 @@ function SetPasswordForm() {
     }
   };
 
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
   if (isVerifying) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Verifying your invitation...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && error.includes('check your email')) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="text-green-600 text-5xl mb-4">📧</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Check Your Email</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={handleLogin}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
@@ -233,6 +224,9 @@ function SetPasswordForm() {
         <h1 className="mb-6 text-2xl font-bold text-gray-800">Create Your Account</h1>
         <p className="mb-4 text-gray-600">
           Welcome! Please create a password for your account: <strong>{email}</strong>
+        </p>
+        <p className="mb-4 text-sm text-gray-500">
+          You will receive a password reset link to set your password.
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -268,7 +262,7 @@ function SetPasswordForm() {
             disabled={loading}
             className="w-full rounded-md bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Creating Account...' : 'Create Account & Continue'}
+            {loading ? 'Sending reset link...' : 'Set Password & Continue'}
           </button>
         </form>
       </div>
