@@ -32,7 +32,6 @@ function SetPasswordForm() {
       setEmail(decodeURIComponent(urlEmail));
       setInviteToken(token);
       
-      // For invite type, verify the token in user_roles
       if (type === 'invite') {
         const { data: invite, error: inviteError } = await supabase
           .from('user_roles')
@@ -59,12 +58,10 @@ function SetPasswordForm() {
           return;
         }
         
-        // Invitation is valid, show password form
         setIsVerifying(false);
         return;
       }
       
-      // For magic link flow (existing)
       const { error: verifyError } = await supabase.auth.verifyOtp({
         email: decodeURIComponent(urlEmail),
         token: token,
@@ -105,10 +102,6 @@ function SetPasswordForm() {
     
     try {
       if (type === 'invite') {
-        // For invites: The user already exists in auth.users (created by admin)
-        // We need to set their password using the admin API or send a reset email
-        
-        // Option 1: Send a password reset email to let them set password
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(
           decodeURIComponent(urlEmail || email),
           {
@@ -122,11 +115,10 @@ function SetPasswordForm() {
           return;
         }
         
-        // Update user_roles to mark as accepted (will be completed after password reset)
         await supabase
           .from('user_roles')
           .update({ 
-            accepted_at: new Date().toISOString()
+            invite_accepted_at: new Date().toISOString()
           })
           .eq('invitation_token', inviteToken);
         
@@ -134,7 +126,6 @@ function SetPasswordForm() {
         setLoading(false);
         return;
       } else {
-        // For magic link flow (existing)
         const { error: updateError } = await supabase.auth.updateUser({
           password: password,
         });
@@ -146,7 +137,6 @@ function SetPasswordForm() {
         }
       }
       
-      // Get user role and redirect
       const { data: { user } } = await supabase.auth.getUser();
       const { data: userRole } = await supabase
         .from('user_roles')
