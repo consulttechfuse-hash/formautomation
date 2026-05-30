@@ -18,7 +18,6 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('stats');
   const [loading, setLoading] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
-  const [adminId, setAdminId] = useState('');
   const [stats, setStats] = useState({
     revenue: 0,
     profit: 0,
@@ -37,7 +36,6 @@ export default function AdminDashboard() {
       return;
     }
     setAdminEmail(user.email || '');
-    setAdminId(user.id);
 
     const { data: clientsData } = await supabase
       .from('user_roles')
@@ -149,11 +147,11 @@ export default function AdminDashboard() {
           </div>
         )}
         
-        {activeSection === 'paymentStatus' && <AdminPaymentStatus adminId={adminId} />}
+        {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
         
-        {activeSection === 'reports' && <AdminAgentPerformanceReport adminId={adminId} />}
+        {activeSection === 'reports' && <AdminAgentPerformanceReport />}
         
-        {activeSection === 'profile' && <UserProfile userId={adminId} />}
+        {activeSection === 'profile' && <UserProfile />}
       </div>
     </div>
   );
