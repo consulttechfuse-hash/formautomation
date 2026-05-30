@@ -127,6 +127,41 @@ export default function AgentManagement() {
     }
   };
 
+  // NEW: Delete Agent Function
+  const handleDeleteAgent = async (agent: Agent) => {
+    if (!confirm(`Are you sure you want to remove ${agent.email} as an agent? This action cannot be undone.`)) return;
+    
+    setLoading(true);
+    
+    // First, check if this agent has any assigned clients
+    const { data: assignedClients, error: clientCheckError } = await supabase
+      .from('user_roles')
+      .select('id, email')
+      .eq('role', 'client')
+      .eq('assigned_admin_id', agent.user_id);
+    
+    if (assignedClients && assignedClients.length > 0) {
+      setMessage(`❌ Cannot delete agent ${agent.email} because they have ${assignedClients.length} assigned client(s). Please reassign clients first.`);
+      setLoading(false);
+      return;
+    }
+    
+    // Delete the agent from user_roles
+    const { error: deleteError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', agent.id);
+    
+    if (deleteError) {
+      setMessage(`❌ Failed to delete agent: ${deleteError.message}`);
+    } else {
+      setMessage(`✅ Agent ${agent.email} has been removed`);
+      await loadAgents();
+    }
+    
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -148,7 +183,12 @@ export default function AgentManagement() {
       {/* Pending Invites */}
       {pendingInvites.length > 0 && (
         <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-3">Pending Invites ({pendingInvites.length})</h3>
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold">Pending Invites</h3>
+            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+              {pendingInvites.length} pending
+            </span>
+          </div>
           <div className="space-y-2">
             {pendingInvites.map((invite) => (
               <div key={invite.id} className="flex justify-between items-center border-b pb-2">
@@ -180,7 +220,12 @@ export default function AgentManagement() {
 
       {/* Active Agents */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold mb-3">Active Agents ({agents.length})</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-semibold">Active Agents</h3>
+          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+            {agents.length} active
+          </span>
+        </div>
         {agents.length === 0 ? (
           <p className="text-gray-500 text-sm">No agents assigned yet</p>
         ) : (
@@ -192,6 +237,15 @@ export default function AgentManagement() {
                   <p className="text-xs text-gray-500">
                     Since: {new Date(agent.created_at).toLocaleDateString()}
                   </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDeleteAgent(agent)}
+                    disabled={loading}
+                    className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}
