@@ -11,6 +11,7 @@ import AgentRankingChart from '../components/charts/AgentRanking';
 import CompletionProgressChart from '../components/charts/CompletionProgress';
 import PaymentSuccessRateChart from '../components/charts/PaymentSuccessRate';
 import UserProfile from '../../components/UserProfile';
+import AgentManagement from "../components/AgentManagement";
 import AdminPaymentStatus from '../components/PaymentStatusView';
 
 interface Agent {
