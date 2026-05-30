@@ -31,29 +31,55 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
     
-    // Check if user already exists in user_roles
-    const { data: existingUser } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('email', email)
-      .single();
+    // First, check if user already exists in auth.users
+    // We need to use service role to check users by email
+    const { data: { users } } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = users?.find(u => u.email === email);
     
-    if (existingUser?.user_id) {
-      // User already exists, update role to agent
+    let userId = null;
+    
+    if (existingAuthUser) {
+      // User exists in auth
+      userId = existingAuthUser.id;
+      
+      // Update user_roles
       await supabase
         .from('user_roles')
-        .update({
+        .upsert({
+          user_id: userId,
+          email: email,
           role: 'agent',
           invited_by: session.user.id,
           assigned_admin_id: session.user.id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', email);
+          updated_at: new Date().toISOString(),
+          invitation_token: invitationToken,
+          invitation_expires_at: expiresAt.toISOString(),
+        }, { onConflict: 'user_id' });
+      
     } else {
-      // Create invitation record
+      // Create new user in auth.users using admin API
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: email,
+        email_confirm: false, // User must confirm email via invite link
+        user_metadata: {
+          role: 'agent',
+          invited_by: session.user.id,
+          invited_at: new Date().toISOString()
+        }
+      });
+      
+      if (createError) {
+        console.error('Create user error:', createError);
+        return NextResponse.json({ error: createError.message }, { status: 500 });
+      }
+      
+      userId = newUser.user.id;
+      
+      // Create user_roles record
       await supabase
         .from('user_roles')
         .insert({
+          user_id: userId,
           email: email,
           role: 'agent',
           invited_by: session.user.id,
@@ -66,7 +92,7 @@ export async function POST(request: Request) {
     
     const inviteLink = `https://techfuseconsult.online/accept-invite?token=${invitationToken}`;
     
-    // Try to send email
+    // Send invitation email
     try {
       const RESEND_API_KEY = process.env.RESEND_API_KEY;
       await fetch('https://api.resend.com/emails', {
@@ -87,11 +113,12 @@ export async function POST(request: Request) {
               </div>
               <div style="padding: 20px; border: 1px solid #e5e7eb;">
                 <p>You have been invited to become an <strong>Agent</strong>.</p>
-                <p>Click the link below to accept your invitation:</p>
+                <p>Click the link below to set up your password and complete your account:</p>
                 <div style="text-align: center; margin: 20px 0;">
-                  <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Accept Invitation</a>
+                  <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Complete Registration</a>
                 </div>
                 <p>This link expires in 7 days.</p>
+                <p>If you did not expect this invitation, you can ignore this email.</p>
               </div>
             </div>
           `,
@@ -103,7 +130,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Invitation created successfully',
+      message: 'Agent invited successfully. User account created.',
       inviteLink: inviteLink 
     });
     
