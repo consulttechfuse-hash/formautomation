@@ -49,10 +49,8 @@ export async function POST(request: Request) {
     let userId = null;
     
     if (existingAuthUser) {
-      // User already exists in auth
       userId = existingAuthUser.id;
     } else {
-      // Create the user in auth.users
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: email,
         email_confirm: true,
@@ -73,6 +71,7 @@ export async function POST(request: Request) {
     const invitationToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
+    const now = new Date().toISOString();
     
     // Check if user already exists in user_roles
     const { data: existingUserRole } = await supabase
@@ -82,7 +81,6 @@ export async function POST(request: Request) {
       .single();
     
     if (existingUserRole) {
-      // Update existing user_roles record
       await supabase
         .from('user_roles')
         .update({
@@ -92,12 +90,12 @@ export async function POST(request: Request) {
           assigned_admin_id: loggedInUserId,
           invitation_token: invitationToken,
           invitation_expires_at: expiresAt.toISOString(),
+          invite_sent_at: now,
           accepted_at: null,
-          updated_at: new Date().toISOString()
+          updated_at: now
         })
         .eq('email', email);
     } else {
-      // Create new user_roles record
       await supabase
         .from('user_roles')
         .insert({
@@ -108,7 +106,8 @@ export async function POST(request: Request) {
           assigned_admin_id: loggedInUserId,
           invitation_token: invitationToken,
           invitation_expires_at: expiresAt.toISOString(),
-          created_at: new Date().toISOString(),
+          invite_sent_at: now,
+          created_at: now,
         });
     }
     
