@@ -6,6 +6,11 @@ import { useRouter } from 'next/navigation';
 import AgentManagement from "../components/AgentManagement";
 import AdminPaymentStatus from '../components/PaymentStatusView';
 import UserProfile from '../../components/UserProfile';
+import AdminClientGrowthChart from '../components/charts/AdminClientGrowth';
+import AgentRankingChart from '../components/charts/AgentRanking';
+import CompletionProgressChart from '../components/charts/CompletionProgress';
+import PaymentSuccessRateChart from '../components/charts/PaymentSuccessRate';
+import AdminAgentPerformanceReport from '../components/reports/AgentPerformance';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -13,6 +18,7 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('stats');
   const [loading, setLoading] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
+  const [adminId, setAdminId] = useState('');
   const [stats, setStats] = useState({
     revenue: 0,
     profit: 0,
@@ -31,8 +37,8 @@ export default function AdminDashboard() {
       return;
     }
     setAdminEmail(user.email || '');
-    
-    // Load stats
+    setAdminId(user.id);
+
     const { data: clientsData } = await supabase
       .from('user_roles')
       .select('*')
@@ -56,6 +62,7 @@ export default function AdminDashboard() {
     { id: 'agents', name: '👥 Agent Management' },
     { id: 'clients', name: '👤 Clients' },
     { id: 'paymentStatus', name: '💰 Payment Status' },
+    { id: 'reports', name: '📈 Reports' },
     { id: 'profile', name: '👤 My Profile' },
   ];
 
@@ -65,7 +72,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Admin Portal</h1>
@@ -97,28 +103,33 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-6">
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-gray-500 text-sm">Total Revenue</h3>
-                <div className="text-2xl font-bold text-green-600">R{stats.revenue.toLocaleString()}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-lg shadow p-6 text-white">
+                <h3 className="text-sm opacity-90">Total Revenue</h3>
+                <div className="text-3xl font-bold mt-2">R{stats.revenue.toLocaleString()}</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-gray-500 text-sm">Your Profit (50%)</h3>
-                <div className="text-2xl font-bold text-blue-600">R{stats.profit.toLocaleString()}</div>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow p-6 text-white">
+                <h3 className="text-sm opacity-90">Your Profit (50%)</h3>
+                <div className="text-3xl font-bold mt-2">R{stats.profit.toLocaleString()}</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-gray-500 text-sm">Paid Clients</h3>
-                <div className="text-2xl font-bold text-green-600">{stats.paidToDate}</div>
+              <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg shadow p-6 text-white">
+                <h3 className="text-sm opacity-90">Paid Clients</h3>
+                <div className="text-3xl font-bold mt-2">{stats.paidToDate}</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-gray-500 text-sm">Total Signups</h3>
-                <div className="text-2xl font-bold text-purple-600">{stats.clientsSignedUp}</div>
+              <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-lg shadow p-6 text-white">
+                <h3 className="text-sm opacity-90">Total Signups</h3>
+                <div className="text-3xl font-bold mt-2">{stats.clientsSignedUp}</div>
               </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdminClientGrowthChart adminId={adminId} />
+              <PaymentSuccessRateChart adminId={adminId} />
+              <AgentRankingChart adminId={adminId} />
+              <CompletionProgressChart adminId={adminId} />
             </div>
           </div>
         )}
@@ -132,9 +143,11 @@ export default function AdminDashboard() {
           </div>
         )}
         
-        {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
+        {activeSection === 'paymentStatus' && <AdminPaymentStatus adminId={adminId} />}
         
-        {activeSection === 'profile' && <UserProfile />}
+        {activeSection === 'reports' && <AdminAgentPerformanceReport adminId={adminId} />}
+        
+        {activeSection === 'profile' && <UserProfile userId={adminId} />}
       </div>
     </div>
   );
