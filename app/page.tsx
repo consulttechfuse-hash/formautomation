@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function HomePage() {
@@ -21,11 +22,40 @@ export default function HomePage() {
     dark: '#333333'
   };
 
+  // Slider data with image paths - REPLACE THESE WITH YOUR ACTUAL IMAGE PATHS
   const slides = [
-    { title: 'CONSULT.CONSUME', subtitle: 'We provide Outsource Managed Services for Project and Business development across Multi-Industries', highlight: 'commanding the attention of global investors.', cta: 'Explore Opportunities' },
-    { title: 'Infrastructure Leadership', subtitle: 'Leading the R5 Billion Central Karoo development with 6 integrated GAPs', highlight: 'Seeking long-term investors for 25-Year FBOOT term.', cta: 'View Infrastructure' },
-    { title: 'Education Transformation', subtitle: 'R1 Billion Career Guide Distribution programme reaching every public school in South Africa', highlight: '11M+ learners to be reached.', cta: 'Partner With Us' },
-    { title: 'Mining Excellence', subtitle: '1.2 Billion metric tonnes in-situ coal reserve in Limpopo', highlight: 'Open to various deal structures.', cta: 'Invest Now' },
+    {
+      title: 'CONSULT.CONSUME',
+      subtitle: 'We provide Outsource Managed Services for Project and Business development across Multi-Industries',
+      highlight: 'commanding the attention of global investors.',
+      cta: 'Explore Opportunities',
+      image: '/images/slider/slide1.jpg',  // CHANGE THIS PATH
+      link: '/services'
+    },
+    {
+      title: 'Infrastructure Leadership',
+      subtitle: 'Leading the R5 Billion Central Karoo development with 6 integrated GAPs',
+      highlight: 'Seeking long-term investors for 25-Year FBOOT term.',
+      cta: 'View Infrastructure',
+      image: '/images/slider/slide2.jpg',  // CHANGE THIS PATH
+      link: '/projects/infrastructure'
+    },
+    {
+      title: 'Education Transformation',
+      subtitle: 'R1 Billion Career Guide Distribution programme reaching every public school in South Africa',
+      highlight: '11M+ learners to be reached.',
+      cta: 'Partner With Us',
+      image: '/images/slider/slide3.jpg',  // CHANGE THIS PATH
+      link: '/projects/education'
+    },
+    {
+      title: 'Mining Excellence',
+      subtitle: '1.2 Billion metric tonnes in-situ coal reserve in Limpopo',
+      highlight: 'Open to various deal structures.',
+      cta: 'Invest Now',
+      image: '/images/slider/slide4.jpg',  // CHANGE THIS PATH
+      link: '/projects/mining'
+    },
   ];
 
   const stats = [
@@ -163,31 +193,47 @@ export default function HomePage() {
         )}
       </nav>
 
-      {/* Hero Slider Section */}
+      {/* Hero Slider Section with Images */}
       <section className="relative h-screen pt-16 overflow-hidden">
         {slides.map((slide, index) => (
           <div
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
           >
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}>
-              <div className="absolute inset-0 bg-black/30"></div>
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src={slide.image}
+                alt={slide.title}
+                fill
+                priority={index === 0}
+                className="object-cover"
+                style={{ objectFit: 'cover' }}
+              />
+              <div className="absolute inset-0 bg-black/50"></div>
             </div>
             <div className="relative h-full flex items-center justify-center text-center text-white px-4">
               <div className="max-w-4xl mx-auto">
                 <h1 className="text-5xl md:text-7xl font-bold mb-4">{slide.title}</h1>
                 <p className="text-xl md:text-2xl mb-4">{slide.subtitle}</p>
                 <p className="text-lg md:text-xl text-yellow-200 mb-8">{slide.highlight}</p>
-                <button className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.accent, color: brandColors.dark }}>
-                  {slide.cta}
-                </button>
+                <Link href={slide.link}>
+                  <button className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.accent, color: brandColors.dark }}>
+                    {slide.cta}
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
         ))}
-        <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-2">
+        {/* Slider Dots */}
+        <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-2 z-10">
           {slides.map((_, index) => (
-            <button key={index} onClick={() => setCurrentSlide(index)} className={`w-3 h-3 rounded-full transition-all ${currentSlide === index ? 'bg-white w-6' : 'bg-white/50'}`} />
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all ${currentSlide === index ? 'bg-white w-6' : 'bg-white/50'}`}
+            />
           ))}
         </div>
       </section>
@@ -261,7 +307,9 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3>
                 <p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p>
                 <p className="text-gray-600 mb-4">6 integrated GAPs including water bulk, sewer, energy, roads, fibre, and housing.</p>
-                <button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button>
+                <Link href="/projects/infrastructure">
+                  <button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button>
+                </Link>
               </div>
             </div>
 
@@ -271,7 +319,9 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold mb-2">Education Career Guide</h3>
                 <p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p>
                 <p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p>
-                <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
+                <Link href="/projects/education">
+                  <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
+                </Link>
               </div>
             </div>
 
@@ -281,7 +331,9 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold mb-2">Mining Greenfields</h3>
                 <p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p>
                 <p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p>
-                <button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button>
+                <Link href="/projects/mining">
+                  <button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button>
+                </Link>
               </div>
             </div>
           </div>
