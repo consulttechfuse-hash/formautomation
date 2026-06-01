@@ -18,6 +18,7 @@ export default function HomePage() {
     accent: '#F3BC48',
     lightBg: '#F6F1E8',
     emancipation: '#6B2D8B',
+    section: '#888888',
     white: '#FFFFFF',
     dark: '#333333'
   };
