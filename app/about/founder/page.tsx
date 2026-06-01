@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Calendar, Building2, Briefcase, Award, Cpu, Network } from 'lucide-react';
+import { ArrowLeft, Calendar, Briefcase, Award, Cpu, Network } from 'lucide-react';
 
 export default function FounderPage() {
   const brandColors = {
@@ -54,13 +54,32 @@ export default function FounderPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: brandColors.lightBg }}>
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 shadow-md" style={{ backgroundColor: brandColors.white }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="relative w-8 h-8">
+                <Image src="/logo.png" alt="Logo" width={32} height={32} className="object-contain" />
+              </div>
+              <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
+            </Link>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link href="/services" className="text-gray-700 hover:text-primary">Services</Link>
+              <Link href="/#projects" className="text-gray-700 hover:text-primary">Projects</Link>
+              <Link href="/about/vision" className="text-gray-700 hover:text-primary">About</Link>
+              <Link href="/about/founder" className="text-gray-700 hover:text-primary" style={{ color: brandColors.primary }}>Founder</Link>
+              <Link href="/foundation/envirogreen" className="text-gray-700 hover:text-primary">Foundation</Link>
+              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg" style={{ backgroundColor: brandColors.primary }}>
+                Form Automation
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <Link href="/about" className="inline-flex items-center gap-2 mb-6" style={{ color: brandColors.primary }}>
-            <ArrowLeft className="w-4 h-4" /> Back to About
-          </Link>
-
-          {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: brandColors.primary }}>The Founder</h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -68,18 +87,13 @@ export default function FounderPage() {
             </p>
           </div>
 
-          {/* Timeline / Experience */}
+          {/* Timeline */}
           <div className="relative">
-            {/* Vertical Line */}
             <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 w-0.5 h-full bg-gray-300 hidden md:block"></div>
-
             <div className="space-y-8">
               {experience.map((exp, idx) => (
                 <div key={idx} className={`relative flex flex-col md:flex-row ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                  {/* Timeline Dot */}
                   <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 w-4 h-4 rounded-full z-10" style={{ backgroundColor: brandColors.primary }}></div>
-                  
-                  {/* Content */}
                   <div className={`ml-16 md:ml-0 md:w-1/2 ${idx % 2 === 0 ? 'md:pr-12' : 'md:pl-12'}`}>
                     <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
                       <div className="flex items-center gap-3 mb-3">
@@ -98,26 +112,13 @@ export default function FounderPage() {
             </div>
           </div>
 
-          {/* Stats Section */}
+          {/* Stats */}
           <div className="mt-16 bg-white rounded-2xl p-8 shadow-lg">
-            <h2 className="text-2xl font-bold text-center mb-8" style={{ color: brandColors.primary }}>Legacy of Excellence</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <div className="text-4xl font-bold" style={{ color: brandColors.primary }}>25+</div>
-                <div className="text-gray-500">Years ICT Experience</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold" style={{ color: brandColors.primary }}>20+</div>
-                <div className="text-gray-500">Years at Telkom/Post Office</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold" style={{ color: brandColors.primary }}>5+</div>
-                <div className="text-gray-500">Countries Served</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold" style={{ color: brandColors.primary }}>R6B+</div>
-                <div className="text-gray-500">Project Value</div>
-              </div>
+              <div><div className="text-4xl font-bold" style={{ color: brandColors.primary }}>25+</div><div className="text-gray-500">Years Experience</div></div>
+              <div><div className="text-4xl font-bold" style={{ color: brandColors.primary }}>3</div><div className="text-gray-500">Active Projects</div></div>
+              <div><div className="text-4xl font-bold" style={{ color: brandColors.primary }}>R6B+</div><div className="text-gray-500">Project Value</div></div>
+              <div><div className="text-4xl font-bold" style={{ color: brandColors.primary }}>100%</div><div className="text-gray-500">Advisory Focus</div></div>
             </div>
           </div>
         </div>
