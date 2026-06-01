@@ -9,16 +9,16 @@ export default function HomePage() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Brand colors - matching existing system
+  // Brand colors from your specifications
   const brandColors = {
-    primary: '#1e40af',      // Dark blue (from existing system)
-    primaryLight: '#3b82f6',  // Light blue (from existing system)
-    secondary: '#10b981',     // Green (from existing system)
-    accent: '#f59e0b',        // Orange
-    dark: '#1f2937',
-    light: '#f3f4f6',
-    gradientStart: '#1e3a8a', // Darker blue
-    gradientEnd: '#2563eb'    // Medium blue
+    primary: '#D54022',      // Main / Primary - Buttons, banners, headings
+    accent: '#F3BC48',       // Tertiary / Accent - Highlights, gold accents, dividers
+    lightBg: '#F6F1E8',      // Light Contrast - Backgrounds, card fills
+    fieldValue: '#0000FF',   // Field Values - Completed form field text
+    emancipation: '#6B2D8B', // 928 Emancipation - Section header backgrounds
+    section: '#888888',      // Section - Section header backgrounds
+    white: '#FFFFFF',
+    dark: '#333333'
   };
 
   const slides = [
@@ -52,7 +52,7 @@ export default function HomePage() {
   }, [slides.length]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: brandColors.white }}>
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,7 +68,7 @@ export default function HomePage() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 py-2">
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2" style={{ color: '#333', hover: { color: brandColors.primary } }}>
                   <span>Services</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -80,7 +80,7 @@ export default function HomePage() {
               </div>
 
               <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 py-2">
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
                   <span>Projects</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -92,7 +92,7 @@ export default function HomePage() {
               </div>
 
               <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 py-2">
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
                   <span>About</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -104,7 +104,7 @@ export default function HomePage() {
               </div>
 
               <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 py-2">
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
                   <span>Foundation</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -170,15 +170,15 @@ export default function HomePage() {
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
           >
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.gradientStart}, ${brandColors.gradientEnd})` }}>
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}>
               <div className="absolute inset-0 bg-black/30"></div>
             </div>
             <div className="relative h-full flex items-center justify-center text-center text-white px-4">
               <div className="max-w-4xl mx-auto">
                 <h1 className="text-5xl md:text-7xl font-bold mb-4">{slide.title}</h1>
                 <p className="text-xl md:text-2xl mb-4">{slide.subtitle}</p>
-                <p className="text-lg md:text-xl text-blue-200 mb-8">{slide.highlight}</p>
-                <button className="bg-white text-blue-900 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition">
+                <p className="text-lg md:text-xl text-yellow-200 mb-8">{slide.highlight}</p>
+                <button className="px-8 py-3 rounded-full font-semibold transition" style={{ backgroundColor: brandColors.accent, color: brandColors.dark }}>
                   {slide.cta}
                 </button>
               </div>
@@ -193,7 +193,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16" style={{ backgroundColor: brandColors.light }}>
+      <section className="py-16" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((stat, idx) => (
@@ -207,7 +207,7 @@ export default function HomePage() {
       </section>
 
       {/* Who We Are Section */}
-      <section className="py-20">
+      <section className="py-20" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
@@ -215,7 +215,7 @@ export default function HomePage() {
               <p className="text-gray-600 mb-6">TechFuse Holdings is a professional advisory and business development firm operating under the brand Consult.Consume. We are not an ICT service provider — we are an active participant and advisory partner across three high-value, multi-industry projects spanning infrastructure, education, and mining.</p>
               <p className="text-gray-600 mb-6">Our founder brings over 25 years of deep ICT sector experience — from SA Post Office and Telkom SA, through Huawei Technologies at Chief Engineer level, to XConnect SA business development. That expertise is the engine behind TechFuse's ability to evaluate, structure, and drive complex projects to bankable outcomes.</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8">
+            <div className="rounded-2xl p-8" style={{ backgroundColor: brandColors.lightBg }}>
               <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Who We Serve</h3>
               <ul className="space-y-3">
                 <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> Infrastructure Developers</li>
@@ -230,7 +230,7 @@ export default function HomePage() {
       </section>
 
       {/* Services Section */}
-      <section className="py-20" style={{ backgroundColor: brandColors.light }}>
+      <section className="py-20" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>What We Offer</h2>
@@ -238,7 +238,7 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, idx) => (
-              <div key={idx} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div key={idx} className="rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow" style={{ backgroundColor: brandColors.white }}>
                 <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
                 <p className="text-gray-500">{service.desc}</p>
               </div>
@@ -248,7 +248,7 @@ export default function HomePage() {
       </section>
 
       {/* Projects Section */}
-      <section className="py-20">
+      <section className="py-20" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Active Projects</h2>
@@ -256,7 +256,7 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {/* Infrastructure Project */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.primary }}>
+            <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.primary }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3>
                 <p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p>
@@ -266,22 +266,22 @@ export default function HomePage() {
             </div>
 
             {/* Education Project */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.secondary }}>
+            <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.accent }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Education Career Guide</h3>
                 <p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p>
                 <p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p>
-                <button className="text-sm font-semibold" style={{ color: brandColors.secondary }}>Learn More →</button>
+                <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
               </div>
             </div>
 
             {/* Mining Project */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.accent }}>
+            <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.emancipation }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Mining Greenfields</h3>
                 <p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p>
                 <p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p>
-                <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
+                <button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button>
               </div>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function HomePage() {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20" style={{ backgroundColor: brandColors.light }}>
+      <section className="py-20" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
@@ -301,7 +301,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-3"><Phone className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="tel:+27101234567">+27 (0) 10 123 4567</a></div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-8 shadow-md text-center">
+            <div className="rounded-xl p-8 shadow-md text-center" style={{ backgroundColor: brandColors.white }}>
               <p className="text-gray-500 mb-4">Contact form is being prepared.</p>
               <p className="text-sm text-gray-400">For now, please email us directly at <a href="mailto:info@techfuseconsult.online" className="font-semibold" style={{ color: brandColors.primary }}>info@techfuseconsult.online</a></p>
             </div>
@@ -310,7 +310,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="text-white py-12" style={{ backgroundColor: brandColors.dark }}>
+      <footer className="text-white py-12" style={{ backgroundColor: brandColors.section }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
@@ -320,13 +320,13 @@ export default function HomePage() {
                 </div>
                 <span className="font-bold text-white">TechFuse Consulting</span>
               </div>
-              <p className="text-sm text-gray-400">Professional advisory and business development firm operating under the brand Consult.Consume.</p>
+              <p className="text-sm text-gray-300">Professional advisory and business development firm operating under the brand Consult.Consume.</p>
             </div>
-            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-400 hover:text-white">Form Automation</Link></li><li><Link href="/services/consulting" className="text-gray-400 hover:text-white">Consulting</Link></li><li><Link href="/projects/infrastructure" className="text-gray-400 hover:text-white">Projects</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="text-gray-400 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="text-gray-400 hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="text-gray-400 hover:text-white">Mining Greenfields</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="text-gray-400 hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="text-gray-400 hover:text-white">NPO Initiatives</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-300 hover:text-white">Form Automation</Link></li><li><Link href="/services/consulting" className="text-gray-300 hover:text-white">Consulting</Link></li><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Projects</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="text-gray-300 hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="text-gray-300 hover:text-white">Mining Greenfields</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="text-gray-300 hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="text-gray-300 hover:text-white">NPO Initiatives</Link></li></ul></div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
             <p>&copy; {new Date().getFullYear()} TechFuse Consulting. All rights reserved. | Consult.Consume</p>
           </div>
         </div>
