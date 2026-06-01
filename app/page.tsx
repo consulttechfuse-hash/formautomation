@@ -9,6 +9,16 @@ export default function HomePage() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Brand colors
+  const brandColors = {
+    primary: '#1e3a8a',   // Dark blue
+    primaryLight: '#3b82f6', // Light blue
+    secondary: '#10b981',  // Green
+    accent: '#f59e0b',     // Orange
+    dark: '#1f2937',
+    light: '#f3f4f6'
+  };
+
   const slides = [
     { title: 'CONSULT.CONSUME', subtitle: 'We provide Outsource Managed Services for Project and Business development across Multi-Industries', highlight: 'commanding the attention of global investors.', cta: 'Explore Opportunities' },
     { title: 'Infrastructure Leadership', subtitle: 'Leading the R5 Billion Central Karoo development with 6 integrated GAPs', highlight: 'Seeking long-term investors for 25-Year FBOOT term.', cta: 'View Infrastructure' },
@@ -46,7 +56,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColors.primary }}>
                 <span className="text-white font-bold text-xl">T</span>
               </div>
               <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
@@ -102,7 +112,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link href="/form-automation" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg transition" style={{ backgroundColor: brandColors.primary }}>
                 Form Automation
               </Link>
             </div>
@@ -145,7 +155,7 @@ export default function HomePage() {
               <Link href="/about/vision" className="block py-2">About</Link>
               <Link href="/about/contact" className="block py-2">Contact</Link>
               <Link href="/foundation/envirogreen" className="block py-2">Foundation</Link>
-              <Link href="/form-automation" className="block py-2 text-blue-600 font-medium">Form Automation →</Link>
+              <Link href="/form-automation" className="block py-2 font-medium" style={{ color: brandColors.primary }}>Form Automation →</Link>
             </div>
           </div>
         )}
@@ -158,7 +168,7 @@ export default function HomePage() {
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700">
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.primaryLight})` }}>
               <div className="absolute inset-0 bg-black/30"></div>
             </div>
             <div className="relative h-full flex items-center justify-center text-center text-white px-4">
@@ -181,12 +191,12 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((stat, idx) => (
               <div key={idx}>
-                <div className="text-4xl md:text-5xl font-bold text-blue-600 mb-2">{stat.value}</div>
+                <div className="text-4xl md:text-5xl font-bold mb-2" style={{ color: brandColors.primary }}>{stat.value}</div>
                 <div className="text-gray-600">{stat.label}</div>
               </div>
             ))}
@@ -199,18 +209,18 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Professional Advisory &<br />Business Development</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Professional Advisory &<br />Business Development</h2>
               <p className="text-gray-600 mb-6">TechFuse Holdings is a professional advisory and business development firm operating under the brand Consult.Consume. We are not an ICT service provider — we are an active participant and advisory partner across three high-value, multi-industry projects spanning infrastructure, education, and mining.</p>
               <p className="text-gray-600 mb-6">Our founder brings over 25 years of deep ICT sector experience — from SA Post Office and Telkom SA, through Huawei Technologies at Chief Engineer level, to XConnect SA business development. That expertise is the engine behind TechFuse's ability to evaluate, structure, and drive complex projects to bankable outcomes.</p>
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8">
-              <h3 className="text-xl font-bold mb-4">Who We Serve</h3>
+              <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Who We Serve</h3>
               <ul className="space-y-3">
-                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4 text-blue-600" /> Infrastructure Developers</li>
-                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4 text-blue-600" /> Education Sector Partners</li>
-                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4 text-blue-600" /> Mining & Resources Investors</li>
-                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4 text-blue-600" /> Government & Municipalities</li>
-                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4 text-blue-600" /> CSI & Crowd-Sponsors</li>
+                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> Infrastructure Developers</li>
+                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> Education Sector Partners</li>
+                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> Mining & Resources Investors</li>
+                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> Government & Municipalities</li>
+                <li className="flex items-center gap-2"><ChevronRight className="w-4 h-4" style={{ color: brandColors.primary }} /> CSI & Crowd-Sponsors</li>
               </ul>
             </div>
           </div>
@@ -218,15 +228,15 @@ export default function HomePage() {
       </section>
 
       {/* Services Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What We Offer</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>What We Offer</h2>
             <p className="text-gray-600">Professional advisory and business development services across multi-industry projects</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, idx) => (
-              <div key={idx} className="bg-white rounded-xl p-6 shadow-lg">
+              <div key={idx} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                 <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
                 <p className="text-gray-500">{service.desc}</p>
               </div>
@@ -240,12 +250,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Get In Touch</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Get In Touch</h2>
               <p className="text-gray-600 mb-8">Ready to transform your project? Reach out and let's discuss how TechFuse can support your goals.</p>
               <div className="space-y-4">
-                <div className="flex items-center gap-3"><MapPin className="w-5 h-5 text-blue-600" /><span>132 2nd Street, Randtjiespark, Midrand, Tshwane, South Africa</span></div>
-                <div className="flex items-center gap-3"><Mail className="w-5 h-5 text-blue-600" /><a href="mailto:info@techfuseconsult.online">info@techfuseconsult.online</a></div>
-                <div className="flex items-center gap-3"><Phone className="w-5 h-5 text-blue-600" /><a href="tel:+27101234567">+27 (0) 10 123 4567</a></div>
+                <div className="flex items-center gap-3"><MapPin className="w-5 h-5" style={{ color: brandColors.primary }} /><span>132 2nd Street, Randtjiespark, Midrand, Tshwane, South Africa</span></div>
+                <div className="flex items-center gap-3"><Mail className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="mailto:info@techfuseconsult.online">info@techfuseconsult.online</a></div>
+                <div className="flex items-center gap-3"><Phone className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="tel:+27101234567">+27 (0) 10 123 4567</a></div>
               </div>
             </div>
             <div className="bg-gray-50 rounded-xl p-8 text-center">
@@ -257,21 +267,23 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-12">
+      <footer className="text-white py-12" style={{ backgroundColor: brandColors.dark }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"><span className="text-white font-bold text-xl">T</span></div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColors.primary }}>
+                  <span className="text-white font-bold text-xl">T</span>
+                </div>
                 <span className="font-bold text-white">TechFuse Consulting</span>
               </div>
-              <p className="text-sm">Professional advisory and business development firm operating under the brand Consult.Consume.</p>
+              <p className="text-sm text-gray-400">Professional advisory and business development firm operating under the brand Consult.Consume.</p>
             </div>
-            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="hover:text-white">Form Automation</Link></li><li><Link href="/services/consulting" className="hover:text-white">Consulting</Link></li><li><Link href="/projects/infrastructure" className="hover:text-white">Projects</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="hover:text-white">Mining Greenfields</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="hover:text-white">NPO Initiatives</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-400 hover:text-white">Form Automation</Link></li><li><Link href="/services/consulting" className="text-gray-400 hover:text-white">Consulting</Link></li><li><Link href="/projects/infrastructure" className="text-gray-400 hover:text-white">Projects</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="text-gray-400 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="text-gray-400 hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="text-gray-400 hover:text-white">Mining Greenfields</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="text-gray-400 hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="text-gray-400 hover:text-white">NPO Initiatives</Link></li></ul></div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
             <p>&copy; {new Date().getFullYear()} TechFuse Consulting. All rights reserved. | Consult.Consume</p>
           </div>
         </div>
