@@ -3,28 +3,31 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send } from 'lucide-react';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formStatus, setFormStatus] = useState('');
 
-  // Brand colors from your specifications
+  // Brand colors
   const brandColors = {
-    primary: '#D54022',      // Main / Primary - Buttons, banners, headings
-    accent: '#F3BC48',       // Tertiary / Accent - Highlights, gold accents, dividers
-    lightBg: '#F6F1E8',      // Light Contrast - Backgrounds, card fills
-    fieldValue: '#0000FF',   // Field Values - Completed form field text
-    emancipation: '#6B2D8B', // 928 Emancipation - Section header backgrounds
-    section: '#888888',      // Section - Section header backgrounds
+    primary: '#D54022',
+    accent: '#F3BC48',
+    lightBg: '#F6F1E8',
+    fieldValue: '#0000FF',
+    emancipation: '#6B2D8B',
+    section: '#888888',
     white: '#FFFFFF',
     dark: '#333333'
   };
 
-  // Slider data with image paths - REPLACE THESE WITH YOUR ACTUAL IMAGE PATHS
   const slides = [
     {
+      id: 1,
       title: 'CONSULT.CONSUME',
       subtitle: 'We provide Outsource Managed Services for Project and Business development across Multi-Industries',
       highlight: 'commanding the attention of global investors.',
@@ -33,6 +36,7 @@ export default function HomePage() {
       link: '/services'
     },
     {
+      id: 2,
       title: 'Infrastructure Leadership',
       subtitle: 'Leading the R5 Billion Central Karoo development with 6 integrated GAPs',
       highlight: 'Seeking long-term investors for 25-Year FBOOT term.',
@@ -41,6 +45,7 @@ export default function HomePage() {
       link: '/projects/infrastructure'
     },
     {
+      id: 3,
       title: 'Education Transformation',
       subtitle: 'R1 Billion Career Guide Distribution programme reaching every public school in South Africa',
       highlight: '11M+ learners to be reached.',
@@ -49,6 +54,7 @@ export default function HomePage() {
       link: '/projects/education'
     },
     {
+      id: 4,
       title: 'Mining Excellence',
       subtitle: '1.2 Billion metric tonnes in-situ coal reserve in Limpopo',
       highlight: 'Open to various deal structures.',
@@ -81,14 +87,36 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [slides.length]);
 
+  const handleImageError = (index: number) => {
+    setImageErrors(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormStatus('sending');
+    
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+    
+    if (response.ok) {
+      setFormStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setFormStatus(''), 3000);
+    } else {
+      setFormStatus('error');
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: brandColors.white }}>
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm">
+      {/* Navigation - Solid White Background */}
+      <nav className="fixed top-0 w-full z-50 shadow-md" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
-              {/* Logo */}
               <div className="relative w-8 h-8">
                 <Image
                   src="/logo.png"
@@ -97,13 +125,13 @@ export default function HomePage() {
                   height={32}
                   className="object-contain"
                   priority
+                  onError={() => console.log('Logo not found')}
                 />
               </div>
               <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
               <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
             </Link>
 
-            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <div className="relative group">
                 <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
@@ -157,14 +185,12 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Mobile menu button */}
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t">
             <div className="px-4 py-2 space-y-2">
@@ -201,23 +227,27 @@ export default function HomePage() {
         )}
       </nav>
 
-      {/* Hero Slider Section with Images */}
+      {/* Hero Slider Section */}
       <section className="relative h-screen pt-16 overflow-hidden">
         {slides.map((slide, index) => (
           <div
-            key={index}
+            key={slide.id}
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
           >
-            {/* Background Image */}
             <div className="absolute inset-0">
-              <Image
-                src={slide.image}
-                alt={slide.title}
-                fill
-                priority={index === 0}
-                className="object-cover"
-                style={{ objectFit: 'cover' }}
-              />
+              {!imageErrors[index] ? (
+                <Image
+                  src={slide.image}
+                  alt={slide.title}
+                  fill
+                  priority={index === 0}
+                  className="object-cover"
+                  style={{ objectFit: 'cover' }}
+                  onError={() => handleImageError(index)}
+                />
+              ) : (
+                <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}></div>
+              )}
               <div className="absolute inset-0 bg-black/50"></div>
             </div>
             <div className="relative h-full flex items-center justify-center text-center text-white px-4">
@@ -234,7 +264,6 @@ export default function HomePage() {
             </div>
           </div>
         ))}
-        {/* Slider Dots */}
         <div className="absolute bottom-8 left-0 right-0 flex justify-center space-x-2 z-10">
           {slides.map((_, index) => (
             <button
@@ -309,46 +338,35 @@ export default function HomePage() {
             <p className="text-gray-600">Our project portfolio across infrastructure, education, and mining</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Infrastructure Project */}
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.primary }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3>
                 <p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p>
                 <p className="text-gray-600 mb-4">6 integrated GAPs including water bulk, sewer, energy, roads, fibre, and housing.</p>
-                <Link href="/projects/infrastructure">
-                  <button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button>
-                </Link>
+                <Link href="/projects/infrastructure"><button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button></Link>
               </div>
             </div>
-
-            {/* Education Project */}
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.accent }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Education Career Guide</h3>
                 <p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p>
                 <p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p>
-                <Link href="/projects/education">
-                  <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
-                </Link>
+                <Link href="/projects/education"><button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button></Link>
               </div>
             </div>
-
-            {/* Mining Project */}
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.emancipation }}>
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">Mining Greenfields</h3>
                 <p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p>
                 <p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p>
-                <Link href="/projects/mining">
-                  <button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button>
-                </Link>
+                <Link href="/projects/mining"><button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button></Link>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
+      {/* Contact Section with Form */}
       <section className="py-20" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
@@ -358,12 +376,55 @@ export default function HomePage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3"><MapPin className="w-5 h-5" style={{ color: brandColors.primary }} /><span>132 2nd Street, Randtjiespark, Midrand, Tshwane, South Africa</span></div>
                 <div className="flex items-center gap-3"><Mail className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="mailto:info@techfuseconsult.online">info@techfuseconsult.online</a></div>
-                <div className="flex items-center gap-3"><Phone className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="tel:+27101234567">+27 (0) 10 123 4567</a></div>
+                <div className="flex items-center gap-3"><Phone className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="tel:+27878217338">+27 87 821 7338</a></div>
               </div>
             </div>
-            <div className="rounded-xl p-8 shadow-md text-center" style={{ backgroundColor: brandColors.white }}>
-              <p className="text-gray-500 mb-4">Contact form is being prepared.</p>
-              <p className="text-sm text-gray-400">For now, please email us directly at <a href="mailto:info@techfuseconsult.online" className="font-semibold" style={{ color: brandColors.primary }}>info@techfuseconsult.online</a></p>
+            <div>
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ backgroundColor: brandColors.white }}
+                    required
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Your Email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ backgroundColor: brandColors.white }}
+                    required
+                  />
+                </div>
+                <div>
+                  <textarea
+                    placeholder="Your Message"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    rows={4}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ backgroundColor: brandColors.white }}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={formStatus === 'sending'}
+                  className="w-full text-white py-3 rounded-lg transition hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: brandColors.primary }}
+                >
+                  {formStatus === 'sending' ? 'Sending...' : 'Send Message'}
+                </button>
+                {formStatus === 'success' && <p className="text-green-600 text-center">Message sent successfully!</p>}
+                {formStatus === 'error' && <p className="text-red-600 text-center">Failed to send. Please try again.</p>}
+              </form>
             </div>
           </div>
         </div>
@@ -376,13 +437,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="relative w-8 h-8">
-                  <Image
-                    src="/logo.png"
-                    alt="TechFuse Consulting Logo"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
+                  <Image src="/logo.png" alt="TechFuse Consulting Logo" width={32} height={32} className="object-contain" onError={() => console.log('Logo not found')} />
                 </div>
                 <span className="font-bold text-white">TechFuse Consulting</span>
               </div>
