@@ -29,7 +29,7 @@ export default function HomePage() {
       subtitle: 'We provide Outsource Managed Services for Project and Business development across Multi-Industries',
       highlight: 'commanding the attention of global investors.',
       cta: 'Explore Opportunities',
-      image: '/images/slider/slide1.jpg',  // CHANGE THIS PATH
+      image: '/images/slider/slide1.jpg',
       link: '/services'
     },
     {
@@ -37,7 +37,7 @@ export default function HomePage() {
       subtitle: 'Leading the R5 Billion Central Karoo development with 6 integrated GAPs',
       highlight: 'Seeking long-term investors for 25-Year FBOOT term.',
       cta: 'View Infrastructure',
-      image: '/images/slider/slide2.jpg',  // CHANGE THIS PATH
+      image: '/images/slider/slide2.jpg',
       link: '/projects/infrastructure'
     },
     {
@@ -45,7 +45,7 @@ export default function HomePage() {
       subtitle: 'R1 Billion Career Guide Distribution programme reaching every public school in South Africa',
       highlight: '11M+ learners to be reached.',
       cta: 'Partner With Us',
-      image: '/images/slider/slide3.jpg',  // CHANGE THIS PATH
+      image: '/images/slider/slide3.jpg',
       link: '/projects/education'
     },
     {
@@ -53,7 +53,7 @@ export default function HomePage() {
       subtitle: '1.2 Billion metric tonnes in-situ coal reserve in Limpopo',
       highlight: 'Open to various deal structures.',
       cta: 'Invest Now',
-      image: '/images/slider/slide4.jpg',  // CHANGE THIS PATH
+      image: '/images/slider/slide4.jpg',
       link: '/projects/mining'
     },
   ];
@@ -88,8 +88,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColors.primary }}>
-                <span className="text-white font-bold text-xl">T</span>
+              {/* Logo */}
+              <div className="relative w-8 h-8">
+                <Image
+                  src="/logo.png"
+                  alt="TechFuse Consulting Logo"
+                  width={32}
+                  height={32}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
               <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
@@ -367,8 +375,14 @@ export default function HomePage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColors.primary }}>
-                  <span className="text-white font-bold text-xl">T</span>
+                <div className="relative w-8 h-8">
+                  <Image
+                    src="/logo.png"
+                    alt="TechFuse Consulting Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
                 </div>
                 <span className="font-bold text-white">TechFuse Consulting</span>
               </div>
