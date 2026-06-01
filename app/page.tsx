@@ -9,14 +9,16 @@ export default function HomePage() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Brand colors
+  // Brand colors - matching existing system
   const brandColors = {
-    primary: '#1e3a8a',   // Dark blue
-    primaryLight: '#3b82f6', // Light blue
-    secondary: '#10b981',  // Green
-    accent: '#f59e0b',     // Orange
+    primary: '#1e40af',      // Dark blue (from existing system)
+    primaryLight: '#3b82f6',  // Light blue (from existing system)
+    secondary: '#10b981',     // Green (from existing system)
+    accent: '#f59e0b',        // Orange
     dark: '#1f2937',
-    light: '#f3f4f6'
+    light: '#f3f4f6',
+    gradientStart: '#1e3a8a', // Darker blue
+    gradientEnd: '#2563eb'    // Medium blue
   };
 
   const slides = [
@@ -168,7 +170,7 @@ export default function HomePage() {
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
           >
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.primaryLight})` }}>
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brandColors.gradientStart}, ${brandColors.gradientEnd})` }}>
               <div className="absolute inset-0 bg-black/30"></div>
             </div>
             <div className="relative h-full flex items-center justify-center text-center text-white px-4">
@@ -245,8 +247,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact Section */}
+      {/* Projects Section */}
       <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Active Projects</h2>
+            <p className="text-gray-600">Our project portfolio across infrastructure, education, and mining</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Infrastructure Project */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.primary }}>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3>
+                <p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p>
+                <p className="text-gray-600 mb-4">6 integrated GAPs including water bulk, sewer, energy, roads, fibre, and housing.</p>
+                <button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button>
+              </div>
+            </div>
+
+            {/* Education Project */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.secondary }}>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Education Career Guide</h3>
+                <p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p>
+                <p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p>
+                <button className="text-sm font-semibold" style={{ color: brandColors.secondary }}>Learn More →</button>
+              </div>
+            </div>
+
+            {/* Mining Project */}
+            <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ borderTopColor: brandColors.accent }}>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">Mining Greenfields</h3>
+                <p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p>
+                <p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p>
+                <button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
@@ -258,9 +301,9 @@ export default function HomePage() {
                 <div className="flex items-center gap-3"><Phone className="w-5 h-5" style={{ color: brandColors.primary }} /><a href="tel:+27101234567">+27 (0) 10 123 4567</a></div>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-xl p-8 text-center">
+            <div className="bg-white rounded-xl p-8 shadow-md text-center">
               <p className="text-gray-500 mb-4">Contact form is being prepared.</p>
-              <p className="text-sm text-gray-400">For now, please email us directly.</p>
+              <p className="text-sm text-gray-400">For now, please email us directly at <a href="mailto:info@techfuseconsult.online" className="font-semibold" style={{ color: brandColors.primary }}>info@techfuseconsult.online</a></p>
             </div>
           </div>
         </div>
