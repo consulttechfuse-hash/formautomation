@@ -68,7 +68,7 @@ export default function HomePage() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2" style={{ color: '#333', hover: { color: brandColors.primary } }}>
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
                   <span>Services</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -114,7 +114,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg transition" style={{ backgroundColor: brandColors.primary }}>
+              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>
                 Form Automation
               </Link>
             </div>
@@ -178,7 +178,7 @@ export default function HomePage() {
                 <h1 className="text-5xl md:text-7xl font-bold mb-4">{slide.title}</h1>
                 <p className="text-xl md:text-2xl mb-4">{slide.subtitle}</p>
                 <p className="text-lg md:text-xl text-yellow-200 mb-8">{slide.highlight}</p>
-                <button className="px-8 py-3 rounded-full font-semibold transition" style={{ backgroundColor: brandColors.accent, color: brandColors.dark }}>
+                <button className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.accent, color: brandColors.dark }}>
                   {slide.cta}
                 </button>
               </div>
