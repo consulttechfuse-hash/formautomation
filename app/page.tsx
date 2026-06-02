@@ -3,11 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send, ArrowRight } from 'lucide-react';
+import { ChevronRight, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import Navbar from '@/components/Navbar';
 
 export default function HomePage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -37,27 +36,26 @@ export default function HomePage() {
     { value: 'R6B+', label: 'Combined Project Value' },
   ];
 
-  // Service cards with images
   const serviceCards = [
     {
       title: 'Consulting',
       description: 'Strategic advisory and project development services to transform complex opportunities into bankable outcomes.',
       image: '/images/services/services1.jpg',
-      link: '/services/consulting',
+      link: '/consulting',
       color: brandColors.primary
     },
     {
       title: 'Advisory',
       description: 'Expert guidance on investment readiness, risk assessment, and stakeholder engagement across multi-industry projects.',
       image: '/images/services/services2.jpg',
-      link: '/services/advisory',
+      link: '/advisory',
       color: brandColors.accent
     },
     {
       title: 'Business Development',
       description: 'Strategic partnership development, market expansion, and deal structuring for sustainable growth.',
       image: '/images/services/services3.jpg',
-      link: '/services/business-development',
+      link: '/business-development',
       color: brandColors.emancipation
     }
   ];
@@ -92,48 +90,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: brandColors.white }}>
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 shadow-md" style={{ backgroundColor: brandColors.white }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="relative w-8 h-8">
-                <Image src="/logo.png" alt="TechFuse Consulting Logo" width={32} height={32} className="object-contain" priority />
-              </div>
-              <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
-              <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
-            </Link>
-
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/services" className="text-gray-700 hover:text-primary">Services</Link>
-              <Link href="/#projects" className="text-gray-700 hover:text-primary">Projects</Link>
-              <Link href="/about" className="text-gray-700 hover:text-primary">About</Link>
-              <Link href="/about/founder" className="text-gray-700 hover:text-primary">Founder</Link>
-              <Link href="/foundation/envirogreen" className="text-gray-700 hover:text-primary">Foundation</Link>
-              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg" style={{ backgroundColor: brandColors.primary }}>
-                Form Automation
-              </Link>
-            </div>
-
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t">
-            <div className="px-4 py-2 space-y-2">
-              <Link href="/services" className="block py-2">Services</Link>
-              <Link href="/#projects" className="block py-2">Projects</Link>
-              <Link href="/about" className="block py-2">About</Link>
-              <Link href="/about/founder" className="block py-2">Founder</Link>
-              <Link href="/foundation/envirogreen" className="block py-2">Foundation</Link>
-              <Link href="/form-automation" className="block py-2 font-medium" style={{ color: brandColors.primary }}>Form Automation →</Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navbar />
 
       {/* Hero Slider Section */}
       <section className="relative h-screen pt-16 overflow-hidden">
@@ -218,12 +175,7 @@ export default function HomePage() {
               <Link href={service.link} key={idx}>
                 <div className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer h-full">
                   <div className="relative h-48 w-full overflow-hidden">
-                    <Image
-                      src={service.image}
-                      alt={service.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Image src={service.image} alt={service.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 bg-black/20"></div>
                   </div>
                   <div className="p-6">
@@ -249,13 +201,13 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.primary }}>
-              <div className="p-6"><h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3><p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p><p className="text-gray-600 mb-4">6 integrated GAPs including water bulk, sewer, energy, roads, fibre, and housing.</p><Link href="/projects/infrastructure"><button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button></Link></div>
+              <div className="p-6"><h3 className="text-xl font-bold mb-2">Infrastructure Build-Out</h3><p className="text-gray-500 text-sm mb-4">Central Karoo | R5 Billion | 25-Year FBOOT</p><p className="text-gray-600 mb-4">6 integrated GAPs including water bulk, sewer, energy, roads, fibre, and housing.</p><Link href="/infrastructure"><button className="text-sm font-semibold" style={{ color: brandColors.primary }}>Learn More →</button></Link></div>
             </div>
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.accent }}>
-              <div className="p-6"><h3 className="text-xl font-bold mb-2">Education Career Guide</h3><p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p><p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p><Link href="/projects/education"><button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button></Link></div>
+              <div className="p-6"><h3 className="text-xl font-bold mb-2">Education Career Guide</h3><p className="text-gray-500 text-sm mb-4">South Africa | R1 Billion | 13-Volume Guide</p><p className="text-gray-600 mb-4">Reaching 20,894 schools, 11M+ learners across all provinces.</p><Link href="/education"><button className="text-sm font-semibold" style={{ color: brandColors.accent }}>Learn More →</button></Link></div>
             </div>
             <div className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-t-4" style={{ backgroundColor: brandColors.white, borderTopColor: brandColors.emancipation }}>
-              <div className="p-6"><h3 className="text-xl font-bold mb-2">Mining Greenfields</h3><p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p><p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p><Link href="/projects/mining"><button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button></Link></div>
+              <div className="p-6"><h3 className="text-xl font-bold mb-2">Mining Greenfields</h3><p className="text-gray-500 text-sm mb-4">Limpopo | 1.2 Billion Mt | Coal</p><p className="text-gray-600 mb-4">ESKOM tender, 52MMt supply over 30 years, international opportunities.</p><Link href="/mining"><button className="text-sm font-semibold" style={{ color: brandColors.emancipation }}>Learn More →</button></Link></div>
             </div>
           </div>
         </div>
@@ -293,9 +245,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div><div className="flex items-center space-x-2 mb-4"><Image src="/logo.png" alt="Logo" width={32} height={32} /><span className="font-bold text-white">TechFuse Consulting</span></div><p className="text-sm text-gray-300">Professional advisory and business development firm operating under the brand Consult.Consume.</p></div>
-            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-300 hover:text-white">Form Automation</Link></li><li><Link href="/services" className="text-gray-300 hover:text-white">Services</Link></li><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Projects</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="text-gray-300 hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="text-gray-300 hover:text-white">Mining Greenfields</Link></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="text-gray-300 hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="text-gray-300 hover:text-white">NPO Initiatives</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-300 hover:text-white">Form Automation</Link></li><li><Link href="/consulting" className="text-gray-300 hover:text-white">Consulting</Link></li><li><Link href="/mining" className="text-gray-300 hover:text-white">Projects</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/infrastructure" className="text-gray-300 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/education" className="text-gray-300 hover:text-white">Education Career Guide</Link></li><li><Link href="/mining" className="text-gray-300 hover:text-white">Mining Greenfields</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/envirogreen" className="text-gray-300 hover:text-white">Envirogreen</Link></li><li><Link href="/npo" className="text-gray-300 hover:text-white">NPO Initiatives</Link></li></ul></div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
             <p>&copy; {new Date().getFullYear()} TechFuse Consulting. All rights reserved. | Consult.Consume</p>
