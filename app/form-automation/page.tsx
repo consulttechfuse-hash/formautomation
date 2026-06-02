@@ -2,7 +2,7 @@ import { Header } from "@/components/header"
 import { HeroSection } from "@/components/hero-section"
 import { ProcessSteps } from "@/components/process-steps"
 import { MarqueeBanner } from "@/components/marquee-banner"
-import { Footer } from "@/components/Footer"
+import Footer from "@/components/Footer"
 
 export default function Home() {
   return (
