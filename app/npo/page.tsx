@@ -32,7 +32,7 @@ export default function NpoPage() {
     white: '#FFFFFF',
   };
 
-  const logoSize = { width: 52, height: 52 };
+  const logoSize = { width: 64, height: 64 };
 
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 500);
