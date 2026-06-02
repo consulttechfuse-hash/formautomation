@@ -59,11 +59,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Slogan Only - No Company Name */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="relative w-10 h-10">
-              <Image src="/logo.png" alt="TechFuse Consulting Logo" width={40} height={40} className="object-contain" priority />
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="relative w-12 h-12">
+              <Image src="/logo.png" alt="TechFuse Consulting Logo" width={48} height={48} className="object-contain" priority />
             </div>
-            <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
+            <span className="text-sm text-gray-500 hidden sm:block">consult.consume</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">
