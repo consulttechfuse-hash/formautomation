@@ -70,10 +70,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <div key={item.name} className="relative group">
-                <button
-                  className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2"
-                  style={{ hover: { color: brandColors.primary } }}
-                >
+                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
                   <span>{item.name}</span>
                   <ChevronDown className="w-4 h-4" />
                 </button>
