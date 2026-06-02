@@ -52,7 +52,7 @@ export default function EnvirogreenPage() {
     const response = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ ...formData, to: 'envirogreen@techfuseconsult.online' }),
     });
     if (response.ok) {
       setFormStatus('success');
@@ -140,7 +140,7 @@ export default function EnvirogreenPage() {
         </div>
       </section>
 
-      {/* Donate Now Section - NPO style (amount buttons + contact form side by side) with green gradient */}
+      {/* Donate Now Section */}
       <section id="get-involved" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -150,7 +150,6 @@ export default function EnvirogreenPage() {
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Donation Form - Green themed */}
             <div className="rounded-2xl p-8 shadow-lg text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>
               <h3 className="text-xl font-bold mb-4">Donation Amount</h3>
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -164,7 +163,6 @@ export default function EnvirogreenPage() {
               <p className="text-xs text-center mt-4 flex items-center justify-center gap-1 text-white/80"><Lock className="w-3 h-3" /> Secure payment via PayFast / Yoco</p>
             </div>
             
-            {/* Contact Form */}
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Get in Touch</h3>
               <form onSubmit={handleContactSubmit} className="space-y-4">
@@ -186,7 +184,7 @@ export default function EnvirogreenPage() {
           <div className="text-center mb-12"><Mail className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Contact Us</h2></div>
           <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl p-8 shadow-lg"><Phone className="w-8 h-8 mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Phone</h3><p>+27 87 821 7338</p></div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg"><Mail className="w-8 h-8 mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Email</h3><p>info@envirogreen.org.za</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg"><Mail className="w-8 h-8 mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Email</h3><p>envirogreen@techfuseconsult.online</p></div>
           </div>
         </div>
       </section>
@@ -195,9 +193,9 @@ export default function EnvirogreenPage() {
       <footer className="py-12 px-4" style={{ backgroundColor: brandColors.dark }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
-            <div><Leaf className="w-8 h-8 text-green-500 mb-4" /><p className="text-gray-400 text-sm">Building Sustainable Futures – One Child, One Community, One Ecosystem at a Time</p><p className="text-gray-500 text-xs mt-4">© 2026 EnviroGreen Foundation. All Rights Reserved.</p></div>
+            <div><Leaf className="w-8 h-8 text-green-500 mb-4" /><p className="text-gray-400 text-sm">Building Sustainable Futures – One Child, One Community, One Ecosystem at a Time</p><p className="text-gray-500 text-xs mt-4">© 2026 Techfuse Holdings (Pty) Ltd. All rights reserved.</p></div>
             <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#home')} className="text-gray-400 hover:text-white">Home</button></li><li><button onClick={() => scrollToSection('#vision')} className="text-gray-400 hover:text-white">Our Vision</button></li><li><button onClick={() => scrollToSection('#programmes')} className="text-gray-400 hover:text-white">Programmes</button></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: info@envirogreen.org.za</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p></div>
+            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: envirogreen@techfuseconsult.online</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p></div>
             <div><h4 className="text-white font-semibold mb-4">Location</h4><p className="text-gray-400 text-sm">Northern Cape, South Africa</p></div>
           </div>
         </div>

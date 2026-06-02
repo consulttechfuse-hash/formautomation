@@ -59,7 +59,7 @@ export default function NpoPage() {
     const response = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+      body: JSON.stringify({ ...formData, to: 'npo@techfuseconsult.online' }),
     });
     if (response.ok) {
       setFormStatus('success');
@@ -123,7 +123,7 @@ export default function NpoPage() {
         </div>
       </section>
 
-      {/* Donate Now Section - NPO style (amount buttons + contact form side by side) */}
+      {/* Donate Now Section */}
       <section id="get-involved" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -133,7 +133,6 @@ export default function NpoPage() {
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Donation Form */}
             <div className="rounded-2xl p-8 shadow-lg text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>
               <h3 className="text-xl font-bold mb-4">Donation Amount</h3>
               <div className="grid grid-cols-2 gap-3 mb-6">
@@ -147,7 +146,6 @@ export default function NpoPage() {
               <p className="text-xs text-center mt-4 flex items-center justify-center gap-1 text-white/80"><Lock className="w-3 h-3" /> Secure payment via PayFast / Yoco</p>
             </div>
             
-            {/* Contact Form */}
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Contact Information</h3>
               <form onSubmit={handleContactSubmit} className="space-y-4">
@@ -170,12 +168,12 @@ export default function NpoPage() {
             <div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Community Outreach</h2>
               <p className="text-gray-700 mb-4">We connect talent with opportunity and enhance your capabilities for success.</p>
-              <p className="text-gray-700 mb-4">Our effective training programmes bridge the gap between education, entrepreneurship and employment. By doing this, we increase each individual's effectiveness in employability and entrepreneurship.</p>
-              <p className="text-gray-700">Our modern, innovative training programmes are also essential for skills development. We believe in developing skills that are hard to replace and impossible to ignore.</p>
+              <p className="text-gray-700 mb-4">Our effective training programmes bridge the gap between education, entrepreneurship and employment.</p>
+              <p className="text-gray-700">Our modern, innovative training programmes are also essential for skills development.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br rounded-2xl h-48 flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><Image src="/images/community1.jpg" alt="Community" width={200} height={200} className="object-cover rounded-2xl w-full h-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="absolute text-white font-bold">Image 1</span></div>
-              <div className="bg-gradient-to-br rounded-2xl h-48 flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><Image src="/images/community2.jpg" alt="Community" width={200} height={200} className="object-cover rounded-2xl w-full h-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="absolute text-white font-bold">Image 2</span></div>
+              <div className="bg-gradient-to-br rounded-2xl h-48 flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><span className="text-white font-bold">Image 1</span></div>
+              <div className="bg-gradient-to-br rounded-2xl h-48 flex items-center justify-center text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><span className="text-white font-bold">Image 2</span></div>
             </div>
           </div>
         </div>
@@ -222,7 +220,7 @@ export default function NpoPage() {
         </div>
       </section>
 
-      {/* Youth Development - Changemakers */}
+      {/* Youth Development */}
       <section className="py-20 px-4" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -246,12 +244,12 @@ export default function NpoPage() {
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.primary}20` }}><Calendar className="w-8 h-8" style={{ color: brandColors.primary }} /></div>
               <h3 className="text-xl font-bold mb-2">Cornerstone Matric Ball</h3>
-              <p className="text-gray-600">On 30th November 2024, we hosted a Matric Ball for students of both High Schools in Eersterust, Pretoria. We aim to do this annually and welcome Sponsors and Donors.</p>
+              <p className="text-gray-600">On 30th November 2024, we hosted a Matric Ball for students of both High Schools in Eersterust, Pretoria.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.secondary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.secondary}20` }}><Book className="w-8 h-8" style={{ color: brandColors.secondary }} /></div>
               <h3 className="text-xl font-bold mb-2">Cornerstone School Items Drive</h3>
-              <p className="text-gray-600">Our School Items Drive became a vehicle of change in the community of Eersterust, Pretoria. Our goal is to reach more communities.</p>
+              <p className="text-gray-600">Our School Items Drive became a vehicle of change in the community of Eersterust, Pretoria.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.primary}20` }}><Heart className="w-8 h-8" style={{ color: brandColors.primary }} /></div>
@@ -261,12 +259,12 @@ export default function NpoPage() {
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.secondary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.secondary}20` }}><Shield className="w-8 h-8" style={{ color: brandColors.secondary }} /></div>
               <h3 className="text-xl font-bold mb-2">GBV Prevention</h3>
-              <p className="text-gray-600">Our Gender Based Violence Prevention Programme is geared towards our youth, ensuring they are equipped with the right tools to navigate life.</p>
+              <p className="text-gray-600">Our Gender Based Violence Prevention Programme is geared towards our youth.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4 col-span-2" style={{ borderTopColor: brandColors.primary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.primary}20` }}><Gift className="w-8 h-8" style={{ color: brandColors.primary }} /></div>
               <h3 className="text-xl font-bold mb-2">General Donations Drive</h3>
-              <p className="text-gray-600">Make a difference in someone's life by giving them hope. Prayer changes things but your actions are the answer to those prayers.</p>
+              <p className="text-gray-600">Make a difference in someone's life by giving them hope.</p>
             </div>
           </div>
         </div>
@@ -276,10 +274,10 @@ export default function NpoPage() {
       <footer className="py-12 px-4" style={{ backgroundColor: brandColors.dark }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
-            <div><div className="flex items-center gap-2 mb-4"><Heart className="w-8 h-8 text-red-500" /><span className="text-white font-bold">Cornerstone Foundation</span></div><p className="text-gray-400 text-sm">Making a difference in someone's life by giving them hope.</p><p className="text-gray-500 text-xs mt-4">© 2026 Cornerstone Foundation. All Rights Reserved.</p></div>
+            <div><div className="flex items-center gap-2 mb-4"><Heart className="w-8 h-8 text-red-500" /><span className="text-white font-bold">Cornerstone Foundation</span></div><p className="text-gray-400 text-sm">Making a difference in someone's life by giving them hope.</p><p className="text-gray-500 text-xs mt-4">© 2026 Techfuse Holdings (Pty) Ltd. All rights reserved.</p></div>
             <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#get-involved')} className="text-gray-400 hover:text-white">Donate</button></li><li><Link href="/envirogreen" className="text-gray-400 hover:text-white">EnviroGreen</Link></li><li><Link href="/" className="text-gray-400 hover:text-white">TechFuse Home</Link></li></ul></div>
             <div><h4 className="text-white font-semibold mb-4">Programmes</h4><ul className="space-y-2 text-sm"><li className="text-gray-400">Matric Ball</li><li className="text-gray-400">School Items Drive</li><li className="text-gray-400">Drug Rehabilitation</li><li className="text-gray-400">GBV Prevention</li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: info@cornerstone.org.za</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p><p className="text-gray-400 text-sm">Pretoria, South Africa</p></div>
+            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: npo@techfuseconsult.online</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p><p className="text-gray-400 text-sm">Pretoria, South Africa</p></div>
           </div>
         </div>
       </footer>
