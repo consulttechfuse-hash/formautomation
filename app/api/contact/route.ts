@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
     
-    // Send email to your company
+    // Send to your company email
     const { data, error } = await resend.emails.send({
       from: 'Techfuse Contact <noreply@techfuseconsult.online>',
       to: ['info@techfuseconsult.online'],
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
-    // Optional: Send auto-reply to the person who submitted the form
+    // Send auto-reply to the person who submitted
     await resend.emails.send({
       from: 'Techfuse Consulting <noreply@techfuseconsult.online>',
       to: [email],
@@ -54,13 +54,11 @@ export async function POST(request: Request) {
           <div style="padding: 20px; border: 1px solid #e5e7eb;">
             <p>Dear ${name},</p>
             <p>Thank you for reaching out to TechFuse Consulting. We have received your message and will get back to you within 24-48 hours.</p>
-            <p>Here is a copy of your message:</p>
-            <p style="background-color: #f3f4f6; padding: 15px; border-radius: 8px;">${message}</p>
             <p>Best regards,<br><strong>The TechFuse Consulting Team</strong></p>
           </div>
         </div>
       `,
-    }).catch(err => console.log('Auto-reply error (non-critical):', err));
+    }).catch(err => console.log('Auto-reply error:', err));
     
     return NextResponse.json({ success: true });
   } catch (error) {
