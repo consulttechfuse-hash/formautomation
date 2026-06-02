@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send, Briefcase, TrendingUp, GitBranch, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,6 +44,30 @@ export default function HomePage() {
     { title: 'Marketing & Brand Strategy', desc: 'Strategic brand positioning, marketing frameworks, and go-to-market strategies.' },
     { title: 'Multi-Industry Integration', desc: 'Vertical and horizontal integration strategy across diverse sectors.' },
     { title: 'ICT Sector Specialist', desc: 'Over 25 years of deep ICT expertise applied where it matters most.' },
+  ];
+
+  const serviceCards = [
+    {
+      title: 'Consulting',
+      description: 'Strategic advisory and project development services to transform complex opportunities into bankable outcomes.',
+      icon: <Briefcase className="w-10 h-10" />,
+      link: '/services/consulting',
+      color: brandColors.primary
+    },
+    {
+      title: 'Advisory',
+      description: 'Expert guidance on investment readiness, risk assessment, and stakeholder engagement across multi-industry projects.',
+      icon: <TrendingUp className="w-10 h-10" />,
+      link: '/services/advisory',
+      color: brandColors.accent
+    },
+    {
+      title: 'Business Development',
+      description: 'Strategic partnership development, market expansion, and deal structuring for sustainable growth.',
+      icon: <GitBranch className="w-10 h-10" />,
+      link: '/services/business-development',
+      color: brandColors.emancipation
+    }
   ];
 
   useEffect(() => {
@@ -89,55 +113,12 @@ export default function HomePage() {
             </Link>
 
             <div className="hidden md:flex items-center space-x-6">
-              <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
-                  <span>Services</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link href="/services/consulting" className="block px-4 py-2 hover:bg-gray-100">Consulting</Link>
-                  <Link href="/services/advisory" className="block px-4 py-2 hover:bg-gray-100">Advisory</Link>
-                  <Link href="/services/business-development" className="block px-4 py-2 hover:bg-gray-100">Business Development</Link>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
-                  <span>Projects</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link href="/projects/mining" className="block px-4 py-2 hover:bg-gray-100">Mining</Link>
-                  <Link href="/projects/education" className="block px-4 py-2 hover:bg-gray-100">Education</Link>
-                  <Link href="/projects/infrastructure" className="block px-4 py-2 hover:bg-gray-100">Infrastructure</Link>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
-                  <span>About</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link href="/about/vision" className="block px-4 py-2 hover:bg-gray-100">Vision</Link>
-                  <Link href="/about/mission" className="block px-4 py-2 hover:bg-gray-100">Mission</Link>
-                  <Link href="/about/founder" className="block px-4 py-2 hover:bg-gray-100">Founder</Link>
-                  <Link href="/about/contact" className="block px-4 py-2 hover:bg-gray-100">Contact Us</Link>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <button className="flex items-center space-x-1 text-gray-700 hover:text-primary py-2">
-                  <span>Foundation</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                  <Link href="/foundation/envirogreen" className="block px-4 py-2 hover:bg-gray-100">Envirogreen</Link>
-                  <Link href="/foundation/npo" className="block px-4 py-2 hover:bg-gray-100">NPO</Link>
-                </div>
-              </div>
-
-              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>
+              <Link href="/services" className="text-gray-700 hover:text-primary">Services</Link>
+              <Link href="/#projects" className="text-gray-700 hover:text-primary">Projects</Link>
+              <Link href="/about" className="text-gray-700 hover:text-primary">About</Link>
+              <Link href="/about/founder" className="text-gray-700 hover:text-primary">Founder</Link>
+              <Link href="/foundation/envirogreen" className="text-gray-700 hover:text-primary">Foundation</Link>
+              <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg" style={{ backgroundColor: brandColors.primary }}>
                 Form Automation
               </Link>
             </div>
@@ -151,18 +132,11 @@ export default function HomePage() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t">
             <div className="px-4 py-2 space-y-2">
-              <Link href="/services/consulting" className="block py-2">Consulting</Link>
-              <Link href="/services/advisory" className="block py-2">Advisory</Link>
-              <Link href="/services/business-development" className="block py-2">Business Development</Link>
-              <Link href="/projects/mining" className="block py-2">Mining</Link>
-              <Link href="/projects/education" className="block py-2">Education</Link>
-              <Link href="/projects/infrastructure" className="block py-2">Infrastructure</Link>
-              <Link href="/about/vision" className="block py-2">Vision</Link>
-              <Link href="/about/mission" className="block py-2">Mission</Link>
+              <Link href="/services" className="block py-2">Services</Link>
+              <Link href="/#projects" className="block py-2">Projects</Link>
+              <Link href="/about" className="block py-2">About</Link>
               <Link href="/about/founder" className="block py-2">Founder</Link>
-              <Link href="/about/contact" className="block py-2">Contact</Link>
-              <Link href="/foundation/envirogreen" className="block py-2">Envirogreen</Link>
-              <Link href="/foundation/npo" className="block py-2">NPO</Link>
+              <Link href="/foundation/envirogreen" className="block py-2">Foundation</Link>
               <Link href="/form-automation" className="block py-2 font-medium" style={{ color: brandColors.primary }}>Form Automation →</Link>
             </div>
           </div>
@@ -237,25 +211,36 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* Services Cards Section - MOVED HERE (above Projects) */}
       <section className="py-20" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>What We Offer</h2>
-            <p className="text-gray-600">Professional advisory and business development services across multi-industry projects</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Services</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              TechFuse Holdings delivers professional advisory and business development services across multi-industry projects — 
+              bringing the depth of experience needed to convert complex opportunities into bankable outcomes.
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {services.map((service, idx) => (
-              <div key={idx} className="rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow" style={{ backgroundColor: brandColors.white }}>
-                <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
-                <p className="text-gray-500">{service.desc}</p>
-              </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {serviceCards.map((service, idx) => (
+              <Link href={service.link} key={idx}>
+                <div className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer text-center h-full">
+                  <div className="mb-4 flex justify-center">
+                    <div style={{ color: service.color }}>{service.icon}</div>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3" style={{ color: service.color }}>{service.title}</h3>
+                  <p className="text-gray-600 mb-4">{service.description}</p>
+                  <div className="flex items-center justify-center gap-2 font-semibold" style={{ color: service.color }}>
+                    Learn More <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Projects Section */}
+      {/* Active Projects Section */}
       <section className="py-20" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -308,7 +293,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div><div className="flex items-center space-x-2 mb-4"><Image src="/logo.png" alt="Logo" width={32} height={32} /><span className="font-bold text-white">TechFuse Consulting</span></div><p className="text-sm text-gray-300">Professional advisory and business development firm operating under the brand Consult.Consume.</p></div>
-            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-300 hover:text-white">Form Automation</Link></li><li><Link href="/services/consulting" className="text-gray-300 hover:text-white">Consulting</Link></li><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Projects</Link></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><Link href="/form-automation" className="text-gray-300 hover:text-white">Form Automation</Link></li><li><Link href="/services" className="text-gray-300 hover:text-white">Services</Link></li><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Projects</Link></li></ul></div>
             <div><h4 className="text-white font-semibold mb-4">Projects</h4><ul className="space-y-2 text-sm"><li><Link href="/projects/infrastructure" className="text-gray-300 hover:text-white">Infrastructure Build-Out</Link></li><li><Link href="/projects/education" className="text-gray-300 hover:text-white">Education Career Guide</Link></li><li><Link href="/projects/mining" className="text-gray-300 hover:text-white">Mining Greenfields</Link></li></ul></div>
             <div><h4 className="text-white font-semibold mb-4">Foundation</h4><ul className="space-y-2 text-sm"><li><Link href="/foundation/envirogreen" className="text-gray-300 hover:text-white">Envirogreen</Link></li><li><Link href="/foundation/npo" className="text-gray-300 hover:text-white">NPO Initiatives</Link></li></ul></div>
           </div>
