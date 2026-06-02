@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Menu, X, ChevronDown, Heart, Handshake, Briefcase, GraduationCap, Leaf, Globe, Factory, Users, Target, BookOpen, Star, HardHat, HeartPulse, GraduationCap as GradCap, Brain, ArrowUp, Award, Truck, Recycle, Droplets, Trees, Sun, Shield, Book, User, FileText, CheckCircle, Sparkles, Baby, School, Home, Building, ChartBar, Clock, Calendar, ThumbsUp, Eye, Compass, BookOpenCheck, LifeBuoy, Flower, Sprout, Footprints, Mail, Phone, MapPin, Send, Linkedin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { 
+  Menu, X, ChevronDown, Heart, Handshake, Briefcase, GraduationCap, 
+  Leaf, Globe, Factory, Users, Target, BookOpen, Star, HardHat, 
+  HeartPulse, Brain, ArrowUp, Award, Truck, Recycle, Droplets, 
+  Trees, Sun, Shield, Book, User, FileText, CheckCircle, Sparkles, 
+  Baby, School, Home, Building, Calendar, Mail, Phone, MapPin, Send, 
+  Linkedin, Facebook, Twitter, Instagram, TrendingUp, Activity
+} from 'lucide-react';
 
 export default function EnvirogreenPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -74,25 +81,16 @@ export default function EnvirogreenPage() {
 
   const trainingCourses = [
     { icon: <HeartPulse className="w-6 h-6" />, title: 'First Aid Courses', description: 'Comprehensive first aid training for all contexts' },
-    { icon: <Flower className="w-6 h-6" />, title: 'Fire Fighting Courses', description: 'Basic to advanced fire response' },
+    { icon: <Activity className="w-6 h-6" />, title: 'Fire Fighting Courses', description: 'Basic to advanced fire response' },
     { icon: <HardHat className="w-6 h-6" />, title: 'Health and Safety Courses', description: 'OHS compliance and implementation' },
     { icon: <HeartPulse className="w-6 h-6" />, title: 'CPR, AED & Choking Courses', description: 'Life-saving emergency response' },
     { icon: <Star className="w-6 h-6" />, title: 'Specialised Courses', description: 'Customized programs for specific needs' },
   ];
 
-  const technicalSolutions = [
-    { title: 'Presses', items: ['Presses for compaction', 'Portable compactor', '"Press Container"'] },
-    { title: 'Shredders', items: ['Recyclable materials shredders', 'Bulky waste crushers', 'Green waste shredders'] },
-    { title: 'Biogas Flares', items: ['Compact type biogas burning flares', 'Biogas wellheads', 'Condensate arrestors'] },
-    { title: 'Composting', items: ['Aerobic units for vertical composting', 'Aerobic/anaerobic composting equipment'] },
-    { title: 'Bins', items: ['Composting bins', 'Waste bins', 'Recycling bins'] },
-    { title: 'Hospital Waste', items: ['Disinfection systems for hospital waste', 'Infectious waste treatment'] },
-  ];
-
   const youthProgrammes = [
     { icon: <Activity className="w-10 h-10" />, title: 'Youth Sport & Social Programming', description: 'Sport and related activities to divert social ills with healthy body conditioning.' },
     { icon: <Brain className="w-10 h-10" />, title: 'Youth Psychological Services', description: 'Mental support and capacity building to heal body, mind, and soul.' },
-    { icon: <GradCap className="w-10 h-10" />, title: 'Educational & Study Bursaries', description: 'Providing raw academic talent a chance to further their career.' },
+    { icon: <GraduationCap className="w-10 h-10" />, title: 'Educational & Study Bursaries', description: 'Providing raw academic talent a chance to further their career.' },
   ];
 
   const teamMembers = [
@@ -109,7 +107,6 @@ export default function EnvirogreenPage() {
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-white" />
-                <Sprout className="w-5 h-5 text-white -ml-2" />
               </div>
               <div>
                 <span className="font-bold text-lg" style={{ color: brandColors.primary }}>EnviroGreen</span>
@@ -144,13 +141,12 @@ export default function EnvirogreenPage() {
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="relative h-screen flex items-center justify-center pt-16">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 to-green-800/50 z-10"></div>
+      <section id="home" className="relative h-screen flex items-center justify-center pt-16 bg-gradient-to-r from-green-800 to-green-600">
         <div className="relative z-20 text-center text-white px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">Building Sustainable Futures – One Child, One Community, One Ecosystem at a Time</h1>
           <p className="text-xl md:text-2xl mb-8">EnviroGreen and Foundation implements conservation, protection, and recovery of natural resources through Early Childhood Development and Ecological Economics.</p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <button className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.secondary, color: brandColors.white }}>EXPLORE OUR PROGRAMMES</button>
+            <button className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90 bg-yellow-500 text-green-900">EXPLORE OUR PROGRAMMES</button>
             <button className="px-8 py-3 rounded-full font-semibold border-2 border-white transition hover:bg-white hover:text-green-800">SUPPORT OUR MISSION</button>
           </div>
           <div className="flex flex-wrap gap-6 justify-center mt-12">
@@ -247,17 +243,6 @@ export default function EnvirogreenPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12"><Star className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Specialist Products & Services</h2><p className="text-gray-600">Health and Safety Training – Made Simple, Logical, and Effective</p></div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">{trainingCourses.map((course, idx) => (<div key={idx} className="bg-white rounded-xl p-6 shadow-lg flex items-start gap-4"><div className="p-3 rounded-full" style={{ backgroundColor: `${brandColors.primary}20` }}>{course.icon}</div><div><h3 className="font-bold text-lg">{course.title}</h3><p className="text-gray-500 text-sm">{course.description}</p></div></div>))}</div>
-          <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Ecological & Environmental Technical Solutions</h3><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{technicalSolutions.map((cat, idx) => (<div key={idx}><h4 className="font-semibold mb-2">{cat.title}</h4><ul className="text-sm text-gray-600 space-y-1">{cat.items.map((item, i) => <li key={i}>• {item}</li>)}</ul></div>))}</div></div>
-        </div>
-      </section>
-
-      {/* Community Farming */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="bg-gradient-to-r p-8 rounded-2xl text-white text-center" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><Sprout className="w-20 h-20 mx-auto mb-4" /><p className="text-lg">Growing Bodies Need the Best Nutrition</p></div>
-            <div><h2 className="text-3xl font-bold mb-4" style={{ color: brandColors.primary }}>Community Farming & Smart Agriculture</h2><p className="text-gray-700 mb-6">It is of vital importance to ensure learners and households have access to healthy food in a sustainable manner.</p><button className="px-6 py-2 rounded-lg text-white" style={{ backgroundColor: brandColors.primary }}>VIEW OUR FARMING INITIATIVES →</button></div>
-          </div>
         </div>
       </section>
 
@@ -297,7 +282,7 @@ export default function EnvirogreenPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12"><Mail className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Contact Us</h2></div>
           <div className="grid md:grid-cols-2 gap-12">
-            <div className="bg-white rounded-2xl p-8 shadow-lg"><div className="space-y-6"><div className="flex items-center gap-4"><Phone className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Phone</p><p>+27 87 821 7338</p></div></div><div className="flex items-center gap-4"><Mail className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Email</p><p>info@envirogreen.org.za</p></div></div><div className="flex items-center gap-4"><MapPin className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Physical Address</p><p>Northern Cape, South Africa – Upington</p></div></div></div><div className="flex gap-4 mt-8 justify-center"><Facebook className="w-6 h-6 text-gray-600 hover:text-blue-600 cursor-pointer" /><Twitter className="w-6 h-6 text-gray-600 hover:text-blue-400 cursor-pointer" /><Linkedin className="w-6 h-6 text-gray-600 hover:text-blue-700 cursor-pointer" /><Instagram className="w-6 h-6 text-gray-600 hover:text-pink-600 cursor-pointer" /></div></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg"><div className="space-y-6"><div className="flex items-center gap-4"><Phone className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Phone</p><p>+27 87 821 7338</p></div></div><div className="flex items-center gap-4"><Mail className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Email</p><p>info@envirogreen.org.za</p></div></div><div className="flex items-center gap-4"><MapPin className="w-6 h-6" style={{ color: brandColors.primary }} /><div><p className="font-semibold">Address</p><p>Northern Cape, South Africa – Upington</p></div></div></div><div className="flex gap-4 mt-8 justify-center"><a href="#" className="text-gray-600 hover:text-blue-600"><Facebook className="w-6 h-6" /></a><a href="#" className="text-gray-600 hover:text-blue-400"><Twitter className="w-6 h-6" /></a><a href="#" className="text-gray-600 hover:text-blue-700"><Linkedin className="w-6 h-6" /></a><a href="#" className="text-gray-600 hover:text-pink-600"><Instagram className="w-6 h-6" /></a></div></div>
             <div className="bg-white rounded-2xl p-8 shadow-lg"><form className="space-y-4"><div className="grid md:grid-cols-2 gap-4"><input type="text" placeholder="Name" className="w-full p-3 border rounded-lg" /><input type="text" placeholder="Organisation" className="w-full p-3 border rounded-lg" /></div><input type="email" placeholder="Email" className="w-full p-3 border rounded-lg" /><select className="w-full p-3 border rounded-lg"><option>General Inquiry</option><option>Partnership</option><option>Donation</option><option>Volunteering</option><option>Media</option></select><textarea placeholder="Message" rows={5} className="w-full p-3 border rounded-lg"></textarea><button className="w-full py-3 rounded-lg text-white" style={{ backgroundColor: brandColors.primary }}>SEND MESSAGE</button></form></div>
           </div>
         </div>
@@ -309,8 +294,8 @@ export default function EnvirogreenPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div><div className="flex items-center gap-2 mb-4"><Leaf className="w-8 h-8 text-green-500" /><span className="text-white font-bold">EnviroGreen</span><span className="text-gray-400 text-sm">and Foundation NPO</span></div><p className="text-gray-400 text-sm">Education for the Future – Protecting Our Children, Preserving Our Planet</p><p className="text-gray-500 text-xs mt-4">© 2026 EnviroGreen and Foundation. All Rights Reserved.</p></div>
             <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#home')} className="text-gray-400 hover:text-white">Home</button></li><li><button onClick={() => scrollToSection('#vision-mission')} className="text-gray-400 hover:text-white">Our Vision & Mission</button></li><li><button onClick={() => scrollToSection('#programmes')} className="text-gray-400 hover:text-white">Programmes</button></li><li><button onClick={() => scrollToSection('#get-involved')} className="text-gray-400 hover:text-white">Get Involved</button></li><li><button onClick={() => scrollToSection('#contact')} className="text-gray-400 hover:text-white">Contact</button></li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Programmes</h4><ul className="space-y-2 text-sm"><li className="text-gray-400">ECD</li><li className="text-gray-400">Ecological Economics</li><li className="text-gray-400">Youth Development</li><li className="text-gray-400">Community Farming</li><li className="text-gray-400">Technical Solutions</li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Newsletter</h4><div className="flex"><input type="email" placeholder="Email Address" className="flex-1 p-2 rounded-l-lg text-gray-800" /><button className="px-4 py-2 rounded-r-lg text-white" style={{ backgroundColor: brandColors.primary }}>Subscribe</button></div><p className="text-gray-500 text-xs mt-4">NPO Registration Certificate [#] | SARS Tax Certificate [#] | Privacy Policy | Terms of Use</p></div>
+            <div><h4 className="text-white font-semibold mb-4">Programmes</h4><ul className="space-y-2 text-sm"><li className="text-gray-400">ECD</li><li className="text-gray-400">Ecological Economics</li><li className="text-gray-400">Youth Development</li><li className="text-gray-400">Community Farming</li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Newsletter</h4><div className="flex"><input type="email" placeholder="Email Address" className="flex-1 p-2 rounded-l-lg text-gray-800" /><button className="px-4 py-2 rounded-r-lg text-white" style={{ backgroundColor: brandColors.primary }}>Subscribe</button></div><p className="text-gray-500 text-xs mt-4">NPO Registration Certificate [#] | SARS Tax Certificate [#]</p></div>
           </div>
         </div>
       </footer>
