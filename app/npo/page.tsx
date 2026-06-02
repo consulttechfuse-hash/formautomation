@@ -32,18 +32,14 @@ export default function NpoPage() {
     white: '#FFFFFF',
   };
 
-  // Enlarged logo size (60% larger)
   const logoSize = { width: 52, height: 52 };
 
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 500);
     window.addEventListener('scroll', handleScroll);
-    
-    // Rotate partner view every 60 seconds
     const interval = setInterval(() => {
       setPartnerView(prev => prev === 'schools' ? 'corporates' : 'schools');
     }, 60000);
-    
     return () => {
       window.removeEventListener('scroll', handleScroll);
       clearInterval(interval);
@@ -78,10 +74,6 @@ export default function NpoPage() {
     alert(`Donation of R${donationAmount || '0'} (${donationFrequency}) - Payment gateway integration coming soon.`);
   };
 
-  const donorImages = [
-    '/images/donor1.jpg', '/images/donor2.jpg', '/images/donor3.jpg', '/images/donor4.jpg', '/images/donor5.jpg'
-  ];
-  
   const donorNames = ['The Smith Family', 'ABC Corporate', 'John & Mary Foundation', 'TechFuse Cares', 'Community Trust'];
 
   const schoolsList = [
@@ -94,7 +86,7 @@ export default function NpoPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: brandColors.lightBg }}>
-      {/* Navigation - Same as homepage */}
+      {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 shadow-md" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -125,13 +117,13 @@ export default function NpoPage() {
       {/* Hero Section */}
       <section id="home" className="relative min-h-[60vh] flex items-center justify-center pt-16 bg-gradient-to-r" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>
         <div className="relative z-20 text-center text-white px-4 max-w-4xl mx-auto py-20">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">DLCF Foundation</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">Cornerstone Foundation</h1>
           <p className="text-xl md:text-2xl mb-6">Making a difference in someone's life by giving them hope. Prayer changes things but your actions are the answer to those prayers.</p>
           <button onClick={() => scrollToSection('#get-involved')} className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.white, color: brandColors.primary }}>DONATE NOW</button>
         </div>
       </section>
 
-      {/* Donate Now Section - Above Contact Form */}
+      {/* Donate Now Section - NPO style (amount buttons + contact form side by side) */}
       <section id="get-involved" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -141,25 +133,25 @@ export default function NpoPage() {
           </div>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Donation Form - Professional Style */}
-            <div className="bg-gray-50 rounded-2xl p-8 shadow-lg">
-              <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Donation Amount</h3>
+            {/* Donation Form */}
+            <div className="rounded-2xl p-8 shadow-lg text-white" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>
+              <h3 className="text-xl font-bold mb-4">Donation Amount</h3>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {['100', '250', '500', '1000', '2500', '5000'].map((amount) => (
-                  <button key={amount} onClick={() => setDonationAmount(amount)} className={`py-3 rounded-lg border-2 transition-all ${donationAmount === amount ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 hover:border-green-600'}`}>R{amount}</button>
+                  <button key={amount} onClick={() => setDonationAmount(amount)} className={`py-3 rounded-lg border-2 transition-all ${donationAmount === amount ? 'bg-white text-primary border-white' : 'bg-white/20 border-white/50 hover:bg-white/30'}`}>R{amount}</button>
                 ))}
-                <div className="col-span-2"><input type="number" placeholder="Other Amount (ZAR)" className="w-full p-3 border rounded-lg" onChange={(e) => setDonationAmount(e.target.value)} /></div>
+                <div className="col-span-2"><input type="number" placeholder="Other Amount (ZAR)" className="w-full p-3 rounded-lg text-gray-800" onChange={(e) => setDonationAmount(e.target.value)} /></div>
               </div>
-              <div className="flex gap-4 mb-6"><button onClick={() => setDonationFrequency('once')} className={`flex-1 py-2 rounded-lg ${donationFrequency === 'once' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>Once-off</button><button onClick={() => setDonationFrequency('monthly')} className={`flex-1 py-2 rounded-lg ${donationFrequency === 'monthly' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>Monthly</button></div>
-              <button onClick={handleDonate} className="w-full py-3 rounded-lg text-white font-semibold flex items-center justify-center gap-2" style={{ backgroundColor: brandColors.primary }}><CreditCard className="w-5 h-5" /> Donate R{donationAmount || '0'} {donationFrequency === 'monthly' ? '/month' : ''}</button>
-              <p className="text-xs text-gray-500 text-center mt-4 flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> Secure payment via PayFast / Yoco</p>
+              <div className="flex gap-4 mb-6"><button onClick={() => setDonationFrequency('once')} className={`flex-1 py-2 rounded-lg ${donationFrequency === 'once' ? 'bg-white text-primary' : 'bg-white/20'}`}>Once-off</button><button onClick={() => setDonationFrequency('monthly')} className={`flex-1 py-2 rounded-lg ${donationFrequency === 'monthly' ? 'bg-white text-primary' : 'bg-white/20'}`}>Monthly</button></div>
+              <button onClick={handleDonate} className="w-full py-3 rounded-lg bg-white text-primary font-semibold flex items-center justify-center gap-2"><CreditCard className="w-5 h-5" /> Donate R{donationAmount || '0'} {donationFrequency === 'monthly' ? '/month' : ''}</button>
+              <p className="text-xs text-center mt-4 flex items-center justify-center gap-1 text-white/80"><Lock className="w-3 h-3" /> Secure payment via PayFast / Yoco</p>
             </div>
             
-            {/* Contact Form - Same as Homepage */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg border">
+            {/* Contact Form */}
+            <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Contact Information</h3>
               <form onSubmit={handleContactSubmit} className="space-y-4">
-                <input type="text" placeholder="Full Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" required />
+                <input type="text" placeholder="Full Name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary" required />
                 <input type="email" placeholder="Email Address" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full p-3 border rounded-lg" required />
                 <textarea placeholder="Message (Optional)" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} rows={3} className="w-full p-3 border rounded-lg"></textarea>
                 <button type="submit" disabled={formStatus === 'sending'} className="w-full py-3 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>{formStatus === 'sending' ? 'Sending...' : 'Send Message'}</button>
@@ -198,7 +190,6 @@ export default function NpoPage() {
             <p className="text-gray-600 max-w-2xl mx-auto">Our programmes are run and supported by amazing partners who share our values and make the magic happen.</p>
           </div>
           
-          {/* Donor Slider */}
           <div className="mb-16">
             <h3 className="text-2xl font-bold text-center mb-8" style={{ color: brandColors.primary }}>Thank You to All Our Donors</h3>
             <p className="text-center text-gray-500 mb-8">God bless you.</p>
@@ -213,7 +204,6 @@ export default function NpoPage() {
             </div>
           </div>
           
-          {/* Rotating Partner Schools/Corporates */}
           <div className="bg-white rounded-2xl p-8 shadow-lg">
             <div className="text-center mb-6">
               <div className="inline-flex gap-2 p-1 bg-gray-100 rounded-lg">
@@ -255,17 +245,17 @@ export default function NpoPage() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.primary}20` }}><Calendar className="w-8 h-8" style={{ color: brandColors.primary }} /></div>
-              <h3 className="text-xl font-bold mb-2">DLCF Matric Ball</h3>
+              <h3 className="text-xl font-bold mb-2">Cornerstone Matric Ball</h3>
               <p className="text-gray-600">On 30th November 2024, we hosted a Matric Ball for students of both High Schools in Eersterust, Pretoria. We aim to do this annually and welcome Sponsors and Donors.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.secondary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.secondary}20` }}><Book className="w-8 h-8" style={{ color: brandColors.secondary }} /></div>
-              <h3 className="text-xl font-bold mb-2">DLCF School Items Drive</h3>
+              <h3 className="text-xl font-bold mb-2">Cornerstone School Items Drive</h3>
               <p className="text-gray-600">Our School Items Drive became a vehicle of change in the community of Eersterust, Pretoria. Our goal is to reach more communities.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.primary }}>
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: `${brandColors.primary}20` }}><Heart className="w-8 h-8" style={{ color: brandColors.primary }} /></div>
-              <h3 className="text-xl font-bold mb-2">DLCF Drug Rehabilitation</h3>
+              <h3 className="text-xl font-bold mb-2">Cornerstone Drug Rehabilitation</h3>
               <p className="text-gray-600">Our Drug Rehabilitation Programme aims to restore and reintegrate drug users back into society.</p>
             </div>
             <div className="bg-white rounded-2xl p-8 shadow-lg border-t-4" style={{ borderTopColor: brandColors.secondary }}>
@@ -286,10 +276,10 @@ export default function NpoPage() {
       <footer className="py-12 px-4" style={{ backgroundColor: brandColors.dark }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
-            <div><div className="flex items-center gap-2 mb-4"><Heart className="w-8 h-8 text-red-500" /><span className="text-white font-bold">DLCF Foundation</span></div><p className="text-gray-400 text-sm">Making a difference in someone's life by giving them hope.</p><p className="text-gray-500 text-xs mt-4">© 2026 DLCF Foundation. All Rights Reserved.</p></div>
+            <div><div className="flex items-center gap-2 mb-4"><Heart className="w-8 h-8 text-red-500" /><span className="text-white font-bold">Cornerstone Foundation</span></div><p className="text-gray-400 text-sm">Making a difference in someone's life by giving them hope.</p><p className="text-gray-500 text-xs mt-4">© 2026 Cornerstone Foundation. All Rights Reserved.</p></div>
             <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#get-involved')} className="text-gray-400 hover:text-white">Donate</button></li><li><Link href="/envirogreen" className="text-gray-400 hover:text-white">EnviroGreen</Link></li><li><Link href="/" className="text-gray-400 hover:text-white">TechFuse Home</Link></li></ul></div>
             <div><h4 className="text-white font-semibold mb-4">Programmes</h4><ul className="space-y-2 text-sm"><li className="text-gray-400">Matric Ball</li><li className="text-gray-400">School Items Drive</li><li className="text-gray-400">Drug Rehabilitation</li><li className="text-gray-400">GBV Prevention</li></ul></div>
-            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: info@dlcf.org.za</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p><p className="text-gray-400 text-sm">Pretoria, South Africa</p></div>
+            <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: info@cornerstone.org.za</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p><p className="text-gray-400 text-sm">Pretoria, South Africa</p></div>
           </div>
         </div>
       </footer>
