@@ -54,8 +54,10 @@ export default function AdvisoryPage() {
         <div className="relative h-[500px] overflow-hidden">
           {slides.map((slide, index) => (
             <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}>
-              <Image src={slide.image} alt={slide.alt} fill className="object-cover" />
-              <div className="absolute inset-0 bg-black/50"></div>
+              <div className="relative w-full h-full">
+                <Image src={slide.image} alt={slide.alt} fill priority={index === 0} className="object-cover" />
+                <div className="absolute inset-0 bg-black/50"></div>
+              </div>
               <div className="absolute inset-0 flex items-center justify-center text-center text-white px-4">
                 <div className="max-w-4xl mx-auto">
                   <h1 className="text-5xl md:text-6xl font-bold mb-4">Advisory</h1>
@@ -64,7 +66,7 @@ export default function AdvisoryPage() {
               </div>
             </div>
           ))}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-10">
             {slides.map((_, index) => (
               <button key={index} onClick={() => setCurrentSlide(index)} className={`w-3 h-3 rounded-full transition-all ${currentSlide === index ? 'bg-white w-6' : 'bg-white/50'}`} />
             ))}
