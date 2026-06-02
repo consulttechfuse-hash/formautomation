@@ -32,7 +32,7 @@ export default function NpoPage() {
     white: '#FFFFFF',
   };
 
-  const logoSize = { width: 64, height: 64 };
+  const logoSize = { width: 40, height: 40 };
 
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 500);
@@ -94,7 +94,7 @@ export default function NpoPage() {
               <div className="relative" style={{ width: logoSize.width, height: logoSize.height }}>
                 <Image src="/logo.png" alt="TechFuse Consulting Logo" width={logoSize.width} height={logoSize.height} className="object-contain" priority />
               </div>
-              <span className="font-bold text-xl text-gray-800">TechFuse Holdings</span>
+              
               <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
             </Link>
             <div className="hidden md:flex items-center space-x-6">

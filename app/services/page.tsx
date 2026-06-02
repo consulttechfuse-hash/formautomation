@@ -48,7 +48,7 @@ export default function ServicesPage() {
               <div className="relative w-8 h-8">
                 <Image src="/logo.png" alt="Logo" width={32} height={32} className="object-contain" />
               </div>
-              <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
+              
             </Link>
             <div className="hidden md:flex items-center space-x-6">
               <Link href="/services" className="text-gray-700 hover:text-primary" style={{ color: brandColors.primary }}>Services</Link>
