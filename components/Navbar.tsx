@@ -18,9 +18,9 @@ export default function Navbar() {
     {
       name: 'Services',
       dropdown: [
-        { name: 'Consulting', path: '/consulting' },
-        { name: 'Advisory', path: '/advisory' },
-        { name: 'Business Development', path: '/business-development' },
+        { name: 'Consulting', path: '/servicesconsult' },
+        { name: 'Advisory', path: '/servicesadvisory' },
+        { name: 'Business Development', path: '/servicesbizdev' },
       ]
     },
     {
@@ -34,10 +34,11 @@ export default function Navbar() {
     {
       name: 'About',
       dropdown: [
-        { name: 'Vision', path: '/vision' },
-        { name: 'Mission', path: '/mission' },
-        { name: 'Founder', path: '/founder' },
-        { name: 'Contact Us', path: '/contact' },
+        { name: 'About Us', path: '/aboutus' },
+        { name: 'Vision', path: '/visionpage' },
+        { name: 'Mission', path: '/missionpage' },
+        { name: 'Founder', path: '/about/founder' },
+        { name: 'Contact', path: '/about/contact' },
       ]
     },
     {
@@ -57,16 +58,14 @@ export default function Navbar() {
     <nav className="fixed top-0 w-full z-50 shadow-md" style={{ backgroundColor: brandColors.white }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="relative w-8 h-8">
               <Image src="/logo.png" alt="TechFuse Consulting Logo" width={32} height={32} className="object-contain" priority />
             </div>
-            <span className="font-bold text-xl text-gray-800">TechFuse Consulting</span>
+            <span className="font-bold text-xl text-gray-800">TechFuse Holdings</span>
             <span className="text-xs text-gray-500 hidden sm:block">consult.consume</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <div key={item.name} className="relative group">
@@ -76,55 +75,37 @@ export default function Navbar() {
                 </button>
                 <div className="absolute top-full left-0 w-56 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   {item.dropdown.map((subItem) => (
-                    <Link
-                      key={subItem.name}
-                      href={subItem.path}
-                      className="block px-4 py-2 hover:bg-gray-100"
-                    >
+                    <Link key={subItem.name} href={subItem.path} className="block px-4 py-2 hover:bg-gray-100">
                       {subItem.name}
                     </Link>
                   ))}
                 </div>
               </div>
             ))}
-            <Link
-              href="/form-automation"
-              className="text-white px-4 py-2 rounded-lg transition hover:opacity-90"
-              style={{ backgroundColor: brandColors.primary }}
-            >
+            <Link href="/form-automation" className="text-white px-4 py-2 rounded-lg transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>
               Form Automation
             </Link>
           </div>
 
-          {/* Mobile menu button */}
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t">
           <div className="px-4 py-2 space-y-2">
             {navItems.map((item) => (
               <div key={item.name}>
-                <button
-                  onClick={() => handleDropdown(item.name)}
-                  className="flex justify-between items-center w-full py-2 text-gray-700"
-                >
+                <button onClick={() => handleDropdown(item.name)} className="flex justify-between items-center w-full py-2 text-gray-700">
                   {item.name}
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? 'rotate-180' : ''}`} />
                 </button>
                 {openDropdown === item.name && (
                   <div className="pl-4 space-y-2">
                     {item.dropdown.map((subItem) => (
-                      <Link
-                        key={subItem.name}
-                        href={subItem.path}
-                        className="block py-1 text-gray-600"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
+                      <Link key={subItem.name} href={subItem.path} className="block py-1 text-gray-600" onClick={() => setMobileMenuOpen(false)}>
                         {subItem.name}
                       </Link>
                     ))}
@@ -132,12 +113,7 @@ export default function Navbar() {
                 )}
               </div>
             ))}
-            <Link
-              href="/form-automation"
-              className="block py-2 font-medium"
-              style={{ color: brandColors.primary }}
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link href="/form-automation" className="block py-2 font-medium" style={{ color: brandColors.primary }} onClick={() => setMobileMenuOpen(false)}>
               Form Automation →
             </Link>
           </div>
