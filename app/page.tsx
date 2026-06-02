@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send, Briefcase, TrendingUp, GitBranch, ArrowRight } from 'lucide-react';
+import { Menu, X, ChevronDown, ChevronRight, Mail, Phone, MapPin, Send, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -37,34 +37,26 @@ export default function HomePage() {
     { value: 'R6B+', label: 'Combined Project Value' },
   ];
 
-  const services = [
-    { title: 'Project Development & Execution', desc: 'End-to-end advisory and management of complex multi-industry projects from concept through to successful delivery.' },
-    { title: 'Bankable Business Development', desc: 'Transforming project concepts into investor-ready, bankable business cases with full financial structuring.' },
-    { title: 'Financial Metrics & Analysis', desc: 'Rigorous financial modelling, project valuation, ROI analysis, and metrics reporting.' },
-    { title: 'Marketing & Brand Strategy', desc: 'Strategic brand positioning, marketing frameworks, and go-to-market strategies.' },
-    { title: 'Multi-Industry Integration', desc: 'Vertical and horizontal integration strategy across diverse sectors.' },
-    { title: 'ICT Sector Specialist', desc: 'Over 25 years of deep ICT expertise applied where it matters most.' },
-  ];
-
+  // Service cards with images
   const serviceCards = [
     {
       title: 'Consulting',
       description: 'Strategic advisory and project development services to transform complex opportunities into bankable outcomes.',
-      icon: <Briefcase className="w-10 h-10" />,
+      image: '/images/services/services1.jpg',
       link: '/services/consulting',
       color: brandColors.primary
     },
     {
       title: 'Advisory',
       description: 'Expert guidance on investment readiness, risk assessment, and stakeholder engagement across multi-industry projects.',
-      icon: <TrendingUp className="w-10 h-10" />,
+      image: '/images/services/services2.jpg',
       link: '/services/advisory',
       color: brandColors.accent
     },
     {
       title: 'Business Development',
       description: 'Strategic partnership development, market expansion, and deal structuring for sustainable growth.',
-      icon: <GitBranch className="w-10 h-10" />,
+      image: '/images/services/services3.jpg',
       link: '/services/business-development',
       color: brandColors.emancipation
     }
@@ -211,7 +203,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Services Cards Section - MOVED HERE (above Projects) */}
+      {/* Services Cards Section with Images */}
       <section className="py-20" style={{ backgroundColor: brandColors.lightBg }}>
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
@@ -224,14 +216,22 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8">
             {serviceCards.map((service, idx) => (
               <Link href={service.link} key={idx}>
-                <div className="group bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer text-center h-full">
-                  <div className="mb-4 flex justify-center">
-                    <div style={{ color: service.color }}>{service.icon}</div>
+                <div className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer h-full">
+                  <div className="relative h-48 w-full overflow-hidden">
+                    <Image
+                      src={service.image}
+                      alt={service.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/20"></div>
                   </div>
-                  <h3 className="text-2xl font-bold mb-3" style={{ color: service.color }}>{service.title}</h3>
-                  <p className="text-gray-600 mb-4">{service.description}</p>
-                  <div className="flex items-center justify-center gap-2 font-semibold" style={{ color: service.color }}>
-                    Learn More <ArrowRight className="w-4 h-4" />
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold mb-3" style={{ color: service.color }}>{service.title}</h3>
+                    <p className="text-gray-600 mb-4">{service.description}</p>
+                    <div className="flex items-center gap-2 font-semibold" style={{ color: service.color }}>
+                      Learn More <ArrowRight className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
               </Link>
