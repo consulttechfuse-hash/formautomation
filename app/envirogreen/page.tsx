@@ -28,8 +28,14 @@ export default function EnvirogreenPage() {
     white: '#FFFFFF',
   };
 
-  // New navigation structure
-  const navItems = [
+  interface NavItem {
+    name: string;
+    dropdown?: { name: string; href: string }[];
+    href?: string;
+    isLink?: boolean;
+  }
+
+  const navItems: NavItem[] = [
     {
       name: 'About Us',
       dropdown: [
@@ -112,8 +118,8 @@ export default function EnvirogreenPage() {
             <div className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <div key={item.name} className="relative group">
-                  {item.isLink ? (
-                    <button onClick={() => scrollToSection(item.href)} className="text-gray-700 hover:text-green-600 py-2 px-2 text-sm font-medium">
+                  {item.isLink && item.href ? (
+                    <button onClick={() => scrollToSection(item.href!)} className="text-gray-700 hover:text-green-600 py-2 px-2 text-sm font-medium">
                       {item.name}
                     </button>
                   ) : (
@@ -123,7 +129,7 @@ export default function EnvirogreenPage() {
                         <ChevronDown className="w-3 h-3" />
                       </button>
                       <div className="absolute top-full left-0 w-48 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        {item.dropdown.map((subItem) => (
+                        {item.dropdown && item.dropdown.map((subItem) => (
                           <button key={subItem.name} onClick={() => scrollToSection(subItem.href)} className="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
                             {subItem.name}
                           </button>
@@ -151,8 +157,8 @@ export default function EnvirogreenPage() {
             <div className="px-4 py-2 space-y-1">
               {navItems.map((item) => (
                 <div key={item.name}>
-                  {item.isLink ? (
-                    <button onClick={() => scrollToSection(item.href)} className="block w-full text-left py-2 text-gray-700">
+                  {item.isLink && item.href ? (
+                    <button onClick={() => scrollToSection(item.href!)} className="block w-full text-left py-2 text-gray-700">
                       {item.name}
                     </button>
                   ) : (
@@ -161,7 +167,7 @@ export default function EnvirogreenPage() {
                         {item.name}
                         <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? 'rotate-180' : ''}`} />
                       </button>
-                      {openDropdown === item.name && (
+                      {openDropdown === item.name && item.dropdown && (
                         <div className="pl-4 space-y-1 pb-2">
                           {item.dropdown.map((subItem) => (
                             <button key={subItem.name} onClick={() => scrollToSection(subItem.href)} className="block w-full text-left py-1 text-gray-500 text-sm">
