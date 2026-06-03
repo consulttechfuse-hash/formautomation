@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Briefcase, Calendar, Award, Cpu, Network, User, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Briefcase, Calendar, Award, Cpu, Network, ExternalLink, FileText } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -37,7 +37,7 @@ export default function FounderPage() {
           <div className="bg-white rounded-2xl p-8 shadow-lg mb-12">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-20 h-20 rounded-full bg-gradient-to-r flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}>
-                <User className="w-10 h-10 text-white" />
+                <span className="text-white text-3xl font-bold">J</span>
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold" style={{ color: brandColors.primary }}>Joey Gouws</h1>
@@ -78,12 +78,42 @@ export default function FounderPage() {
           </div>
 
           {/* Stats */}
-          <div className="bg-gradient-to-r p-8 rounded-2xl text-white text-center" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}>
+          <div className="bg-gradient-to-r p-8 rounded-2xl text-white text-center mb-12" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.emancipation})` }}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div><div className="text-4xl font-bold">30+</div><div className="text-white/80">Years Experience</div></div>
               <div><div className="text-4xl font-bold">25+</div><div className="text-white/80">Years ICT</div></div>
               <div><div className="text-4xl font-bold">3</div><div className="text-white/80">Active Projects</div></div>
               <div><div className="text-4xl font-bold">R6B+</div><div className="text-white/80">Project Value</div></div>
+            </div>
+          </div>
+
+          {/* NEW: Career and Business Profile Section */}
+          <div className="bg-white rounded-2xl p-8 shadow-lg">
+            <div className="flex items-center gap-3 mb-6">
+              <FileText className="w-8 h-8" style={{ color: brandColors.primary }} />
+              <h2 className="text-2xl md:text-3xl font-bold" style={{ color: brandColors.primary }}>Career and Business Profile</h2>
+            </div>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+              View my complete executive business profile, including detailed career history, project portfolio, core competencies, 
+              strategic goals, and a short introductory video.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link 
+                href="/about/founder/cv" 
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-white font-semibold transition hover:opacity-90"
+                style={{ backgroundColor: brandColors.primary }}
+              >
+                View Full Profile <ExternalLink className="w-4 h-4" />
+              </Link>
+              <a 
+                href="https://www.youtube.com/shorts/aPZamF45VzU" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 font-semibold transition hover:bg-gray-50"
+                style={{ borderColor: brandColors.primary, color: brandColors.primary }}
+              >
+                Watch Intro Video →
+              </a>
             </div>
           </div>
         </div>
