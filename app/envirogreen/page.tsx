@@ -9,7 +9,8 @@ import {
   HeartPulse, Brain, ArrowUp, Award, Truck, Recycle, Droplets,
   Trees, Sun, Shield, Book, User, FileText, CheckCircle, Sparkles,
   Baby, School, Home, Building, Calendar, Mail, Phone, MapPin, Send,
-  TrendingUp, Activity, Sprout, Eye, Compass, CreditCard, Lock, Zap
+  TrendingUp, Activity, Sprout, Eye, Compass, CreditCard, Lock, Zap,
+  HelpCircle, Gift
 } from 'lucide-react';
 
 export default function EnvirogreenPage() {
@@ -98,9 +99,9 @@ export default function EnvirogreenPage() {
     {
       name: 'Get Involved',
       dropdown: [
-        { name: 'Ways to Support', href: '#get-involved' },
-        { name: 'Donate Now', href: '#get-involved' },
-        { name: 'Partner With Us', href: '#get-involved' },
+        { name: 'Ways to Support', href: '#ways-to-support' },
+        { name: 'Donate Now', href: '#donate' },
+        { name: 'Partner With Us', href: '#partner' },
       ]
     },
   ];
@@ -137,6 +138,13 @@ export default function EnvirogreenPage() {
     { title: 'Composting', items: ['Aerobic units for vertical composting', 'Aerobic/anaerobic composting equipment'] },
     { title: 'Bins', items: ['Composting bins', 'Waste bins', 'Recycling bins'] },
     { title: 'Hospital Waste', items: ['Disinfection systems for hospital waste', 'Infectious waste treatment'] },
+  ];
+
+  const waysToSupport = [
+    { icon: <Heart className="w-10 h-10" />, title: 'Donate', description: 'Financial contributions support our ECD and environmental programmes.' },
+    { icon: <Handshake className="w-10 h-10" />, title: 'Partner', description: 'Corporate partnerships for shared value initiatives.' },
+    { icon: <Briefcase className="w-10 h-10" />, title: 'Sponsor', description: 'Sponsor a child\'s education or a community farming project.' },
+    { icon: <Users className="w-10 h-10" />, title: 'Volunteer', description: 'Join our team of volunteers and coaches.' },
   ];
 
   return (
@@ -176,7 +184,7 @@ export default function EnvirogreenPage() {
                   )}
                 </div>
               ))}
-              <button onClick={() => scrollToSection('#get-involved')} className="px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
+              <button onClick={() => scrollToSection('#donate')} className="px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
             </div>
 
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
@@ -211,7 +219,7 @@ export default function EnvirogreenPage() {
                   )}
                 </div>
               ))}
-              <button onClick={() => scrollToSection('#get-involved')} className="w-full py-2 rounded-lg text-white mt-2" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
+              <button onClick={() => scrollToSection('#donate')} className="w-full py-2 rounded-lg text-white mt-2" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
               <Link href="/form-automation" className="block py-2 font-medium" style={{ color: '#D54022' }} onClick={() => setMobileMenuOpen(false)}>Form Automation →</Link>
             </div>
           </div>
@@ -226,7 +234,7 @@ export default function EnvirogreenPage() {
           <p className="text-xl md:text-2xl mb-6">Building Sustainable Futures – One Child, One Community, One Ecosystem at a Time</p>
           <div className="flex flex-wrap gap-4 justify-center">
             <button onClick={() => scrollToSection('#programmes')} className="px-8 py-3 rounded-full font-semibold transition hover:opacity-90 bg-yellow-500 text-green-900">EXPLORE OUR PROGRAMMES</button>
-            <button onClick={() => scrollToSection('#get-involved')} className="px-8 py-3 rounded-full font-semibold border-2 border-white transition hover:bg-white hover:text-green-800">SUPPORT OUR MISSION</button>
+            <button onClick={() => scrollToSection('#donate')} className="px-8 py-3 rounded-full font-semibold border-2 border-white transition hover:bg-white hover:text-green-800">SUPPORT OUR MISSION</button>
           </div>
           <div className="flex flex-wrap gap-6 justify-center mt-12">
             <div className="flex items-center gap-2"><Award className="w-5 h-5" /><span className="text-sm">Registered NPO</span></div>
@@ -357,12 +365,32 @@ export default function EnvirogreenPage() {
         </div>
       </section>
 
-      {/* Get Involved - Donation Section */}
-      <section id="get-involved" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
+      {/* Get Involved - Ways to Support Section */}
+      <section id="ways-to-support" className="py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Handshake className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} />
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Ways to Support</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Join us in building a sustainable future for South Africa's children and environment.</p>
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {waysToSupport.map((way, idx) => (
+              <div key={idx} className="bg-white rounded-2xl p-6 shadow-lg text-center transition-transform hover:scale-105">
+                <div className="mb-4 flex justify-center" style={{ color: brandColors.primary }}>{way.icon}</div>
+                <h3 className="text-xl font-bold mb-2">{way.title}</h3>
+                <p className="text-gray-600">{way.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Donate Now Section */}
+      <section id="donate" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <Heart className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} />
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Support Our Mission</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Make a Donation</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">Your contribution helps us protect our environment and empower our communities.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -389,6 +417,21 @@ export default function EnvirogreenPage() {
                 {formStatus === 'error' && <p className="text-red-600 text-center">Failed to send. Try again.</p>}
               </form>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Partner With Us Section */}
+      <section id="partner" className="py-20 px-4" style={{ backgroundColor: brandColors.light }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Handshake className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} />
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Partner With Us</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Join us in building a sustainable future for South Africa's children and environment.</p>
+          </div>
+          <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-3xl mx-auto">
+            <p className="text-gray-700 mb-6">Become a corporate partner and help us expand our reach. Your support enables us to implement more programmes, reach more communities, and create lasting change.</p>
+            <button onClick={() => scrollToSection('#contact')} className="px-8 py-3 rounded-lg text-white font-semibold transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>BECOME A PARTNER</button>
           </div>
         </div>
       </section>
