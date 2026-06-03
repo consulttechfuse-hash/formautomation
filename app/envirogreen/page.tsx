@@ -72,7 +72,6 @@ export default function EnvirogreenPage() {
     setOpenDropdown(openDropdown === name ? null : name);
   };
 
-  // Grouped navigation structure
   const navItems = [
     {
       name: 'About Us',
@@ -127,8 +126,8 @@ export default function EnvirogreenPage() {
   ];
 
   const teamMembers = [
-    { name: 'Joey Gouws', title: 'Managing Director', bio: 'ICT Industry career specialist of 30+ years and Managing Director of various businesses.', email: 'joey@envirogreen.co.za', initial: 'J' },
-    { name: 'Lucrecia Van Wyk', title: 'Operations Director', bio: 'ECD Specialist Consultant for private and public sectors.', email: 'lucrecia@envirogreen.co.za', initial: 'L' },
+    { name: 'Joey Gouws', title: 'Managing Director', bio: 'ICT Industry career specialist of 30+ years and Managing Director of various businesses.', email: 'joey.envirogreen@techfuseconsult.online', initial: 'J' },
+    { name: 'To be announced', title: 'Operations Director', bio: 'NPO Operations Specialist Consultant for private and public sectors.', email: 'ops.envirogreen@techfuseconsult.online', initial: 'T' },
   ];
 
   const technicalSolutions = [
@@ -153,7 +152,6 @@ export default function EnvirogreenPage() {
               <span className="text-sm text-gray-500 hidden sm:block">consult.consume</span>
             </Link>
 
-            {/* Desktop Navigation - Grouped Dropdowns */}
             <div className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <div key={item.name} className="relative group">
@@ -185,7 +183,6 @@ export default function EnvirogreenPage() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t max-h-[80vh] overflow-y-auto">
             <div className="px-4 py-2 space-y-1">
@@ -239,7 +236,7 @@ export default function EnvirogreenPage() {
         </div>
       </section>
 
-      {/* Vision & Mission Section (Strategy) */}
+      {/* Vision & Mission Section */}
       <section id="vision-mission" className="py-20 px-4" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12"><Eye className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Strategy</h2></div>
@@ -356,7 +353,7 @@ export default function EnvirogreenPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12"><Target className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Projects & Impact</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">{[{ value: '0000', label: 'Children Reached' }, { value: '00', label: 'Communities Served' }, { value: '0000', label: 'Trees Planted' }, { value: '000', label: 'Teachers Trained' }, { value: '00', label: 'Schools Partnered' }].map((stat, idx) => (<div key={idx} className="bg-white rounded-xl p-4 text-center shadow"><div className="text-2xl font-bold" style={{ color: brandColors.primary }}>{stat.value}</div><div className="text-sm text-gray-500">{stat.label}</div></div>))}</div>
-          <div className="bg-white rounded-2xl p-8 shadow-lg text-center"><h3 className="text-xl font-bold mb-2">Upington Community Project</h3><p className="text-gray-600 mb-4">Location: Northern Cape, South Africa</p><button className="px-6 py-2 rounded-lg text-white" style={{ backgroundColor: brandColors.primary }}>READ MORE →</button></div>
+          <div className="bg-white rounded-2xl p-8 shadow-lg text-center"><h3 className="text-xl font-bold mb-2">Community Projects</h3><p className="text-gray-600 mb-4">Location: South Africa</p><button className="px-6 py-2 rounded-lg text-white" style={{ backgroundColor: brandColors.primary }}>READ MORE →</button></div>
         </div>
       </section>
 
