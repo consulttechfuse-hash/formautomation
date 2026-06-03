@@ -44,6 +44,7 @@ export default function EnvirogreenPage() {
     const id = href.substring(1);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     setMobileMenuOpen(false);
+    setOpenDropdown(null);
   };
 
   const handleContactSubmit = async (e: React.FormEvent) => {
@@ -67,17 +68,42 @@ export default function EnvirogreenPage() {
     alert(`Donation of R${donationAmount || '0'} (${donationFrequency}) - Payment gateway integration coming soon.`);
   };
 
+  const handleDropdown = (name: string) => {
+    setOpenDropdown(openDropdown === name ? null : name);
+  };
+
+  // Grouped navigation structure
   const navItems = [
-    { name: 'Home', href: '#home' },
-    { name: 'Vision & Mission', href: '#vision-mission' },
-    { name: 'What We Do', href: '#programmes' },
-    { name: 'Specialist', href: '#specialist' },
-    { name: 'Location', href: '#location' },
-    { name: 'Our Team', href: '#team' },
-    { name: 'Business Model', href: '#business-model' },
-    { name: 'Projects', href: '#projects' },
-    { name: 'Get Involved', href: '#get-involved' },
-    { name: 'Contact', href: '#contact' },
+    {
+      name: 'About Us',
+      dropdown: [
+        { name: 'Strategy', href: '#vision-mission' },
+        { name: 'Our Team', href: '#team' },
+        { name: 'Location', href: '#location' },
+        { name: 'Contact', href: '#contact' },
+      ]
+    },
+    {
+      name: 'Operations',
+      dropdown: [
+        { name: 'Core Programmes', href: '#programmes' },
+        { name: 'Specialist Services', href: '#specialist' },
+        { name: 'Business Model', href: '#business-model' },
+      ]
+    },
+    {
+      name: 'Projects',
+      href: '#projects',
+      isLink: true
+    },
+    {
+      name: 'Get Involved',
+      dropdown: [
+        { name: 'Ways to Support', href: '#get-involved' },
+        { name: 'Donate Now', href: '#get-involved' },
+        { name: 'Partner With Us', href: '#get-involved' },
+      ]
+    },
   ];
 
   const programmes = [
@@ -101,8 +127,8 @@ export default function EnvirogreenPage() {
   ];
 
   const teamMembers = [
-    { name: 'Joey Gouws', title: 'Managing Director', bio: 'ICT Industry career specialist of 30+ years and Managing Director of various businesses. Ecological and Environmental challenges are of high importance.', email: 'joey@envirogreen.co.za', initial: 'J' },
-    { name: 'Lucrecia Van Wyk', title: 'Operations Director', bio: 'ECD Specialist Consultant for private and public sectors. Specialising in curriculum development, assess and moderate accredited programs.', email: 'lucrecia@envirogreen.co.za', initial: 'L' },
+    { name: 'Joey Gouws', title: 'Managing Director', bio: 'ICT Industry career specialist of 30+ years and Managing Director of various businesses.', email: 'joey@envirogreen.co.za', initial: 'J' },
+    { name: 'Lucrecia Van Wyk', title: 'Operations Director', bio: 'ECD Specialist Consultant for private and public sectors.', email: 'lucrecia@envirogreen.co.za', initial: 'L' },
   ];
 
   const technicalSolutions = [
@@ -126,24 +152,71 @@ export default function EnvirogreenPage() {
               </div>
               <span className="text-sm text-gray-500 hidden sm:block">consult.consume</span>
             </Link>
+
+            {/* Desktop Navigation - Grouped Dropdowns */}
             <div className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
-                <button key={item.name} onClick={() => scrollToSection(item.href)} className={`text-sm transition-colors ${activeSection === item.href.substring(1) ? 'font-bold' : 'text-gray-600 hover:text-green-600'}`} style={{ color: activeSection === item.href.substring(1) ? brandColors.primary : undefined }}>{item.name}</button>
+                <div key={item.name} className="relative group">
+                  {item.isLink ? (
+                    <button onClick={() => scrollToSection(item.href!)} className="text-gray-700 hover:text-green-600 py-2 px-2 text-sm font-medium">
+                      {item.name}
+                    </button>
+                  ) : (
+                    <>
+                      <button className="flex items-center space-x-1 text-gray-700 hover:text-green-600 py-2 px-2 text-sm font-medium">
+                        <span>{item.name}</span>
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                      <div className="absolute top-full left-0 w-48 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        {item.dropdown && item.dropdown.map((subItem) => (
+                          <button key={subItem.name} onClick={() => scrollToSection(subItem.href)} className="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">
+                            {subItem.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               ))}
-            </div>
-            <div className="hidden md:flex items-center space-x-3">
               <button onClick={() => scrollToSection('#get-involved')} className="px-4 py-2 rounded-lg text-white transition hover:opacity-90" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
-              <button onClick={() => scrollToSection('#get-involved')} className="px-4 py-2 rounded-lg border-2 transition hover:bg-gray-50" style={{ borderColor: brandColors.primary, color: brandColors.primary }}>PARTNER WITH US</button>
             </div>
+
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden">{mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
           </div>
         </div>
+
+        {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t p-4 space-y-2">
-            {navItems.map((item) => (<button key={item.name} onClick={() => scrollToSection(item.href)} className="block w-full text-left py-2 text-gray-600">{item.name}</button>))}
-            <button onClick={() => scrollToSection('#get-involved')} className="w-full py-2 rounded-lg text-white mt-2" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
-            <button onClick={() => scrollToSection('#get-involved')} className="w-full py-2 rounded-lg border-2 mt-2" style={{ borderColor: brandColors.primary, color: brandColors.primary }}>PARTNER WITH US</button>
-            <Link href="/form-automation" className="block py-2 font-medium" style={{ color: '#D54022' }} onClick={() => setMobileMenuOpen(false)}>Form Automation →</Link>
+          <div className="md:hidden bg-white border-t max-h-[80vh] overflow-y-auto">
+            <div className="px-4 py-2 space-y-1">
+              {navItems.map((item) => (
+                <div key={item.name}>
+                  {item.isLink ? (
+                    <button onClick={() => scrollToSection(item.href!)} className="block w-full text-left py-2 text-gray-700">
+                      {item.name}
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => handleDropdown(item.name)} className="flex justify-between items-center w-full py-2 text-gray-700">
+                        {item.name}
+                        <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === item.name ? 'rotate-180' : ''}`} />
+                      </button>
+                      {openDropdown === item.name && item.dropdown && (
+                        <div className="pl-4 space-y-1 pb-2">
+                          {item.dropdown.map((subItem) => (
+                            <button key={subItem.name} onClick={() => scrollToSection(subItem.href)} className="block w-full text-left py-1 text-gray-500 text-sm">
+                              {subItem.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+              <button onClick={() => scrollToSection('#get-involved')} className="w-full py-2 rounded-lg text-white mt-2" style={{ backgroundColor: brandColors.primary }}>DONATE NOW</button>
+              <Link href="/form-automation" className="block py-2 font-medium" style={{ color: '#D54022' }} onClick={() => setMobileMenuOpen(false)}>Form Automation →</Link>
+            </div>
           </div>
         )}
       </nav>
@@ -166,23 +239,22 @@ export default function EnvirogreenPage() {
         </div>
       </section>
 
-      {/* Vision & Mission Section */}
+      {/* Vision & Mission Section (Strategy) */}
       <section id="vision-mission" className="py-20 px-4" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><Eye className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Vision & Mission</h2></div>
+          <div className="text-center mb-12"><Eye className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Strategy</h2></div>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-2xl font-bold mb-4" style={{ color: brandColors.secondary }}>Vision Statement</h3><p className="text-gray-700">To provide an Economic Impact Environmental Program, bringing sustainable solutions through Early Childhood Development Programs and Low Economic Household Programs.</p></div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-2xl font-bold mb-4" style={{ color: brandColors.secondary }}>Mission Statement</h3><p className="text-gray-700">To educate and inform individuals to reach their full potential through outstanding quality service. We believe the quality of all living environments can always be improved, starting with our Children.</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-2xl font-bold mb-4" style={{ color: brandColors.secondary }}>Mission Statement</h3><p className="text-gray-700">To educate and inform individuals to reach their full potential through outstanding quality service.</p></div>
           </div>
-          <div className="mt-8 bg-gradient-to-r p-6 rounded-2xl text-white text-center" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}><p className="text-lg italic">"This is our Foundation Mantra and Conviction, and it will remain as our corporate culture."</p></div>
         </div>
       </section>
 
       {/* Core Programmes Section */}
       <section id="programmes" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>What We Do – Core Programmes</h2></div>
-          <div className="grid md:grid-cols-3 gap-8">{programmes.map((programme, idx) => (<div key={idx} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow"><div className="mb-4" style={{ color: brandColors.primary }}>{programme.icon}</div><h3 className="text-xl font-bold mb-2" style={{ color: brandColors.primary }}>{programme.title}</h3><p className="text-gray-600 mb-4">{programme.description}</p><ul className="space-y-2">{programme.activities.map((activity, i) => (<li key={i} className="flex items-center gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4" style={{ color: brandColors.secondary }} /> {activity}</li>))}</ul></div>))}</div>
+          <div className="text-center mb-12"><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Core Programmes</h2></div>
+          <div className="grid md:grid-cols-3 gap-8">{programmes.map((programme, idx) => (<div key={idx} className="bg-white rounded-2xl p-6 shadow-lg"><div className="mb-4" style={{ color: brandColors.primary }}>{programme.icon}</div><h3 className="text-xl font-bold mb-2" style={{ color: brandColors.primary }}>{programme.title}</h3><p className="text-gray-600 mb-4">{programme.description}</p><ul className="space-y-2">{programme.activities.map((activity, i) => (<li key={i} className="flex items-center gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4" style={{ color: brandColors.secondary }} /> {activity}</li>))}</ul></div>))}</div>
         </div>
       </section>
 
@@ -229,8 +301,8 @@ export default function EnvirogreenPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12"><MapPin className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Where We Operate</h2></div>
           <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center"><MapPin className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Northern Cape, South Africa – Upington</h3><p className="text-gray-600">The Education levels in the Northern Cape is very low. Most people have no schooling, resulting in high unemployment.</p></div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Response</h3><p className="text-gray-600 mb-4">EnviroGreen Foundation is embarking on a massive campaign to raise awareness on the rights of children as articulated in the Children's Act.</p><div className="bg-red-50 p-4 rounded-lg"><p className="text-red-700 text-sm">Despite the best efforts, children still remain vulnerable to abuse, neglect, and exploitation.</p></div></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg text-center"><MapPin className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Northern Cape, South Africa</h3><p className="text-gray-600">Based in Upington, serving the Northern Cape region.</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Response</h3><p className="text-gray-600 mb-4">EnviroGreen Foundation is embarking on a massive campaign to raise awareness on the rights of children.</p><div className="bg-red-50 p-4 rounded-lg"><p className="text-red-700 text-sm">Despite best efforts, children still remain vulnerable.</p></div></div>
           </div>
         </div>
       </section>
@@ -238,19 +310,19 @@ export default function EnvirogreenPage() {
       {/* Business Model */}
       <section id="business-model" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><Building className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Business Model – Tri-Sector Engagement</h2></div>
+          <div className="text-center mb-12"><Building className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Business Model – Tri-Sector Engagement</h2></div>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.primary }}><Building className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Government</h3><p className="text-gray-600">Co-operative Engagement – We engage all levels of state to ensure all compliance and laws are enforced.</p></div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.secondary }}><Briefcase className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.secondary }} /><h3 className="text-xl font-bold mb-2">Business</h3><p className="text-gray-600">Invested Interest – Create interest to invest more into green solutions and environmental economic support.</p></div>
-            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.accent }}><Users className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.accent }} /><h3 className="text-xl font-bold mb-2">Communities</h3><p className="text-gray-600">Sustainable Economics – We work tirelessly to ensure the most vulnerable communities are protected.</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.primary }}><Building className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.primary }} /><h3 className="text-xl font-bold mb-2">Government</h3><p className="text-gray-600">Co-operative Engagement – Ensuring compliance and laws are enforced.</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.secondary }}><Briefcase className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.secondary }} /><h3 className="text-xl font-bold mb-2">Business</h3><p className="text-gray-600">Invested Interest – Creating green investment opportunities.</p></div>
+            <div className="bg-white rounded-2xl p-8 shadow-lg text-center border-t-4" style={{ borderTopColor: brandColors.accent }}><Users className="w-16 h-16 mx-auto mb-4" style={{ color: brandColors.accent }} /><h3 className="text-xl font-bold mb-2">Communities</h3><p className="text-gray-600">Sustainable Economics – Protecting the most vulnerable.</p></div>
           </div>
         </div>
       </section>
 
-      {/* Specialist Products & Services */}
+      {/* Specialist Services */}
       <section id="specialist" className="py-20 px-4" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><Star className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Specialist Products & Services</h2><p className="text-gray-600">Health and Safety Training – Made Simple, Logical, and Effective</p></div>
+          <div className="text-center mb-12"><Star className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Specialist Services</h2><p className="text-gray-600">Health and Safety Training – Made Simple, Logical, and Effective</p></div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">{trainingCourses.map((course, idx) => (<div key={idx} className="bg-white rounded-xl p-6 shadow-lg flex items-start gap-4"><div className="p-3 rounded-full" style={{ backgroundColor: `${brandColors.primary}20` }}>{course.icon}</div><div><h3 className="font-bold text-lg">{course.title}</h3><p className="text-gray-500 text-sm">{course.description}</p></div></div>))}</div>
           <div className="bg-white rounded-2xl p-8 shadow-lg"><h3 className="text-xl font-bold mb-4" style={{ color: brandColors.primary }}>Ecological & Environmental Technical Solutions</h3><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{technicalSolutions.map((cat, idx) => (<div key={idx}><h4 className="font-semibold mb-2">{cat.title}</h4><ul className="text-sm text-gray-600 space-y-1">{cat.items.map((item, i) => <li key={i}>• {item}</li>)}</ul></div>))}</div></div>
         </div>
@@ -274,7 +346,7 @@ export default function EnvirogreenPage() {
       {/* Our Team */}
       <section id="team" className="py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><Users className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Leadership Team</h2></div>
+          <div className="text-center mb-12"><Users className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Team</h2></div>
           <div className="grid md:grid-cols-2 gap-8">{teamMembers.map((member, idx) => (<div key={idx} className="bg-white rounded-2xl p-8 shadow-lg flex gap-6"><div className="w-24 h-24 rounded-full bg-gradient-to-br flex items-center justify-center text-white text-2xl font-bold" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>{member.initial}</div><div><h3 className="text-xl font-bold">{member.name}</h3><p className="text-green-600 mb-2">{member.title}</p><p className="text-gray-600 text-sm">{member.bio}</p><a href={`mailto:${member.email}`} className="text-sm text-green-600 mt-2 inline-block">{member.email}</a></div></div>))}</div>
         </div>
       </section>
@@ -282,13 +354,13 @@ export default function EnvirogreenPage() {
       {/* Projects & Impact */}
       <section id="projects" className="py-20 px-4" style={{ backgroundColor: brandColors.light }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12"><Target className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Our Projects & Impact</h2></div>
+          <div className="text-center mb-12"><Target className="w-12 h-12 mx-auto mb-4" style={{ color: brandColors.primary }} /><h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: brandColors.primary }}>Projects & Impact</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">{[{ value: '0000', label: 'Children Reached' }, { value: '00', label: 'Communities Served' }, { value: '0000', label: 'Trees Planted' }, { value: '000', label: 'Teachers Trained' }, { value: '00', label: 'Schools Partnered' }].map((stat, idx) => (<div key={idx} className="bg-white rounded-xl p-4 text-center shadow"><div className="text-2xl font-bold" style={{ color: brandColors.primary }}>{stat.value}</div><div className="text-sm text-gray-500">{stat.label}</div></div>))}</div>
           <div className="bg-white rounded-2xl p-8 shadow-lg text-center"><h3 className="text-xl font-bold mb-2">Upington Community Project</h3><p className="text-gray-600 mb-4">Location: Northern Cape, South Africa</p><button className="px-6 py-2 rounded-lg text-white" style={{ backgroundColor: brandColors.primary }}>READ MORE →</button></div>
         </div>
       </section>
 
-      {/* Get Involved - Donation Section (Updated with NPO-style) */}
+      {/* Get Involved - Donation Section */}
       <section id="get-involved" className="py-16 px-4" style={{ backgroundColor: brandColors.white }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
@@ -340,7 +412,7 @@ export default function EnvirogreenPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div><Leaf className="w-8 h-8 text-green-500 mb-4" /><p className="text-gray-400 text-sm">Building Sustainable Futures – One Child, One Community, One Ecosystem at a Time</p><p className="text-gray-500 text-xs mt-4">© 2026 Techfuse Holdings (Pty) Ltd. All rights reserved.</p></div>
-            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#home')} className="text-gray-400 hover:text-white">Home</button></li><li><button onClick={() => scrollToSection('#vision-mission')} className="text-gray-400 hover:text-white">Vision & Mission</button></li><li><button onClick={() => scrollToSection('#programmes')} className="text-gray-400 hover:text-white">Programmes</button></li></ul></div>
+            <div><h4 className="text-white font-semibold mb-4">Quick Links</h4><ul className="space-y-2 text-sm"><li><button onClick={() => scrollToSection('#home')} className="text-gray-400 hover:text-white">Home</button></li><li><button onClick={() => scrollToSection('#vision-mission')} className="text-gray-400 hover:text-white">Strategy</button></li><li><button onClick={() => scrollToSection('#programmes')} className="text-gray-400 hover:text-white">Programmes</button></li></ul></div>
             <div><h4 className="text-white font-semibold mb-4">Contact</h4><p className="text-gray-400 text-sm">Email: envirogreen@techfuseconsult.online</p><p className="text-gray-400 text-sm">Phone: +27 87 821 7338</p></div>
             <div><h4 className="text-white font-semibold mb-4">Location</h4><p className="text-gray-400 text-sm">Northern Cape, South Africa</p></div>
           </div>
