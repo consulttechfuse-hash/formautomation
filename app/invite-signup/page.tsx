@@ -106,19 +106,13 @@ function InviteSignupForm() {
         return;
       }
 
-      // Sign in the user
-      const signInResponse = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!signInResponse.ok) {
-        router.push('/login?message=Account created. Please log in.');
+      if (data.requiresLogin) {
+        // Account created but login failed - redirect to login page
+        router.push('/login?message=Account created! Please log in with your new password.');
         return;
       }
 
-      // Redirect based on role
+      // Success! Redirect based on role
       if (role === 'admin') {
         router.push('/admin/dashboard');
       } else if (role === 'agent') {
