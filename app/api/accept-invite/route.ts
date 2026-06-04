@@ -33,6 +33,8 @@ export async function POST(request: Request) {
 
     if (existing) {
       userId = existing.id;
+      // Update password for existing user
+      await supabaseAdmin.auth.admin.updateUserById(userId, { password });
     } else {
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -88,7 +90,32 @@ export async function POST(request: Request) {
         });
     }
 
-    return NextResponse.json({ success: true, userId, role });
+    // Now sign the user in and create a session
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error('Sign in error:', signInError);
+      // Return success but let user know they need to login manually
+      return NextResponse.json({ 
+        success: true, 
+        userId, 
+        role,
+        requiresLogin: true,
+        message: 'Account created. Please log in.'
+      });
+    }
+
+    // Return success with session
+    return NextResponse.json({ 
+      success: true, 
+      userId, 
+      role,
+      requiresLogin: false,
+      session: signInData.session
+    });
   } catch (error) {
     console.error('Accept invite error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
