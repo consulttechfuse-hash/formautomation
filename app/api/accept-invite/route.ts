@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
+    // Verify the invitation token in user_roles
     const { data: invitation, error: inviteError } = await supabase
       .from('user_roles')
       .select('id')
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 });
     }
 
+    // Check if user exists in Supabase Auth
     const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
     const existing = existingUser.users.find((u: any) => u.email === email);
 
@@ -33,7 +35,6 @@ export async function POST(request: Request) {
 
     if (existing) {
       userId = existing.id;
-      // Update password for existing user
       await supabaseAdmin.auth.admin.updateUserById(userId, { password });
     } else {
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -55,7 +56,8 @@ export async function POST(request: Request) {
       userId = newUser.user.id;
     }
 
-    const { error: updateError } = await supabase
+    // Update user_roles table
+    const { error: updateRoleError } = await supabase
       .from('user_roles')
       .update({
         user_id: userId,
@@ -67,11 +69,11 @@ export async function POST(request: Request) {
       })
       .eq('invitation_token', token);
 
-    if (updateError) {
-      console.error('Update error:', updateError);
-      return NextResponse.json({ error: 'Failed to update user role' }, { status: 500 });
+    if (updateRoleError) {
+      console.error('user_roles update error:', updateRoleError);
     }
 
+    // Update or insert into public.users table
     const { data: existingUserRecord } = await supabase
       .from('users')
       .select('id')
@@ -86,19 +88,36 @@ export async function POST(request: Request) {
           email: email,
           role: role,
           status: 'active',
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          accepted_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
         });
+    } else {
+      await supabase
+        .from('users')
+        .update({
+          email: email,
+          role: role,
+          status: 'active',
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          accepted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
     }
 
-    // Now sign the user in and create a session
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    // Sign the user in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (signInError) {
       console.error('Sign in error:', signInError);
-      // Return success but let user know they need to login manually
       return NextResponse.json({ 
         success: true, 
         userId, 
@@ -108,14 +127,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Return success with session
-    return NextResponse.json({ 
-      success: true, 
-      userId, 
-      role,
-      requiresLogin: false,
-      session: signInData.session
-    });
+    return NextResponse.json({ success: true, userId, role });
   } catch (error) {
     console.error('Accept invite error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
