@@ -516,7 +516,7 @@ export default function AdminDashboard() {
                 </table>
               </div>
             </div>
-            <AdminAgentPerformanceReport agents={agents} />
+            <AdminAgentPerformanceReport />
           </div>
         )}
         

@@ -29,3 +29,5 @@ export async function GET(request: Request) {
     role: invitation.role,
   });
 }
+
+export const dynamic = "force-dynamic";

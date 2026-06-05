@@ -130,3 +130,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to invite agent: ' + (error instanceof Error ? error.message : 'Unknown error')}, { status: 500 });
   }
 }
+
+export const dynamic = "force-dynamic";
