@@ -110,7 +110,8 @@ export default function AdminDashboard() {
     const { data: agentsData } = await supabase
       .from('user_roles')
       .select('*')
-      .eq('role', 'agent');
+      .eq('role', 'agent')
+      .eq('invited_by', id);
     
     setAgentList(agentsData || []);
     
@@ -133,7 +134,6 @@ export default function AdminDashboard() {
   };
 
   const loadAgentStats = async (adminUserId: string) => {
-    // Get all agents under this admin
     const { data: agentsData } = await supabase
       .from('user_roles')
       .select('*')
@@ -143,23 +143,19 @@ export default function AdminDashboard() {
 
     if (agentsData) {
       const agentsWithStats: AgentStats[] = await Promise.all(agentsData.map(async (agent) => {
-        // Get clients assigned to this agent
         const { data: clients } = await supabase
           .from('user_roles')
           .select('*')
           .eq('role', 'client')
           .eq('assigned_admin_id', agent.user_id);
 
-        // Get form completion stats
         let formsSubmitted = 0;
-
         for (const client of (clients || [])) {
           const { data: form01 } = await supabase
             .from('form01_data')
             .select('onboarding_submitted')
             .eq('user_id', client.user_id)
             .single();
-
           if (form01?.onboarding_submitted) {
             formsSubmitted++;
           }
@@ -178,7 +174,6 @@ export default function AdminDashboard() {
           forms_pending: (clients?.length || 0) - formsSubmitted
         };
       }));
-
       setAgents(agentsWithStats);
     }
   };
@@ -234,6 +229,38 @@ export default function AdminDashboard() {
     return <div className="p-8 text-center">Loading admin dashboard...</div>;
   }
 
+  const handleDeleteAgent = async (id: string, email: string) => {
+    if (confirm(`Delete agent ${email}? This will remove all their data.`)) {
+      await supabase.from('user_roles').delete().eq('id', id);
+      await supabase.from('users').delete().eq('email', email);
+      await loadAgents(adminId);
+      alert('Agent deleted');
+    }
+  };
+
+  const handleResendInvite = async (email: string) => {
+    const response = await fetch('/api/admin/invite-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (response.ok) {
+      alert('Invitation resent');
+      await loadAgents(adminId);
+    } else {
+      alert('Failed to resend invitation');
+    }
+  };
+
+  const handleCancelInvite = async (id: string, email: string) => {
+    if (confirm(`Cancel invitation for ${email}?`)) {
+      await supabase.from('user_roles').delete().eq('id', id);
+      await supabase.from('users').delete().eq('email', email).eq('status', 'pending');
+      await loadAgents(adminId);
+      alert('Invitation cancelled');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -257,7 +284,6 @@ export default function AdminDashboard() {
         
         {/* Profile Section */}
         <div className="border-t border-gray-700 p-4 space-y-3">
-          {/* Profile Button */}
           <div className="relative">
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -293,7 +319,6 @@ export default function AdminDashboard() {
             )}
           </div>
           
-          {/* Sign Out Button - Always Visible */}
           <button
             onClick={async () => {
               await supabase.auth.signOut();
@@ -313,7 +338,6 @@ export default function AdminDashboard() {
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
             
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-lg shadow p-6 text-white">
                 <h3 className="text-sm opacity-90">Total Revenue</h3>
@@ -333,7 +357,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdminClientGrowthChart />
               <PaymentSuccessRateChart />
@@ -344,174 +367,243 @@ export default function AdminDashboard() {
         )}
         
         {activeSection === 'agents' && (
-  <div className="bg-white rounded-lg shadow p-6">
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-bold">Agent Management</h2>
-      <button
-        onClick={() => setShowInviteModal(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        + Invite Agent
-      </button>
-    </div>
-    
-    <input
-      type="text"
-      placeholder="Search agents..."
-      value={searchAgent}
-      onChange={(e) => setSearchAgent(e.target.value)}
-      className="w-full p-2 border rounded mb-4"
-    />
-    
-    {/* Pending Invites Section */}
-    <div className="mb-6">
-      <h3 className="font-semibold mb-2 text-gray-700">Pending Invites</h3>
-      {agentList.filter(a => !a.user_id || !a.accepted_at).length === 0 ? (
-        <p className="text-gray-500 text-sm">No pending invites</p>
-      ) : (
-        <div className="space-y-2">
-          {agentList.filter(a => !a.user_id || !a.accepted_at).map(invite => (
-            <div key={invite.id} className="flex justify-between items-center border-b pb-2">
-              <div>
-                <span className="font-medium">{invite.email}</span>
-                <p className="text-xs text-gray-500">
-                  Expires: {invite.invitation_expires_at ? new Date(invite.invitation_expires_at).toLocaleDateString() : "7 days"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
-                <button
-                  onClick={async () => {
-                    const response = await fetch("/api/admin/invite-agent", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ email: invite.email }),
-                    });
-                    if (response.ok) {
-                      alert("Invitation resent");
-                      loadAgents(adminId);
-                    }
-                  }}
-                  className="text-blue-600 hover:text-blue-800 text-xs"
-                >
-                  Resend
-                </button>
-                <button
-                  onClick={async () => {
-                    if (confirm("Cancel invitation for " + invite.email + "?")) {
-                      await supabase.from("user_roles").delete().eq("id", invite.id);
-                      await supabase.from("users").delete().eq("email", invite.email);
-                      loadAgents(adminId);
-                      alert("Invitation cancelled");
-                    }
-                  }}
-                  className="text-red-600 hover:text-red-800 text-xs"
-                >
-                  Cancel
-                </button>
-              </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Agent Management</h2>
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                + Invite Agent
+              </button>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-    
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="p-2 text-left">Agent</th>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Status</th>
-            <th className="p-2 text-left">Clients</th>
-            <th className="p-2 text-left">Completion</th>
-            <th className="p-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {agentList
-            .filter(a => a.email && a.email.toLowerCase().includes(searchAgent.toLowerCase()))
-            .map(agent => {
-              const isActive = agent.user_id && agent.accepted_at;
-              const statusText = isActive ? "Active" : (agent.invitation_token ? "Invited" : "Pending");
-              const statusColor = isActive ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
-              return (
-                <tr key={agent.id} className="border-t">
-                  <td className="p-2">{agent.first_name || agent.last_name ? `${agent.first_name || ""} ${agent.last_name || ""}`.trim() : "-"}</td>
-                  <td className="p-2">{agent.email}</td>
-                  <td className="p-2"><span className={`px-2 py-1 text-xs rounded-full ${statusColor}`}>{statusText}</span></td>
-                  <td className="p-2">-</td>
-                  <td className="p-2">{Math.round(completionRatios[agent.user_id] || 0)}%</td>
-                  <td className="p-2">
-                    {!isActive ? (
+            
+            <input
+              type="text"
+              placeholder="Search agents..."
+              value={searchAgent}
+              onChange={(e) => setSearchAgent(e.target.value)}
+              className="w-full p-2 border rounded mb-4"
+            />
+            
+            {/* Pending Invites Section */}
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2 text-gray-700">Pending Invites</h3>
+              {agentList.filter(a => !a.accepted_at).length === 0 ? (
+                <p className="text-gray-500 text-sm">No pending invites</p>
+              ) : (
+                <div className="space-y-2">
+                  {agentList.filter(a => !a.accepted_at).map(invite => (
+                    <div key={invite.id} className="flex justify-between items-center border-b pb-2">
+                      <div>
+                        <span className="font-medium">{invite.email}</span>
+                        <p className="text-xs text-gray-500">
+                          Expires: {invite.invitation_expires_at ? new Date(invite.invitation_expires_at).toLocaleDateString() : "7 days"}
+                        </p>
+                      </div>
                       <div className="flex gap-2">
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
                         <button
-                          onClick={async () => {
-                            const response = await fetch("/api/admin/invite-agent", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ email: agent.email }),
-                            });
-                            if (response.ok) {
-                              alert("Invitation resent");
-                              loadAgents(adminId);
-                            }
-                          }}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          onClick={() => handleResendInvite(invite.email)}
+                          className="text-blue-600 hover:text-blue-800 text-xs"
                         >
                           Resend
                         </button>
                         <button
-                          onClick={async () => {
-                            if (confirm("Delete invite for " + agent.email + "?")) {
-                              await supabase.from("user_roles").delete().eq("id", agent.id);
-                              await supabase.from("users").delete().eq("email", agent.email);
-                              loadAgents(adminId);
-                              alert("Invitation deleted");
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 text-sm"
+                          onClick={() => handleCancelInvite(invite.id, invite.email)}
+                          className="text-red-600 hover:text-red-800 text-xs"
                         >
-                          Delete
+                          Cancel
                         </button>
                       </div>
-                    ) : (
-                      <button
-                        onClick={async () => {
-                          if (confirm("Delete agent " + agent.email + "? This will remove all their data.")) {
-                            await supabase.from("user_roles").delete().eq("id", agent.id);
-                            await supabase.from("users").delete().eq("email", agent.email);
-                            loadAgents(adminId);
-                            alert("Agent deleted");
-                          }
-                        }}
-                        className="text-red-600 hover:text-red-800 text-sm"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)},
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="p-2 text-left">Agent</th>
+                    <th className="p-2 text-left">Email</th>
+                    <th className="p-2 text-left">Status</th>
+                    <th className="p-2 text-left">Clients</th>
+                    <th className="p-2 text-left">Completion</th>
+                    <th className="p-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {agentList
+                    .filter(a => a.email && a.email.toLowerCase().includes(searchAgent.toLowerCase()))
+                    .map(agent => {
+                      const isActive = agent.accepted_at && agent.user_id;
+                      const statusText = isActive ? "Active" : "Pending";
+                      const statusColor = isActive ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
+                      return (
+                        <tr key={agent.id} className="border-t">
+                          <td className="p-2">{agent.first_name || agent.last_name ? `${agent.first_name || ""} ${agent.last_name || ""}`.trim() : "-"}</td>
+                          <td className="p-2">{agent.email}</td>
+                          <td className="p-2"><span className={`px-2 py-1 text-xs rounded-full ${statusColor}`}>{statusText}</span></td>
+                          <td className="p-2">-</td>
+                          <td className="p-2">{Math.round(completionRatios[agent.user_id] || 0)}%</td>
+                          <td className="p-2">
+                            {!isActive ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleResendInvite(agent.email)}
+                                  className="text-blue-600 hover:text-blue-800 text-sm"
+                                >
+                                  Resend
+                                </button>
+                                <button
+                                  onClick={() => handleCancelInvite(agent.id, agent.email)}
+                                  className="text-red-600 hover:text-red-800 text-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleDeleteAgent(agent.id, agent.email)}
+                                className="text-red-600 hover:text-red-800 text-sm"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
+        {activeSection === 'agentStats' && (
+          <div className="space-y-6">
+            <h1 className="text-2xl font-bold mb-6">Agent Performance</h1>
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="text-lg font-semibold mb-4">Agent Details</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-2 text-left">Email</th>
+                      <th className="p-2 text-left">Invite Sent</th>
+                      <th className="p-2 text-left">Invite Accepted</th>
+                      <th className="p-2 text-left">Last Login</th>
+                      <th className="p-2 text-left">Clients</th>
+                      <th className="p-2 text-left">Forms Completed</th>
+                      <th className="p-2 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agents.map(agent => (
+                      <tr key={agent.id} className="border-t">
+                        <td className="p-2">{agent.email}</td>
+                        <td className="p-2">{formatDate(agent.invite_sent_at)}</td>
+                        <td className="p-2">{formatDate(agent.invite_accepted_at)}</td>
+                        <td className="p-2">{formatDate(agent.last_login_at)}</td>
+                        <td className="p-2">{agent.client_count}</td>
+                        <td className="p-2">{agent.forms_completed}</td>
+                        <td className="p-2">{getStatusBadge(agent)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <AdminAgentPerformanceReport agents={agents} />
+          </div>
+        )}
+        
+        {activeSection === 'clients' && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold mb-4">Client Management</h2>
+            <input
+              type="text"
+              placeholder="Search clients..."
+              value={searchClient}
+              onChange={(e) => {
+                setSearchClient(e.target.value);
+                setShowClientResults(true);
+              }}
+              className="w-full p-2 border rounded mb-4"
+            />
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="p-2 text-left">Email</th>
+                    <th className="p-2 text-left">Status</th>
+                    <th className="p-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clients
+                    .filter(c => c.email && c.email.toLowerCase().includes(searchClient.toLowerCase()))
+                    .map(client => (
+                      <tr key={client.id} className="border-t">
+                        <td className="p-2">{client.email}</td>
+                        <td className="p-2">{client.has_paid ? 'Paid' : 'Pending'}</td>
+                        <td className="p-2">
+                          <button className="text-blue-600 hover:text-blue-800">View</button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
+        {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
+        
+        {activeSection === 'profile' && <UserProfile />}
+      </div>
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold">Invite New Agent</h2>
+              <button onClick={() => setShowInviteModal(false)} className="text-gray-500 text-2xl">&times;</button>
+            </div>
+            <div className="p-4">
+              <input
+                type="email"
+                placeholder="agent@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="w-full p-2 border rounded mb-4"
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setShowInviteModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                <button
+                  onClick={async () => {
+                    setInviting(true);
+                    const response = await fetch('/api/admin/invite-agent', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: inviteEmail }),
                     });
-                    const result = await response.json();
                     if (response.ok) {
                       alert('Invitation sent successfully');
                       setInviteEmail('');
                       setShowInviteModal(false);
+                      await loadAgents(adminId);
                     } else {
-                      alert(result.error);
+                      const result = await response.json();
+                      alert(result.error || 'Failed to send invitation');
                     }
                     setInviting(false);
                   }}
                   disabled={inviting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white rounded"
                 >
                   {inviting ? 'Sending...' : 'Send Invitation'}
                 </button>
