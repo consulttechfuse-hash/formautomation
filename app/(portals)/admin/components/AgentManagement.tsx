@@ -35,6 +35,9 @@ export default function AgentManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const supabase = createClient();
 
+  // Version check to force refresh
+  console.log('AgentManagement v2.0 loaded');
+
   useEffect(() => {
     loadAgents();
     loadPendingInvites();
@@ -124,7 +127,6 @@ export default function AgentManagement() {
     
     setLoading(true);
     
-    // Delete from user_roles
     const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
@@ -136,7 +138,6 @@ export default function AgentManagement() {
       return;
     }
     
-    // Also delete from users table if it exists as pending
     const { error: userError } = await supabase
       .from('users')
       .delete()
@@ -154,11 +155,10 @@ export default function AgentManagement() {
   };
 
   const handleDeleteAgent = async (agentId: string, email: string) => {
-    if (!confirm(`Delete agent ${email}? This will remove all their data.`)) return;
+    if (!confirm(`Delete agent ${email}? This action cannot be undone.`)) return;
     
     setLoading(true);
     
-    // Delete from user_roles
     const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
@@ -170,7 +170,6 @@ export default function AgentManagement() {
       return;
     }
     
-    // Delete from users table
     const { error: userError } = await supabase
       .from('users')
       .delete()
@@ -195,7 +194,7 @@ export default function AgentManagement() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Agent Management</h2>
+        <h2 className="text-xl font-bold">Agent Management v2</h2>
         <button
           onClick={() => setShowInviteModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -210,7 +209,6 @@ export default function AgentManagement() {
         </div>
       )}
 
-      {/* Search Bar */}
       <div className="bg-white rounded-lg shadow p-4">
         <input
           type="text"
@@ -221,61 +219,9 @@ export default function AgentManagement() {
         />
       </div>
 
-      {/* Active Agents Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Agent</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Email</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Phone</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Joined</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Status</th>
-              <th className="p-3 text-left text-sm font-medium text-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredAgents.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-4 text-center text-gray-500">
-                  No active agents found
-                </td>
-              </tr>
-            ) : (
-              filteredAgents.map(agent => (
-                <tr key={agent.id} className="border-t">
-                  <td className="p-3">
-                    {agent.first_name || agent.last_name ? 
-                      `${agent.first_name || ''} ${agent.last_name || ''}`.trim() : 
-                      '-'
-                    }
-                  </td>
-                  <td className="p-3">{agent.email}</td>
-                  <td className="p-3">{agent.phone_number || '-'}</td>
-                  <td className="p-3">{new Date(agent.created_at).toLocaleDateString()}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                      Active
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleDeleteAgent(agent.id, agent.email)}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
       {/* Pending Invites Section */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold mb-3">Pending Invites</h3>
+        <h3 className="font-semibold mb-3">Pending Invites ({pendingInvites.length})</h3>
         {pendingInvites.length === 0 ? (
           <p className="text-gray-500 text-sm">No pending invites</p>
         ) : (
@@ -292,13 +238,13 @@ export default function AgentManagement() {
                   <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
                   <button
                     onClick={() => handleResendInvite(invite.email)}
-                    className="text-blue-600 hover:text-blue-800 text-xs"
+                    className="text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Resend
                   </button>
                   <button
                     onClick={() => handleCancelInvite(invite.id, invite.email)}
-                    className="text-red-600 hover:text-red-800 text-xs"
+                    className="text-red-600 hover:text-red-800 text-sm"
                   >
                     Cancel
                   </button>
@@ -307,6 +253,61 @@ export default function AgentManagement() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Active Agents Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <h3 className="font-semibold p-4 border-b">Active Agents ({filteredAgents.length})</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Agent</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Email</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Phone</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Joined</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Status</th>
+                <th className="p-3 text-left text-sm font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAgents.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
+                    No active agents found
+                  </td>
+                </tr>
+              ) : (
+                filteredAgents.map(agent => (
+                  <tr key={agent.id} className="border-t">
+                    <td className="p-3">
+                      {agent.first_name || agent.last_name ? 
+                        `${agent.first_name || ''} ${agent.last_name || ''}`.trim() : 
+                        '-'
+                      }
+                    </td>
+                    <td className="p-3">{agent.email}</td>
+                    <td className="p-3">{agent.phone_number || '-'}</td>
+                    <td className="p-3">{new Date(agent.created_at).toLocaleDateString()}</td>
+                    <td className="p-3">
+                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleDeleteAgent(agent.id, agent.email)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Invite Modal */}
