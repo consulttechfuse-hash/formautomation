@@ -146,18 +146,34 @@ export default function AdminManagement() {
     }
   };
 
-  const handleCancelInvite = async (id: string) => {
-    if (!confirm('Cancel this invitation?')) return;
-    const { error } = await supabase
+  const handleCancelInvite = async (id: string, email: string) => {
+    if (!confirm('Cancel this invitation? This will remove the pending invite permanently.')) return;
+    
+    // Delete from user_roles
+    const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
       .eq('id', id);
-    if (!error) {
-      alert('Invitation cancelled');
-      loadPendingInvites();
-    } else {
+    
+    if (roleError) {
       alert('Failed to cancel invitation');
+      return;
     }
+    
+    // Also delete from public.users if it exists as pending
+    const { error: userError } = await supabase
+      .from('users')
+      .delete()
+      .eq('email', email)
+      .eq('status', 'pending');
+    
+    if (userError) {
+      console.error('Failed to delete from users:', userError);
+    }
+    
+    alert('Invitation cancelled');
+    loadPendingInvites();
+    loadAdmins();
   };
 
   const sortedAgents = [...adminAgents].sort((a, b) => {
@@ -259,7 +275,7 @@ export default function AdminManagement() {
                     Resend
                   </button>
                   <button
-                    onClick={() => handleCancelInvite(invite.id)}
+                    onClick={() => handleCancelInvite(invite.id, invite.email)}
                     className="text-red-600 hover:text-red-800 text-xs"
                   >
                     Cancel
