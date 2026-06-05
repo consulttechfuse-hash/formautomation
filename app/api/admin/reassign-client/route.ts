@@ -27,34 +27,8 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
 
-    // Get current agent to decrement client count
-    const { data: currentClient } = await supabase
-      .from('users')
-      .select('assigned_agent_id')
-      .eq('id', clientId)
-      .single();
-
-    if (currentClient?.assigned_agent_id) {
-      // Decrement old agent's client count
-      const { data: oldAgent } = await supabase
-        .from('users')
-        .select('client_count')
-        .eq('id', currentClient.assigned_agent_id)
-        .single();
-      
-      if (oldAgent) {
-        await supabase
-          .from('users')
-          .update({
-            client_count: Math.max((oldAgent.client_count || 1) - 1, 0),
-            updated_at: now,
-          })
-          .eq('id', currentClient.assigned_agent_id);
-      }
-    }
-
     // Update client in user_roles
-    const { error: clientRoleError } = await supabase
+    const { error: updateError } = await supabase
       .from('user_roles')
       .update({
         assigned_agent_id: newAgentId,
@@ -62,35 +36,9 @@ export async function POST(request: Request) {
       })
       .eq('user_id', clientId);
 
-    if (clientRoleError) {
-      console.error('Error updating user_roles:', clientRoleError);
+    if (updateError) {
+      console.error('Error reassigning client:', updateError);
       return NextResponse.json({ error: 'Failed to reassign client' }, { status: 500 });
-    }
-
-    // Update client in users table
-    await supabase
-      .from('users')
-      .update({
-        assigned_agent_id: newAgentId,
-        updated_at: now,
-      })
-      .eq('id', clientId);
-
-    // Increment new agent's client count
-    const { data: newAgent } = await supabase
-      .from('users')
-      .select('client_count')
-      .eq('id', newAgentId)
-      .single();
-
-    if (newAgent) {
-      await supabase
-        .from('users')
-        .update({
-          client_count: (newAgent.client_count || 0) + 1,
-          updated_at: now,
-        })
-        .eq('id', newAgentId);
     }
 
     return NextResponse.json({ success: true });

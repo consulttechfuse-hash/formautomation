@@ -1,254 +1,243 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ConsentPage() {
-  const [agreed, setAgreed] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [consentHtml, setConsentHtml] = useState('')
-  const [formData, setFormData] = useState({
-    full_names: '',
-    id_passport: '',
-    address: '',
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [userData, setUserData] = useState({
     email: '',
-    mobile: ''
-  })
-  const router = useRouter()
-  const supabase = createClient()
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    address: '',
+    id_number: '',
+  });
+  const [consented, setConsented] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    loadConsentHtml()
-  }, [])
+    loadUserData();
+  }, []);
 
-  const loadConsentHtml = async () => {
-    const { data, error } = await supabase
-      .from('consents')
-      .select('html_content')
-      .eq('cont_key', 'consent')
-      .single()
-
-    if (data?.html_content) {
-      setConsentHtml(data.html_content)
-    } else {
-      console.error('Error loading consent:', error)
-    }
-  }
-
-  const capitalizeFirst = (str: string) => {
-    return str.split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ')
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    let formattedValue = value
-
-    if (name === 'full_names') {
-      formattedValue = capitalizeFirst(value)
-    }
-    if (name === 'id_passport') {
-      formattedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '')
-    }
-    if (name === 'address') {
-      formattedValue = capitalizeFirst(value)
-    }
-    if (name === 'mobile') {
-      let cleaned = value.replace(/[^\d+]/g, '')
-      if (cleaned && !cleaned.startsWith('+')) {
-        cleaned = '+' + cleaned
+  const loadUserData = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
       }
-      formattedValue = cleaned
-    }
-    if (name === 'email') {
-      formattedValue = value.toLowerCase()
-    }
 
-    setFormData({ ...formData, [name]: formattedValue })
-  }
+      // Get user data from user_roles
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('first_name, last_name, phone_number, email, address, id_number')
+        .eq('user_id', user.id)
+        .single();
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
+      if (userRole) {
+        setUserData({
+          email: userRole.email || user.email || '',
+          first_name: userRole.first_name || '',
+          last_name: userRole.last_name || '',
+          phone_number: userRole.phone_number || '',
+          address: userRole.address || '',
+          id_number: userRole.id_number || '',
+        });
+      }
+    } catch (err) {
+      console.error('Error loading user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  async function handleAccept() {
-    if (!agreed) {
-      alert('Please accept the terms')
-      return
-    }
-
-    if (!formData.full_names) {
-      alert('Please enter your Full Names')
-      return
-    }
-    if (!formData.id_passport) {
-      alert('Please enter your ID / Passport Number')
-      return
-    }
-    if (!formData.address) {
-      alert('Please enter your Address')
-      return
-    }
-    if (!formData.email) {
-      alert('Please enter your Email')
-      return
-    }
-    if (!validateEmail(formData.email)) {
-      alert('Please enter a valid email address (name@domain.com)')
-      return
-    }
-    if (!formData.mobile) {
-      alert('Please enter your Mobile number')
-      return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!consented) {
+      setError('You must consent to continue');
+      return;
     }
 
-    setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
+    if (!userData.address.trim()) {
+      setError('Please enter your address');
+      return;
     }
 
-    const consentHtmlWithData = `
-      <h3>Consent Form - ${formData.full_names}</h3>
-      <p><strong>ID/Passport:</strong> ${formData.id_passport}</p>
-      <p><strong>Address:</strong> ${formData.address}</p>
-      <p><strong>Email:</strong> ${formData.email}</p>
-      <p><strong>Mobile:</strong> ${formData.mobile}</p>
-      <hr/>
-      ${consentHtml}
-    `
-
-    const { error: saveError } = await supabase
-      .from('generated_forms')
-      .upsert({
-        user_id: user.id,
-        user_email: user.email,
-        form_number: 0,
-        filled_html: consentHtmlWithData,
-        is_locked: true,
-        is_submitted: true,
-        submitted_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,form_number'
-      })
-
-    if (saveError) {
-      console.error('Error saving consent:', saveError)
-      alert('Error saving consent. Please try again.')
-      setLoading(false)
-      return
+    if (!userData.id_number.trim()) {
+      setError('Please enter your ID/Passport number');
+      return;
     }
 
-    await supabase.from('users').update({ has_consented: true }).eq('id', user.id)
+    setSaving(true);
+    setError('');
 
-    setLoading(false)
-    router.push('/client/select-admin')
-  }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Session expired');
+        setSaving(false);
+        return;
+      }
 
-  const handleBack = () => {
-    router.push('/client/dashboard')
+      // Save address and ID to user_roles
+      const { error: updateError } = await supabase
+        .from('user_roles')
+        .update({
+          address: userData.address,
+          id_number: userData.id_number,
+          consent_given: true,
+          consent_given_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        setError('Failed to save your information');
+        setSaving(false);
+        return;
+      }
+
+      // Also update users table
+      await supabase
+        .from('users')
+        .update({
+          address: userData.address,
+          id_number: userData.id_number,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      // Save consent record
+      await supabase
+        .from('consents')
+        .insert({
+          user_id: user.id,
+          admin_id: null,
+          html_content: 'Consent given for DocControl services',
+          html_content_version: '1.0',
+          ip_address: '',
+          cont_key: 'doccontrol_consent',
+          title: 'DocControl Service Consent',
+          created_at: new Date().toISOString(),
+        });
+
+      // Redirect to select admin page
+      router.push('/client/select-admin');
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Consent & Declaration</h1>
-
-      <div className="border rounded-lg p-6 bg-gray-50 mb-6 h-96 overflow-y-auto text-sm">
-        <div dangerouslySetInnerHTML={{ __html: consentHtml }} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-        <div>
-          <label className="block text-sm font-medium mb-1">Full Names *</label>
-          <input
-            type="text"
-            name="full_names"
-            value={formData.full_names}
-            onChange={handleInputChange}
-            className="w-full border rounded-lg px-4 py-2"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">Capitalizes first letter of each word</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-6">
+          <Link href="/" className="inline-block">
+            <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
+          </Link>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">ID / Passport Number *</label>
-          <input
-            type="text"
-            name="id_passport"
-            value={formData.id_passport}
-            onChange={handleInputChange}
-            className="w-full border rounded-lg px-4 py-2"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">Uppercase letters and numbers only</p>
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <h1 className="text-2xl font-bold text-center mb-2">Consent & Additional Information</h1>
+          <p className="text-gray-600 text-center mb-6">
+            Please provide your consent and complete the information below
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Read-only user info */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h2 className="font-semibold mb-3">Your Information</h2>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-gray-500">Name:</span> {userData.first_name} {userData.last_name}</div>
+                <div><span className="text-gray-500">Email:</span> {userData.email}</div>
+                <div><span className="text-gray-500">Phone:</span> {userData.phone_number}</div>
+              </div>
+            </div>
+
+            {/* Address Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Residential / Postal Address <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={userData.address}
+                onChange={(e) => setUserData({ ...userData, address: e.target.value })}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Street address, city, postal code"
+                required
+                disabled={saving}
+              />
+            </div>
+
+            {/* ID/Passport Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                ID / Passport Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={userData.id_number}
+                onChange={(e) => setUserData({ ...userData, id_number: e.target.value })}
+                className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your ID or Passport number"
+                required
+                disabled={saving}
+              />
+            </div>
+
+            {/* Consent Checkbox */}
+            <div className="border-t pt-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consented}
+                  onChange={(e) => setConsented(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-blue-600"
+                  disabled={saving}
+                />
+                <span className="text-gray-700">
+                  I hereby consent to the collection and processing of my personal information 
+                  for the purpose of providing DocControl services. I confirm that the information 
+                  provided is true and correct.
+                </span>
+              </label>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving || !consented}
+              className="w-full bg-blue-600 text-white rounded-lg px-4 py-3 hover:bg-blue-700 transition-colors disabled:opacity-50 font-semibold"
+            >
+              {saving ? 'Saving...' : 'Continue to Admin Selection'}
+            </button>
+          </form>
         </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium mb-1">Address *</label>
-          <input
-            type="text"
-            name="address"
-            value={formData.address}
-            onChange={handleInputChange}
-            className="w-full border rounded-lg px-4 py-2"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">Capitalizes first letter</p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Email *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            className="w-full border rounded-lg px-4 py-2"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">Must be valid email format (name@domain.com)</p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Mobile / Telephone *</label>
-          <input
-            type="tel"
-            name="mobile"
-            value={formData.mobile}
-            onChange={handleInputChange}
-            placeholder="+27123456789"
-            className="w-full border rounded-lg px-4 py-2"
-            required
-          />
-          <p className="text-xs text-gray-400 mt-1">Starts with +, numbers only</p>
-        </div>
-      </div>
-
-      <label className="flex items-center gap-3 mb-6">
-        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-        <span>This selection I am consenting and declare to all Terms and Conditions, Privacy Policy of Techfuse Consulting, Operating Service for Techfuse Holdings (Pty) Ltd.</span>
-      </label>
-
-      <div className="flex gap-4">
-        <button 
-          onClick={handleBack} 
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-        >
-          ← Back to Dashboard
-        </button>
-        <button 
-          onClick={handleAccept} 
-          disabled={loading} 
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 cursor-pointer disabled:opacity-50"
-        >
-          {loading ? 'Processing...' : 'Accept & Continue →'}
-        </button>
       </div>
     </div>
-  )
+  );
 }
