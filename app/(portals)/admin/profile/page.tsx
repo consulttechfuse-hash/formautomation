@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
+// Force no caching
+export const dynamic = 'force-dynamic';
+
 export default function AdminProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [profile, setProfile] = useState({
     first_name: '',
     last_name: '',
@@ -19,40 +23,47 @@ export default function AdminProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Add timestamp to bypass cache
+    const timestamp = Date.now();
+    console.log('Profile page version: 2.0 with API at', timestamp);
     loadProfile();
   }, []);
 
   const loadProfile = async () => {
     setLoading(true);
-    setMessage('');
+    setError('');
     
     try {
-      // Check if logged in
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
       }
 
-      // Fetch profile from our API
-      const response = await fetch('/api/admin/profile');
+      console.log('Calling API: /api/admin/profile');
+      const response = await fetch('/api/admin/profile', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to load profile');
       }
 
-      if (data.profile) {
-        setProfile({
-          first_name: data.profile.first_name || '',
-          last_name: data.profile.last_name || '',
-          email: data.profile.email || user.email || '',
-          phone_number: data.profile.phone_number || '',
-        });
-      }
-    } catch (error: any) {
-      console.error('Load error:', error);
-      setMessage(error.message);
+      console.log('API response:', data);
+      setProfile({
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        email: data.email || user.email || '',
+        phone_number: data.phone_number || '',
+      });
+    } catch (err: any) {
+      console.error('Load error:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -61,7 +72,8 @@ export default function AdminProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setMessage('');
+    setError('');
+    setSuccess('');
 
     try {
       const response = await fetch('/api/admin/profile', {
@@ -80,10 +92,10 @@ export default function AdminProfilePage() {
         throw new Error(data.error || 'Failed to save profile');
       }
 
-      setMessage('Profile saved successfully!');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (error: any) {
-      setMessage(error.message);
+      setSuccess('Profile saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setSaving(false);
     }
@@ -101,9 +113,15 @@ export default function AdminProfilePage() {
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">My Profile</h1>
       
-      {message && (
-        <div className={`mb-4 p-3 rounded ${message.includes('success') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {message}
+      {error && (
+        <div className="mb-4 p-3 rounded bg-red-100 text-red-700">
+          Error: {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-4 p-3 rounded bg-green-100 text-green-700">
+          {success}
         </div>
       )}
 
