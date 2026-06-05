@@ -20,13 +20,11 @@ function ClientSignupForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verifying, setVerifying] = useState(true);
-  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Get current session
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         console.log('Auth check - user:', user?.email);
@@ -38,25 +36,7 @@ function ClientSignupForm() {
           return;
         }
         
-        // User is authenticated
         setEmail(user.email || (emailParam ? decodeURIComponent(emailParam) : ''));
-        
-        // Check if user already has profile data
-        const { data: userRole, error: roleError } = await supabase
-          .from('user_roles')
-          .select('first_name, last_name')
-          .eq('user_id', user.id)
-          .single();
-        
-        console.log('User role check:', userRole);
-        
-        if (userRole && userRole.first_name && userRole.last_name) {
-          // User already completed signup
-          setAlreadyCompleted(true);
-          setVerifying(false);
-          return;
-        }
-        
         setVerifying(false);
       } catch (err) {
         console.error('Auth check error:', err);
@@ -67,13 +47,6 @@ function ClientSignupForm() {
     
     checkAuth();
   }, [supabase.auth, emailParam]);
-
-  // Redirect if already completed
-  useEffect(() => {
-    if (alreadyCompleted) {
-      router.push('/client/dashboard');
-    }
-  }, [alreadyCompleted, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,20 +95,30 @@ function ClientSignupForm() {
       
       if (updateError) {
         console.error('Password update error:', updateError);
-        // Continue anyway - password might already be set
       }
       
-      // Check if user_roles exists
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
       const finalEmail = email || user.email || '';
+      const now = new Date().toISOString();
       
-      if (!existingRole) {
-        const { error: insertError } = await supabase
+      // FIRST: Try to update existing user_roles
+      let roleError = null;
+      
+      // Try updating with standard column names
+      const { error: updateRoleError } = await supabase
+        .from('user_roles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          updated_at: now,
+        })
+        .eq('user_id', user.id);
+      
+      if (updateRoleError) {
+        console.log('Update failed, trying insert:', updateRoleError);
+        
+        // If update fails, try inserting
+        const { error: insertRoleError } = await supabase
           .from('user_roles')
           .insert({
             user_id: user.id,
@@ -148,39 +131,32 @@ function ClientSignupForm() {
             onboarding_complete: false,
             onboarding_submitted: false,
             has_paid: false,
-            created_at: new Date().toISOString(),
+            created_at: now,
           });
         
-        if (insertError) {
-          console.error('Insert user_roles error:', insertError);
-          setError('Failed to save profile');
-          setLoading(false);
-          return;
-        }
-      } else {
-        const { error: updateRoleError } = await supabase
-          .from('user_roles')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-          })
-          .eq('user_id', user.id);
-        
-        if (updateRoleError) {
-          console.error('Update user_roles error:', updateRoleError);
+        roleError = insertRoleError;
+        if (insertRoleError) {
+          console.error('Insert user_roles error:', insertRoleError);
         }
       }
       
-      // Check users table
-      const { data: existingUser } = await supabase
+      // SECOND: Update users table
+      const { error: updateUserError } = await supabase
         .from('users')
-        .select('id')
-        .eq('id', user.id)
-        .single();
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          role: 'client',
+          status: 'active',
+          updated_at: now,
+        })
+        .eq('id', user.id);
       
-      if (!existingUser) {
-        await supabase
+      if (updateUserError) {
+        console.log('Update users failed, trying insert:', updateUserError);
+        
+        const { error: insertUserError } = await supabase
           .from('users')
           .insert({
             id: user.id,
@@ -190,21 +166,17 @@ function ClientSignupForm() {
             first_name: firstName,
             last_name: lastName,
             phone_number: phoneNumber,
-            created_at: new Date().toISOString(),
+            created_at: now,
           });
-      } else {
-        await supabase
-          .from('users')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user.id);
+        
+        if (insertUserError) {
+          console.error('Insert users error:', insertUserError);
+        }
       }
       
-      // Success! Redirect to client dashboard
+      console.log('Profile saved - Name:', firstName, lastName);
+      
+      // Redirect to client dashboard
       router.push('/client/dashboard');
     } catch (err) {
       console.error('Submit error:', err);
