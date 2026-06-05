@@ -11,6 +11,9 @@ interface Agent {
   assigned_admin_id: string;
   created_at: string;
   accepted_at: string | null;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
 }
 
 interface PendingInvite {
@@ -19,6 +22,7 @@ interface PendingInvite {
   invitation_token: string;
   invitation_expires_at: string;
   created_at: string;
+  role: string;
 }
 
 export default function AgentManagement() {
@@ -28,6 +32,7 @@ export default function AgentManagement() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function AgentManagement() {
 
     const { data } = await supabase
       .from('user_roles')
-      .select('id, user_id, email, role, assigned_admin_id, created_at, accepted_at')
+      .select('id, user_id, email, role, assigned_admin_id, created_at, accepted_at, first_name, last_name, phone_number')
       .eq('role', 'agent')
       .eq('assigned_admin_id', user.id)
       .not('user_id', 'is', null);
@@ -55,7 +60,7 @@ export default function AgentManagement() {
 
     const { data } = await supabase
       .from('user_roles')
-      .select('id, email, invitation_token, invitation_expires_at, created_at')
+      .select('id, email, invitation_token, invitation_expires_at, created_at, role')
       .eq('role', 'agent')
       .eq('invited_by', user.id)
       .is('user_id', null)
@@ -87,6 +92,7 @@ export default function AgentManagement() {
       setInviteEmail('');
       setShowInviteModal(false);
       await loadPendingInvites();
+      setTimeout(() => setMessage(''), 3000);
     } else {
       setMessage(`❌ Error: ${result.error}`);
     }
@@ -101,66 +107,90 @@ export default function AgentManagement() {
       body: JSON.stringify({ email }),
     });
 
+    const result = await response.json();
+
     if (response.ok) {
       setMessage(`✅ Invitation resent to ${email}`);
       await loadPendingInvites();
+      setTimeout(() => setMessage(''), 3000);
     } else {
-      const result = await response.json();
       setMessage(`❌ Error: ${result.error}`);
     }
     setLoading(false);
   };
 
-  const handleCancelInvite = async (id: string) => {
-    if (!confirm('Cancel this invitation?')) return;
+  const handleCancelInvite = async (id: string, email: string) => {
+    if (!confirm(`Cancel invitation for ${email}?`)) return;
     
-    const { error } = await supabase
+    setLoading(true);
+    
+    // Delete from user_roles
+    const { error: roleError } = await supabase
       .from('user_roles')
       .delete()
       .eq('id', id);
     
-    if (!error) {
-      setMessage('✅ Invitation cancelled');
-      await loadPendingInvites();
-    } else {
-      setMessage('❌ Failed to cancel invitation');
-    }
-  };
-
-  // NEW: Delete Agent Function
-  const handleDeleteAgent = async (agent: Agent) => {
-    if (!confirm(`Are you sure you want to remove ${agent.email} as an agent? This action cannot be undone.`)) return;
-    
-    setLoading(true);
-    
-    // First, check if this agent has any assigned clients
-    const { data: assignedClients, error: clientCheckError } = await supabase
-      .from('user_roles')
-      .select('id, email')
-      .eq('role', 'client')
-      .eq('assigned_admin_id', agent.user_id);
-    
-    if (assignedClients && assignedClients.length > 0) {
-      setMessage(`❌ Cannot delete agent ${agent.email} because they have ${assignedClients.length} assigned client(s). Please reassign clients first.`);
+    if (roleError) {
+      setMessage(`❌ Failed to cancel invitation`);
       setLoading(false);
       return;
     }
     
-    // Delete the agent from user_roles
-    const { error: deleteError } = await supabase
-      .from('user_roles')
+    // Also delete from users table if it exists as pending
+    const { error: userError } = await supabase
+      .from('users')
       .delete()
-      .eq('id', agent.id);
+      .eq('email', email)
+      .eq('status', 'pending');
     
-    if (deleteError) {
-      setMessage(`❌ Failed to delete agent: ${deleteError.message}`);
-    } else {
-      setMessage(`✅ Agent ${agent.email} has been removed`);
-      await loadAgents();
+    if (userError) {
+      console.error('Failed to delete from users:', userError);
     }
     
+    setMessage(`✅ Invitation cancelled for ${email}`);
+    await loadPendingInvites();
+    setTimeout(() => setMessage(''), 3000);
     setLoading(false);
   };
+
+  const handleDeleteAgent = async (agentId: string, email: string) => {
+    if (!confirm(`Delete agent ${email}? This will remove all their data.`)) return;
+    
+    setLoading(true);
+    
+    // Delete from user_roles
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('id', agentId);
+    
+    if (roleError) {
+      setMessage(`❌ Failed to delete agent`);
+      setLoading(false);
+      return;
+    }
+    
+    // Delete from users table
+    const { error: userError } = await supabase
+      .from('users')
+      .delete()
+      .eq('email', email);
+    
+    if (userError) {
+      console.error('Failed to delete from users:', userError);
+    }
+    
+    setMessage(`✅ Agent ${email} deleted`);
+    await loadAgents();
+    setTimeout(() => setMessage(''), 3000);
+    setLoading(false);
+  };
+
+  const filteredAgents = agents.filter(agent =>
+    agent.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (agent.first_name && agent.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (agent.last_name && agent.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="space-y-6">
@@ -168,83 +198,109 @@ export default function AgentManagement() {
         <h2 className="text-xl font-bold">Agent Management</h2>
         <button
           onClick={() => setShowInviteModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           + Invite Agent
         </button>
       </div>
 
       {message && (
-        <div className={`p-3 rounded-lg ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+        <div className={`p-3 rounded ${message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
           {message}
         </div>
       )}
 
-      {/* Pending Invites */}
-      {pendingInvites.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="font-semibold">Pending Invites</h3>
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-              {pendingInvites.length} pending
-            </span>
-          </div>
+      {/* Search Bar */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <input
+          type="text"
+          placeholder="Search agents by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Active Agents Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Agent</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Email</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Phone</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Joined</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Status</th>
+              <th className="p-3 text-left text-sm font-medium text-gray-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredAgents.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-4 text-center text-gray-500">
+                  No active agents found
+                </td>
+              </tr>
+            ) : (
+              filteredAgents.map(agent => (
+                <tr key={agent.id} className="border-t">
+                  <td className="p-3">
+                    {agent.first_name || agent.last_name ? 
+                      `${agent.first_name || ''} ${agent.last_name || ''}`.trim() : 
+                      '-'
+                    }
+                  </td>
+                  <td className="p-3">{agent.email}</td>
+                  <td className="p-3">{agent.phone_number || '-'}</td>
+                  <td className="p-3">{new Date(agent.created_at).toLocaleDateString()}</td>
+                  <td className="p-3">
+                    <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                      Active
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => handleDeleteAgent(agent.id, agent.email)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pending Invites Section */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="font-semibold mb-3">Pending Invites</h3>
+        {pendingInvites.length === 0 ? (
+          <p className="text-gray-500 text-sm">No pending invites</p>
+        ) : (
           <div className="space-y-2">
-            {pendingInvites.map((invite) => (
+            {pendingInvites.map(invite => (
               <div key={invite.id} className="flex justify-between items-center border-b pb-2">
                 <div>
-                  <p className="font-medium">{invite.email}</p>
+                  <span className="font-medium">{invite.email}</span>
                   <p className="text-xs text-gray-500">
                     Expires: {new Date(invite.invitation_expires_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
                   <button
                     onClick={() => handleResendInvite(invite.email)}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    className="text-blue-600 hover:text-blue-800 text-xs"
                   >
                     Resend
                   </button>
                   <button
-                    onClick={() => handleCancelInvite(invite.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    onClick={() => handleCancelInvite(invite.id, invite.email)}
+                    className="text-red-600 hover:text-red-800 text-xs"
                   >
                     Cancel
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Active Agents */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-semibold">Active Agents</h3>
-          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-            {agents.length} active
-          </span>
-        </div>
-        {agents.length === 0 ? (
-          <p className="text-gray-500 text-sm">No agents assigned yet</p>
-        ) : (
-          <div className="space-y-2">
-            {agents.map((agent) => (
-              <div key={agent.id} className="flex justify-between items-center border-b pb-2">
-                <div>
-                  <p className="font-medium">{agent.email}</p>
-                  <p className="text-xs text-gray-500">
-                    Since: {new Date(agent.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleDeleteAgent(agent)}
-                    disabled={loading}
-                    className="text-red-600 hover:text-red-800 text-sm disabled:opacity-50"
-                  >
-                    Delete
                   </button>
                 </div>
               </div>
@@ -270,14 +326,8 @@ export default function AgentManagement() {
                 className="w-full p-2 border rounded mb-4"
               />
               <div className="flex justify-end gap-2">
-                <button onClick={() => setShowInviteModal(false)} className="px-4 py-2 border rounded">
-                  Cancel
-                </button>
-                <button
-                  onClick={handleInvite}
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                >
+                <button onClick={() => setShowInviteModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                <button onClick={handleInvite} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">
                   {loading ? 'Sending...' : 'Send Invitation'}
                 </button>
               </div>
