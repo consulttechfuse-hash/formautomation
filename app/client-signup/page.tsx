@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client';
 function ClientSignupForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get('token');
   const emailParam = searchParams.get('email');
   
   const [loading, setLoading] = useState(false);
@@ -44,7 +43,6 @@ function ClientSignupForm() {
           .single();
         
         if (userRole && userRole.first_name && userRole.last_name) {
-          // Already completed, redirect to dashboard
           router.push('/client/dashboard');
           return;
         }
@@ -99,101 +97,56 @@ function ClientSignupForm() {
         return;
       }
       
-      // Update password first
-      await supabase.auth.updateUser({ password: password });
+      // Update password
+      const { error: pwdError } = await supabase.auth.updateUser({ password: password });
+      if (pwdError) console.error('Password error:', pwdError);
       
       const finalEmail = email || user.email || '';
+      const now = new Date().toISOString();
       
-      // Call the working accept-invite API
-      // We need to create a temporary invitation token for the client
-      // First, check if user_roles exists for this user
-      const { data: existingRole } = await supabase
+      // Direct insert/update - this works
+      const { error: upsertError } = await supabase
         .from('user_roles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (!existingRole) {
-        // Create a temporary invitation token
-        const tempToken = crypto.randomUUID();
-        
-        // Insert user_roles first
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            email: finalEmail,
-            role: 'client',
-            invitation_token: tempToken,
-            created_at: new Date().toISOString(),
-          });
-        
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          setError('Failed to create profile');
-          setLoading(false);
-          return;
-        }
-        
-        // Now call accept-invite API to update with names
-        const response = await fetch('/api/accept-invite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            token: tempToken,
-            email: finalEmail,
-            firstName: firstName,
-            lastName: lastName,
-            phoneNumber: phoneNumber,
-            password: password,
-            role: 'client',
-          }),
+        .upsert({
+          user_id: user.id,
+          email: finalEmail,
+          role: 'client',
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          has_consented: false,
+          onboarding_complete: false,
+          onboarding_submitted: false,
+          has_paid: false,
+          created_at: now,
+          updated_at: now,
+        }, {
+          onConflict: 'user_id'
         });
-        
-        const result = await response.json();
-        
-        if (!response.ok) {
-          console.error('Accept invite error:', result);
-          setError(result.error || 'Failed to save profile');
-          setLoading(false);
-          return;
-        }
-        
-        console.log('Profile saved via accept-invite:', result);
-      } else {
-        // Update existing record directly
-        const { error: updateError } = await supabase
-          .from('user_roles')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', user.id);
-        
-        if (updateError) {
-          console.error('Update error:', updateError);
-          setError('Failed to save profile');
-          setLoading(false);
-          return;
-        }
-        
-        // Also update users table
-        await supabase
-          .from('users')
-          .upsert({
-            id: user.id,
-            email: finalEmail,
-            role: 'client',
-            status: 'active',
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
+      
+      if (upsertError) {
+        console.error('Upsert error:', upsertError);
+        setError('Failed to save profile: ' + upsertError.message);
+        setLoading(false);
+        return;
       }
+      
+      // Update users table
+      await supabase
+        .from('users')
+        .upsert({
+          id: user.id,
+          email: finalEmail,
+          role: 'client',
+          status: 'active',
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          created_at: now,
+          updated_at: now,
+        }, { onConflict: 'id' });
+      
+      console.log('Profile saved:', { firstName, lastName });
       
       router.push('/client/dashboard');
     } catch (err) {
