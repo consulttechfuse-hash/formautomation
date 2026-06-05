@@ -344,221 +344,161 @@ export default function AdminDashboard() {
         )}
         
         {activeSection === 'agents' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Agent Management</h2>
-              <button
-                onClick={() => setShowInviteModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                + Invite Agent
-              </button>
-            </div>
-            
-            <input
-              type="text"
-              placeholder="Search agents..."
-              value={searchAgent}
-              onChange={(e) => setSearchAgent(e.target.value)}
-              className="w-full p-2 border rounded mb-4"
-            />
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="p-2 text-left">Email</th>
-                    <th className="p-2 text-left">Clients</th>
-                    <th className="p-2 text-left">Completion Rate</th>
-                    <th className="p-2 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agentList
-                    .filter(a => a.email.toLowerCase().includes(searchAgent.toLowerCase()))
-                    .map(agent => (
-                      <tr key={agent.id} className="border-t">
-                        <td className="p-2">{agent.email}</td>
-                        <td className="p-2">-</td>
-                        <td className="p-2">{Math.round(completionRatios[agent.user_id] || 0)}%</td>
-                        <td className="p-2">
-                          <button className="text-blue-600 hover:text-blue-800">View</button>
-                        </td>
-                       </tr>
-                    ))}
-                </tbody>
-               </table>
-            </div>
-          </div>
-        )}
-        
-        {activeSection === 'agentStats' && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold mb-6">Agent Performance</h1>
-            
-            {/* Agent Stats Table */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <h3 className="text-lg font-semibold mb-4">Agent Details</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="p-3 text-left">Agent Email</th>
-                      <th className="p-3 text-left">Status</th>
-                      <th className="p-3 text-left">Clients</th>
-                      <th className="p-3 text-left">Invite Sent</th>
-                      <th className="p-3 text-left">Invite Accepted</th>
-                      <th className="p-3 text-left">Last Login</th>
-                      <th className="p-3 text-left">Forms Completed</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                    {agents.map((agent) => (
-                      <tr key={agent.id} className="border-t hover:bg-gray-50">
-                        <td className="p-3">{agent.email}</td>
-                        <td className="p-3">{getStatusBadge(agent)}</td>
-                        <td className="p-3">{agent.client_count}</td>
-                        <td className="p-3 text-sm">{formatDate(agent.invite_sent_at)}</td>
-                        <td className="p-3 text-sm">{formatDate(agent.invite_accepted_at)}</td>
-                        <td className="p-3 text-sm">{formatDate(agent.last_login_at)}</td>
-                        <td className="p-3">
-                          <div className="flex items-center space-x-1">
-                            <span className="text-green-600">{agent.forms_completed}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-gray-600">{agent.client_count}</span>
-                          </div>
-                        </td>
-                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Client Distribution Chart */}
-            {agents.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold mb-4">Client Distribution by Agent</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={clientDistributionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="clients" fill="#3b82f6" name="Number of Clients" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Form Completion Chart */}
-            {agents.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="text-lg font-semibold mb-4">Form Completion by Agent</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={formCompletionData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="completed" fill="#10b981" name="Completed Forms" />
-                    <Bar dataKey="pending" fill="#f59e0b" name="Pending Forms" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-blue-600 text-sm">Total Agents</p>
-                <p className="text-2xl font-bold text-blue-800">{agents.length}</p>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-green-600 text-sm">Total Clients</p>
-                <p className="text-2xl font-bold text-green-800">
-                  {agents.reduce((sum, a) => sum + a.client_count, 0)}
+  <div className="bg-white rounded-lg shadow p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-bold">Agent Management</h2>
+      <button
+        onClick={() => setShowInviteModal(true)}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        + Invite Agent
+      </button>
+    </div>
+    
+    <input
+      type="text"
+      placeholder="Search agents..."
+      value={searchAgent}
+      onChange={(e) => setSearchAgent(e.target.value)}
+      className="w-full p-2 border rounded mb-4"
+    />
+    
+    {/* Pending Invites Section */}
+    <div className="mb-6">
+      <h3 className="font-semibold mb-2 text-gray-700">Pending Invites</h3>
+      {agentList.filter(a => !a.user_id || !a.accepted_at).length === 0 ? (
+        <p className="text-gray-500 text-sm">No pending invites</p>
+      ) : (
+        <div className="space-y-2">
+          {agentList.filter(a => !a.user_id || !a.accepted_at).map(invite => (
+            <div key={invite.id} className="flex justify-between items-center border-b pb-2">
+              <div>
+                <span className="font-medium">{invite.email}</span>
+                <p className="text-xs text-gray-500">
+                  Expires: {invite.invitation_expires_at ? new Date(invite.invitation_expires_at).toLocaleDateString() : "7 days"}
                 </p>
               </div>
-              <div className="bg-purple-50 rounded-lg p-4">
-                <p className="text-purple-600 text-sm">Active Agents</p>
-                <p className="text-2xl font-bold text-purple-800">
-                  {agents.filter(a => a.last_login_at).length}
-                </p>
-              </div>
-              <div className="bg-orange-50 rounded-lg p-4">
-                <p className="text-orange-600 text-sm">Forms Completed</p>
-                <p className="text-2xl font-bold text-orange-800">
-                  {agents.reduce((sum, a) => sum + a.forms_completed, 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {activeSection === 'clients' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Client Management</h2>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="Search by email..."
-                value={searchClient}
-                onChange={(e) => setSearchClient(e.target.value)}
-                className="flex-1 p-2 border rounded"
-              />
-              <button
-                onClick={async () => {
-                  const { data } = await supabase
-                    .from('user_roles')
-                    .select('*')
-                    .eq('role', 'client')
-                    .ilike('email', `%${searchClient}%`);
-                  setClients(data || []);
-                  setShowClientResults(true);
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                Search
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
-        
-        {activeSection === 'profile' && <UserProfile />}
-      </div>
-
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-xl font-bold">Invite New Agent</h2>
-              <button onClick={() => setShowInviteModal(false)} className="text-gray-500 text-2xl">&times;</button>
-            </div>
-            <div className="p-4">
-              <input
-                type="email"
-                placeholder="agent@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                className="w-full p-2 border rounded mb-4"
-              />
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setShowInviteModal(false)} className="px-4 py-2 border rounded">
-                  Cancel
+              <div className="flex gap-2">
+                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Pending</span>
+                <button
+                  onClick={async () => {
+                    const response = await fetch("/api/admin/invite-agent", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ email: invite.email }),
+                    });
+                    if (response.ok) {
+                      alert("Invitation resent");
+                      loadAgents(adminId);
+                    }
+                  }}
+                  className="text-blue-600 hover:text-blue-800 text-xs"
+                >
+                  Resend
                 </button>
                 <button
                   onClick={async () => {
-                    setInviting(true);
-                    const response = await fetch('/api/admin/invite-agent', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ email: inviteEmail }),
+                    if (confirm("Cancel invitation for " + invite.email + "?")) {
+                      await supabase.from("user_roles").delete().eq("id", invite.id);
+                      await supabase.from("users").delete().eq("email", invite.email);
+                      loadAgents(adminId);
+                      alert("Invitation cancelled");
+                    }
+                  }}
+                  className="text-red-600 hover:text-red-800 text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+    
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="p-2 text-left">Agent</th>
+            <th className="p-2 text-left">Email</th>
+            <th className="p-2 text-left">Status</th>
+            <th className="p-2 text-left">Clients</th>
+            <th className="p-2 text-left">Completion</th>
+            <th className="p-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {agentList
+            .filter(a => a.email && a.email.toLowerCase().includes(searchAgent.toLowerCase()))
+            .map(agent => {
+              const isActive = agent.user_id && agent.accepted_at;
+              const statusText = isActive ? "Active" : (agent.invitation_token ? "Invited" : "Pending");
+              const statusColor = isActive ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800";
+              return (
+                <tr key={agent.id} className="border-t">
+                  <td className="p-2">{agent.first_name || agent.last_name ? `${agent.first_name || ""} ${agent.last_name || ""}`.trim() : "-"}</td>
+                  <td className="p-2">{agent.email}</td>
+                  <td className="p-2"><span className={`px-2 py-1 text-xs rounded-full ${statusColor}`}>{statusText}</span></td>
+                  <td className="p-2">-</td>
+                  <td className="p-2">{Math.round(completionRatios[agent.user_id] || 0)}%</td>
+                  <td className="p-2">
+                    {!isActive ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            const response = await fetch("/api/admin/invite-agent", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ email: agent.email }),
+                            });
+                            if (response.ok) {
+                              alert("Invitation resent");
+                              loadAgents(adminId);
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Resend
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm("Delete invite for " + agent.email + "?")) {
+                              await supabase.from("user_roles").delete().eq("id", agent.id);
+                              await supabase.from("users").delete().eq("email", agent.email);
+                              loadAgents(adminId);
+                              alert("Invitation deleted");
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          if (confirm("Delete agent " + agent.email + "? This will remove all their data.")) {
+                            await supabase.from("user_roles").delete().eq("id", agent.id);
+                            await supabase.from("users").delete().eq("email", agent.email);
+                            loadAgents(adminId);
+                            alert("Agent deleted");
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)},
                     });
                     const result = await response.json();
                     if (response.ok) {
