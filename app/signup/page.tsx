@@ -16,7 +16,8 @@ export default function SignUpPage() {
   const router = useRouter();
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const redirectUrl = 'https://techfuseconsult.online/set-password';
+  // Redirect to client-signup page with token and email
+  const redirectUrl = 'https://techfuseconsult.online/client-signup';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +85,9 @@ export default function SignUpPage() {
           <p className="text-gray-600 mb-2">
             We sent a magic link to <strong>{email}</strong>
           </p>
+          <p className="text-gray-500 text-sm mb-4">
+            Click the link to complete your registration and create your password.
+          </p>
           <button
             onClick={() => router.push('/login')}
             className="text-blue-600 hover:text-blue-800 text-sm"
@@ -106,7 +110,7 @@ export default function SignUpPage() {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
-          <p className="text-gray-600 mt-2">Sign up to get started</p>
+          <p className="text-gray-600 mt-2">Sign up to get started with DocControl</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
