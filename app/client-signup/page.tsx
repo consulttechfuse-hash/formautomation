@@ -27,10 +27,7 @@ function ClientSignupForm() {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        console.log('Auth check - user:', user?.email);
-        
         if (userError || !user) {
-          console.error('No user found:', userError);
           setError('Invalid or expired magic link. Please request a new one.');
           setVerifying(false);
           return;
@@ -39,7 +36,6 @@ function ClientSignupForm() {
         setEmail(user.email || (emailParam ? decodeURIComponent(emailParam) : ''));
         setVerifying(false);
       } catch (err) {
-        console.error('Auth check error:', err);
         setError('Failed to verify magic link. Please try again.');
         setVerifying(false);
       }
@@ -50,6 +46,12 @@ function ClientSignupForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form submitted - First Name:', firstName);
+    console.log('Form submitted - Last Name:', lastName);
+    console.log('Form submitted - Phone:', phoneNumber);
+    console.log('Form submitted - Email:', email);
+    console.log('Form submitted - Password length:', password.length);
     
     if (!firstName.trim()) {
       setError('Please enter your first name');
@@ -88,93 +90,64 @@ function ClientSignupForm() {
         return;
       }
       
-      // Update password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
-      });
+      console.log('User ID:', user.id);
+      console.log('Saving with values:', { firstName, lastName, phoneNumber });
       
-      if (updateError) {
-        console.error('Password update error:', updateError);
-      }
+      // Update password
+      const { error: pwdError } = await supabase.auth.updateUser({ password: password });
+      if (pwdError) console.error('Password update error:', pwdError);
       
       const finalEmail = email || user.email || '';
       const now = new Date().toISOString();
       
-      // FIRST: Try to update existing user_roles
-      let roleError = null;
-      
-      // Try updating with standard column names
-      const { error: updateRoleError } = await supabase
+      // Use upsert with explicit values
+      const { data: upsertData, error: upsertError } = await supabase
         .from('user_roles')
-        .update({
+        .upsert({
+          user_id: user.id,
+          email: finalEmail,
+          role: 'client',
           first_name: firstName,
           last_name: lastName,
           phone_number: phoneNumber,
+          has_consented: false,
+          onboarding_complete: false,
+          onboarding_submitted: false,
+          has_paid: false,
+          created_at: now,
           updated_at: now,
+        }, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
         })
-        .eq('user_id', user.id);
+        .select();
       
-      if (updateRoleError) {
-        console.log('Update failed, trying insert:', updateRoleError);
-        
-        // If update fails, try inserting
-        const { error: insertRoleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: user.id,
-            email: finalEmail,
-            role: 'client',
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            has_consented: false,
-            onboarding_complete: false,
-            onboarding_submitted: false,
-            has_paid: false,
-            created_at: now,
-          });
-        
-        roleError = insertRoleError;
-        if (insertRoleError) {
-          console.error('Insert user_roles error:', insertRoleError);
-        }
+      console.log('Upsert result:', upsertData);
+      console.log('Upsert error:', upsertError);
+      
+      if (upsertError) {
+        console.error('Database error:', upsertError);
+        setError('Failed to save profile: ' + upsertError.message);
+        setLoading(false);
+        return;
       }
       
-      // SECOND: Update users table
-      const { error: updateUserError } = await supabase
+      // Also update users table
+      await supabase
         .from('users')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          phone_number: phoneNumber,
+        .upsert({
+          id: user.id,
+          email: finalEmail,
           role: 'client',
           status: 'active',
+          first_name: firstName,
+          last_name: lastName,
+          phone_number: phoneNumber,
+          created_at: now,
           updated_at: now,
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' });
       
-      if (updateUserError) {
-        console.log('Update users failed, trying insert:', updateUserError);
-        
-        const { error: insertUserError } = await supabase
-          .from('users')
-          .insert({
-            id: user.id,
-            email: finalEmail,
-            role: 'client',
-            status: 'active',
-            first_name: firstName,
-            last_name: lastName,
-            phone_number: phoneNumber,
-            created_at: now,
-          });
-        
-        if (insertUserError) {
-          console.error('Insert users error:', insertUserError);
-        }
-      }
-      
-      console.log('Profile saved - Name:', firstName, lastName);
+      console.log('Profile saved successfully with name:', firstName, lastName);
       
       // Redirect to client dashboard
       router.push('/client/dashboard');
