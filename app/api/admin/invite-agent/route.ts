@@ -44,18 +44,6 @@ export async function POST(request: Request) {
       }
     }
     
-    // Check if email is already assigned to a different admin
-    const { data: otherAdminAgent } = await supabase
-      .from('user_roles')
-      .select('assigned_admin_id')
-      .eq('email', email)
-      .eq('role', 'agent')
-      .single();
-    
-    if (otherAdminAgent) {
-      return NextResponse.json({ error: 'This agent is already assigned to another admin' }, { status: 409 });
-    }
-    
     // Create invitation token
     const invitationToken = crypto.randomUUID();
     const expiresAt = new Date();
@@ -83,11 +71,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
     }
     
-    // Send email using Resend with the correct invite link
+    // Send email using Resend (same pattern as working admin invite)
     const inviteLink = `https://techfuseconsult.online/invite-signup?token=${invitationToken}`;
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     
-    await fetch('https://api.resend.com/emails', {
+    if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY is not set');
+      return NextResponse.json({ error: 'Email configuration error' }, { status: 500 });
+    }
+    
+    const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -101,20 +94,31 @@ export async function POST(request: Request) {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background-color: #1e3a8a; color: white; padding: 20px; text-align: center;">
               <h1 style="margin: 0;">Techfuse Consulting</h1>
-              <p>Agent Invitation</p>
+              <p style="margin: 5px 0 0;">Agent Invitation</p>
             </div>
-            <div style="padding: 20px; border: 1px solid #e5e7eb;">
-              <p>You have been invited to become an <strong>Agent</strong>.</p>
-              <p>Click the link below to complete your registration:</p>
-              <div style="text-align: center; margin: 20px 0;">
-                <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">Complete Registration</a>
+            <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+              <p>Hello,</p>
+              <p>You have been invited to become an <strong>Agent</strong> on the Techfuse DocControl platform.</p>
+              <p>Click the link below to complete your registration and set up your account:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${inviteLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Complete Registration</a>
               </div>
-              <p>This link expires in 7 days.</p>
+              <p>This link will expire in 7 days.</p>
+              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 12px;">If you didn't expect this invitation, you can safely ignore this email.</p>
             </div>
           </div>
         `,
       }),
     });
+    
+    const emailResult = await emailResponse.json();
+    console.log('Email send result:', emailResult);
+    
+    if (!emailResponse.ok) {
+      console.error('Email failed:', emailResult);
+      // Don't fail the whole request, just log it
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -123,6 +127,6 @@ export async function POST(request: Request) {
     
   } catch (error) {
     console.error('Error:', error);
-    return NextResponse.json({ error: 'Failed to invite agent' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to invite agent: ' + (error instanceof Error ? error.message : 'Unknown error')}, { status: 500 });
   }
 }
