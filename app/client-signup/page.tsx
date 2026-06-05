@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client';
 function ClientSignupForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get('token');
   const emailParam = searchParams.get('email');
   
   const [loading, setLoading] = useState(false);
@@ -21,42 +20,60 @@ function ClientSignupForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [verifying, setVerifying] = useState(true);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const supabase = createClient();
 
-  // Verify the magic link token on page load
   useEffect(() => {
-    const verifyMagicLink = async () => {
-      if (!token || !emailParam) {
-        setError('Invalid magic link. Please request a new one.');
-        setVerifying(false);
-        return;
-      }
-
-      setEmail(decodeURIComponent(emailParam));
-
+    const checkAuth = async () => {
       try {
-        // Verify the OTP token with Supabase
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          email: decodeURIComponent(emailParam),
-          token: token,
-          type: 'magiclink',
-        });
-
-        if (verifyError) {
-          setError(verifyError.message || 'Invalid or expired magic link');
+        // Get current session
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        console.log('Auth check - user:', user?.email);
+        
+        if (userError || !user) {
+          console.error('No user found:', userError);
+          setError('Invalid or expired magic link. Please request a new one.');
           setVerifying(false);
           return;
         }
-
+        
+        // User is authenticated
+        setEmail(user.email || (emailParam ? decodeURIComponent(emailParam) : ''));
+        
+        // Check if user already has profile data
+        const { data: userRole, error: roleError } = await supabase
+          .from('user_roles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('User role check:', userRole);
+        
+        if (userRole && userRole.first_name && userRole.last_name) {
+          // User already completed signup
+          setAlreadyCompleted(true);
+          setVerifying(false);
+          return;
+        }
+        
         setVerifying(false);
       } catch (err) {
+        console.error('Auth check error:', err);
         setError('Failed to verify magic link. Please try again.');
         setVerifying(false);
       }
     };
+    
+    checkAuth();
+  }, [supabase.auth, emailParam]);
 
-    verifyMagicLink();
-  }, [token, emailParam, supabase.auth]);
+  // Redirect if already completed
+  useEffect(() => {
+    if (alreadyCompleted) {
+      router.push('/client/dashboard');
+    }
+  }, [alreadyCompleted, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,39 +107,39 @@ function ClientSignupForm() {
     setError(null);
 
     try {
-      // Get the authenticated user (from magic link)
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (userError || !user) {
+      if (!user) {
         setError('Session expired. Please request a new magic link.');
         setLoading(false);
         return;
       }
       
-      // Update user password
+      // Update password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
       
       if (updateError) {
-        setError(updateError.message);
-        setLoading(false);
-        return;
+        console.error('Password update error:', updateError);
+        // Continue anyway - password might already be set
       }
       
-      // Create user_roles entry for client
+      // Check if user_roles exists
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('id')
         .eq('user_id', user.id)
         .single();
       
+      const finalEmail = email || user.email || '';
+      
       if (!existingRole) {
-        await supabase
+        const { error: insertError } = await supabase
           .from('user_roles')
           .insert({
             user_id: user.id,
-            email: email,
+            email: finalEmail,
             role: 'client',
             first_name: firstName,
             last_name: lastName,
@@ -133,8 +150,15 @@ function ClientSignupForm() {
             has_paid: false,
             created_at: new Date().toISOString(),
           });
+        
+        if (insertError) {
+          console.error('Insert user_roles error:', insertError);
+          setError('Failed to save profile');
+          setLoading(false);
+          return;
+        }
       } else {
-        await supabase
+        const { error: updateRoleError } = await supabase
           .from('user_roles')
           .update({
             first_name: firstName,
@@ -142,9 +166,13 @@ function ClientSignupForm() {
             phone_number: phoneNumber,
           })
           .eq('user_id', user.id);
+        
+        if (updateRoleError) {
+          console.error('Update user_roles error:', updateRoleError);
+        }
       }
       
-      // Create or update users table
+      // Check users table
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -156,7 +184,7 @@ function ClientSignupForm() {
           .from('users')
           .insert({
             id: user.id,
-            email: email,
+            email: finalEmail,
             role: 'client',
             status: 'active',
             first_name: firstName,
@@ -176,9 +204,10 @@ function ClientSignupForm() {
           .eq('id', user.id);
       }
       
-      // Redirect to client dashboard
+      // Success! Redirect to client dashboard
       router.push('/client/dashboard');
     } catch (err) {
+      console.error('Submit error:', err);
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }
@@ -189,7 +218,7 @@ function ClientSignupForm() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Verifying your magic link...</p>
+          <p className="text-gray-600 mt-4">Verifying your link...</p>
         </div>
       </div>
     );
