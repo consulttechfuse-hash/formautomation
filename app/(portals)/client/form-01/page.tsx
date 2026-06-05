@@ -85,34 +85,6 @@ export default function Form01Page() {
     return updates
   }
 
-  async function loadUserProfileData() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return {}
-
-      // Fetch user data from user_roles
-      const { data: userRole } = await supabase
-        .from('user_roles')
-        .select('first_name, last_name, phone_number, email, address, id_number')
-        .eq('user_id', user.id)
-        .single()
-
-      if (userRole) {
-        return {
-          fn_t1: userRole.first_name || '',
-          srn_t1: userRole.last_name || '',
-          cnt_1: userRole.phone_number || '',
-          ema_t1: userRole.email || user.email || '',
-          cadr_t1: userRole.address || '',
-          idp_t1: userRole.id_number || '',
-        }
-      }
-    } catch (err) {
-      console.error('Error loading user profile:', err)
-    }
-    return {}
-  }
-
   async function loadData() {
     setLoading(true)
     
@@ -123,7 +95,11 @@ export default function Form01Page() {
     }
 
     // Load user profile data from user_roles (signup + consent)
-    const userProfileData = await loadUserProfileData()
+    const { data: userRole } = await supabase
+      .from('user_roles')
+      .select('first_name, last_name, phone_number, email, address, id_number')
+      .eq('user_id', user.id)
+      .single()
 
     // Load existing form data
     const { data: existingData } = await supabase
@@ -135,13 +111,21 @@ export default function Form01Page() {
     const initialData: Record<string, any> = {}
 
     // FIRST: Populate with user profile data (auto-population from signup + consent)
-    // Map user_roles fields to form01 fields
-    initialData.fn_t1 = userProfileData.fn_t1 || existingData?.fn_t1 || ''
-    initialData.srn_t1 = userProfileData.srn_t1 || existingData?.srn_t1 || ''
-    initialData.cnt_1 = userProfileData.cnt_1 || existingData?.cnt_1 || ''
-    initialData.ema_t1 = userProfileData.ema_t1 || existingData?.ema_t1 || ''
-    initialData.cadr_t1 = userProfileData.cadr_t1 || existingData?.cadr_t1 || ''
-    initialData.idp_t1 = userProfileData.idp_t1 || existingData?.idp_t1 || ''
+    if (userRole) {
+      initialData.fn_t1 = userRole.first_name || existingData?.fn_t1 || ''
+      initialData.srn_t1 = userRole.last_name || existingData?.srn_t1 || ''
+      initialData.cnt_1 = userRole.phone_number || existingData?.cnt_1 || ''
+      initialData.ema_t1 = userRole.email || existingData?.ema_t1 || user.email || ''
+      initialData.cadr_t1 = userRole.address || existingData?.cadr_t1 || ''
+      initialData.idp_t1 = userRole.id_number || existingData?.idp_t1 || ''
+    } else {
+      initialData.fn_t1 = existingData?.fn_t1 || ''
+      initialData.srn_t1 = existingData?.srn_t1 || ''
+      initialData.cnt_1 = existingData?.cnt_1 || ''
+      initialData.ema_t1 = existingData?.ema_t1 || user.email || ''
+      initialData.cadr_t1 = existingData?.cadr_t1 || ''
+      initialData.idp_t1 = existingData?.idp_t1 || ''
+    }
 
     // THEN: Populate other fields from existing data
     initialData.mdn_t1 = existingData?.mdn_t1 || ''
@@ -250,6 +234,159 @@ export default function Form01Page() {
     return true
   }
 
-  // Rest of the component remains the same (render, handleChange, etc.)
-  // ... (keeping the existing render logic)
+  const handleFieldChange = (fieldName: string, value: any) => {
+    const newData = { ...formData, [fieldName]: value }
+    const autoUpdates = calculateAutoCompleteFields(newData)
+    setFormData({ ...newData, ...autoUpdates })
+    setSaveStatus('unsaved')
+  }
 
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    const success = await saveToDatabase()
+    if (success) {
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus(''), 3000)
+    }
+    setSaving(false)
+  }
+
+  const handleSubmit = async () => {
+    setSaving(true)
+    setError(null)
+    const success = await saveToDatabase()
+    if (success) {
+      router.push('/client/forms/complete')
+    }
+    setSaving(false)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <h1 className="text-2xl font-bold text-center mb-2">Form 01: Personal Information</h1>
+          <p className="text-gray-600 text-center mb-6">Please complete all required fields</p>
+
+          {error && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
+              {error}
+            </div>
+          )}
+
+          {saveStatus === 'saved' && (
+            <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm mb-4">
+              Progress saved successfully!
+            </div>
+          )}
+
+          {/* Name Section */}
+          <div className="border-b pb-4 mb-4">
+            <h2 className="text-lg font-semibold mb-3">Name Information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">First Name *</label>
+                <input
+                  type="text"
+                  value={formData.fn_t1 || ''}
+                  onChange={(e) => handleFieldChange('fn_t1', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Surname *</label>
+                <input
+                  type="text"
+                  value={formData.srn_t1 || ''}
+                  onChange={(e) => handleFieldChange('srn_t1', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Section */}
+          <div className="border-b pb-4 mb-4">
+            <h2 className="text-lg font-semibold mb-3">Contact Information</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Address *</label>
+                <input
+                  type="email"
+                  value={formData.ema_t1 || ''}
+                  onChange={(e) => handleFieldChange('ema_t1', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Mobile Number *</label>
+                <input
+                  type="tel"
+                  value={formData.cnt_1 || ''}
+                  onChange={(e) => handleFieldChange('cnt_1', e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Address Section */}
+          <div className="border-b pb-4 mb-4">
+            <h2 className="text-lg font-semibold mb-3">Address Information</h2>
+            <div>
+              <label className="block text-sm font-medium mb-1">Full Address *</label>
+              <textarea
+                value={formData.cadr_t1 || ''}
+                onChange={(e) => handleFieldChange('cadr_t1', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* ID Section */}
+          <div className="border-b pb-4 mb-4">
+            <h2 className="text-lg font-semibold mb-3">Identification</h2>
+            <div>
+              <label className="block text-sm font-medium mb-1">ID / Passport Number *</label>
+              <input
+                type="text"
+                value={formData.idp_t1 || ''}
+                onChange={(e) => handleFieldChange('idp_t1', e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+              />
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between gap-4">
+            <JumpButton />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+            >
+              Save Progress
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              Submit Form
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
