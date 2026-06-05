@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
     }
     
-    // Send email using Resend
+    // Send email using Resend with the correct invite link
     const inviteLink = `https://techfuseconsult.online/invite-signup?token=${invitationToken}`;
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     
