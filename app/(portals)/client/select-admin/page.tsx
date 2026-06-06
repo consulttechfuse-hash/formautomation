@@ -25,10 +25,10 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // Fetch all users with role 'admin'
+    // Fetch all users with role 'admin' from user_roles
     const { data, error } = await supabase
-      .from('users')
-      .select('id, email')
+      .from('user_roles')
+      .select('user_id, email')
       .eq('role', 'admin');
 
     if (error) {
@@ -53,21 +53,50 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // Update the user's admin_id
-    const { error } = await supabase
+    // 1. Update users table (backward compatibility)
+    await supabase
       .from('users')
       .update({ admin_id: selectedAdminId })
       .eq('id', user.id);
 
-    if (error) {
-      console.error('Error saving admin:', error);
-      alert('Error saving admin selection');
-      setSaving(false);
-      return;
+    // 2. Update user_roles table
+    await supabase
+      .from('user_roles')
+      .update({ assigned_admin_id: selectedAdminId })
+      .eq('user_id', user.id);
+
+    // 3. Update or insert client_flow_state
+    const { data: existingFlow } = await supabase
+      .from('client_flow_state')
+      .select('id')
+      .eq('client_id', user.id)
+      .single();
+
+    if (existingFlow) {
+      await supabase
+        .from('client_flow_state')
+        .update({
+          step_1_admin_selected: true,
+          current_step: 2,
+          step_1_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('client_id', user.id);
+    } else {
+      await supabase
+        .from('client_flow_state')
+        .insert({
+          client_id: user.id,
+          step_1_admin_selected: true,
+          current_step: 2,
+          step_1_completed_at: new Date().toISOString(),
+          lock_type: 'unlocked',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
     }
 
     setSaving(false);
-    // Direct to payment page
     router.push('/client/select-payment');
   }
 
@@ -97,7 +126,7 @@ export default function SelectAdminPage() {
             >
               <option value="">-- Select an Admin --</option>
               {admins.map((admin) => (
-                <option key={admin.id} value={admin.id}>
+                <option key={admin.user_id} value={admin.user_id}>
                   {admin.email}
                 </option>
               ))}
