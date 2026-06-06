@@ -27,7 +27,7 @@ export default function SelectAdminPage() {
 
     const { data, error } = await supabase
       .from('user_roles')
-      .select('user_id, email')
+      .select('user_id, email, first_name, last_name')
       .eq('role', 'admin');
 
     if (error) {
@@ -52,13 +52,19 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // 1. Update user_roles table
+    // 1. Update user_roles table with assigned_admin_id
     await supabase
       .from('user_roles')
       .update({ assigned_admin_id: selectedAdminId })
       .eq('user_id', user.id);
 
-    // 2. Update or insert client_flow_state
+    // 2. Update users table (backward compatibility)
+    await supabase
+      .from('users')
+      .update({ admin_id: selectedAdminId })
+      .eq('id', user.id);
+
+    // 3. Update client_flow_state
     const { data: existingFlow } = await supabase
       .from('client_flow_state')
       .select('id')
@@ -87,6 +93,24 @@ export default function SelectAdminPage() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+    }
+
+    // 4. Trigger round-robin agent assignment
+    try {
+      const response = await fetch('/api/agent/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: user.id, adminId: selectedAdminId })
+      });
+      const result = await response.json();
+      
+      if (result.success && result.assigned_agent_id) {
+        console.log(`Agent assigned: ${result.agent_email}`);
+      } else if (result.message) {
+        console.log(result.message);
+      }
+    } catch (error) {
+      console.error('Round robin assignment error:', error);
     }
 
     setSaving(false);
@@ -120,7 +144,7 @@ export default function SelectAdminPage() {
               <option value="">-- Select an Admin --</option>
               {admins.map((admin) => (
                 <option key={admin.user_id} value={admin.user_id}>
-                  {admin.email}
+                  {admin.first_name} {admin.last_name} ({admin.email})
                 </option>
               ))}
             </select>
