@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { validateFlowAccess, advanceToNextStep } from '@/lib/flow-validation';
 
 export default function ManualPaymentPage() {
   const [user, setUser] = useState<any>(null);
@@ -22,17 +21,27 @@ export default function ManualPaymentPage() {
   }, []);
 
   const checkAccess = async () => {
-    const validation = await validateFlowAccess(2);
-    
-    if (!validation.canAccess) {
-      if (validation.redirectTo) {
-        router.push(`/client/step/${validation.redirectTo}`);
-      } else if (validation.error) {
-        setError(validation.error);
-      }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push('/login');
       return;
     }
-    
+
+    // Direct database check for step 1 completion
+    const { data: flowState } = await supabase
+      .from('client_flow_state')
+      .select('step_1_admin_selected, current_step, lock_type')
+      .eq('client_id', user.id)
+      .single();
+
+    console.log('Payment page - Direct flowState check:', flowState);
+
+    if (!flowState || flowState.step_1_admin_selected !== true) {
+      // Redirect to select admin if step 1 not completed
+      router.push('/client/select-admin');
+      return;
+    }
+
     await loadUser();
   };
 
@@ -172,8 +181,16 @@ export default function ManualPaymentPage() {
       return;
     }
 
-    // Advance to step 3 after successful payment request
-    await advanceToNextStep(2);
+    // Update flow state to step 3
+    await supabase
+      .from('client_flow_state')
+      .update({
+        step_2_payment_completed: true,
+        current_step: 3,
+        step_2_completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('client_id', user.id);
 
     setSuccess(true);
     setSubmitting(false);
