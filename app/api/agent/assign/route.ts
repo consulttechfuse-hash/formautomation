@@ -10,26 +10,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Client ID and Admin ID are required' }, { status: 400 });
     }
 
-    // Get all active agents under this admin
+    console.log('Round robin assign - clientId:', clientId, 'adminId:', adminId);
+
+    // Get all active agents under this admin (including those who haven't accepted invite yet)
     const { data: agents, error: agentsError } = await supabase
       .from('user_roles')
       .select('user_id, email, first_name, last_name')
       .eq('role', 'agent')
-      .eq('invited_by', adminId)
-      .eq('accepted_at', 'not.null'); // Only agents who accepted invite
+      .eq('invited_by', adminId);
 
     if (agentsError) {
       console.error('Error fetching agents:', agentsError);
-      return NextResponse.json({ error: 'Failed to fetch agents' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch agents: ' + agentsError.message }, { status: 500 });
     }
 
+    console.log('Found agents:', agents?.length || 0);
+
     if (!agents || agents.length === 0) {
-      // No agents available - assign null (admin will need to manually assign)
-      await supabase
+      // No agents available - assign null
+      const { error: updateError } = await supabase
         .from('user_roles')
         .update({ assigned_agent_id: null })
         .eq('user_id', clientId);
-      
+
+      if (updateError) {
+        console.error('Error updating client:', updateError);
+      }
+
       return NextResponse.json({ 
         success: true, 
         assigned_agent_id: null,
@@ -68,6 +75,8 @@ export async function POST(request: Request) {
     const nextIndex = (currentIndex + 1) % agents.length;
     const selectedAgent = agents[nextIndex];
 
+    console.log('Selected agent:', selectedAgent);
+
     // Update round robin state
     if (roundRobinState) {
       await supabase
@@ -87,7 +96,7 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error('Error assigning agent:', updateError);
-      return NextResponse.json({ error: 'Failed to assign agent' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to assign agent: ' + updateError.message }, { status: 500 });
     }
 
     return NextResponse.json({ 
