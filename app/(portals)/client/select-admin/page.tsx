@@ -25,7 +25,6 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // Fetch all users with role 'admin' from user_roles
     const { data, error } = await supabase
       .from('user_roles')
       .select('user_id, email')
@@ -53,17 +52,13 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // 1. Update user_roles table (assigned_admin_id)
-    const { error: roleError } = await supabase
+    // 1. Update user_roles table
+    await supabase
       .from('user_roles')
       .update({ assigned_admin_id: selectedAdminId })
       .eq('user_id', user.id);
 
-    if (roleError) {
-      console.error('Error updating user_roles:', roleError);
-    }
-
-    // 2. Update client_flow_state
+    // 2. Update or insert client_flow_state
     const { data: existingFlow } = await supabase
       .from('client_flow_state')
       .select('id')
