@@ -238,7 +238,6 @@ export default function ClientPaymentOverview() {
   return (
     <>
       <div className="space-y-6">
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
           <div className="bg-white rounded-lg shadow p-4 text-center border-l-4 border-blue-500">
             <div className="text-2xl font-bold text-gray-800">{stats.total}</div>
@@ -262,7 +261,6 @@ export default function ClientPaymentOverview() {
           </div>
         </div>
 
-        {/* Second Row */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-blue-50 rounded-lg shadow p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
@@ -276,7 +274,6 @@ export default function ClientPaymentOverview() {
           </div>
         </div>
 
-        {/* Filter and Search */}
         <div className="flex flex-wrap gap-2 border-b pb-2 justify-between items-center">
           <div className="flex gap-2 flex-wrap">
             <button onClick={() => setFilter('all')} className={`px-3 py-1 text-sm rounded ${filter === 'all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500 hover:bg-gray-100'}`}>All ({stats.total})</button>
@@ -291,7 +288,6 @@ export default function ClientPaymentOverview() {
           </div>
         </div>
 
-        {/* Clients Table */}
         {filteredClients.length === 0 ? (
           <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
             {clients.length === 0 ? 'No clients assigned to you yet.' : `No ${filter !== 'all' ? filter : ''} clients found.`}
@@ -316,12 +312,7 @@ export default function ClientPaymentOverview() {
                       <div className="text-xs text-gray-500">{client.email}</div>
                     </td>
                     <td className="px-4 py-2">
-                      <button
-                        onClick={() => setContactModal({ isOpen: true, email: client.email, name: `${client.first_name} ${client.last_name}` })}
-                        className="text-blue-600 hover:underline text-sm"
-                      >
-                        📧 Contact
-                      </button>
+                      <button onClick={() => setContactModal({ isOpen: true, email: client.email, name: `${client.first_name} ${client.last_name}` })} className="text-blue-600 hover:underline text-sm">📧 Contact</button>
                     </td>
                     <td className="px-4 py-2">{getStatusBadge(client.payment_status)}</td>
                     <td className="px-4 py-2">
