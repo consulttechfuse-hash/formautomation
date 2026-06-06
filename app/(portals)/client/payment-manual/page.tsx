@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { validateFlowAccess, advanceToNextStep } from '@/lib/flow-validation';
 
 export default function ManualPaymentPage() {
   const [user, setUser] = useState<any>(null);
@@ -12,60 +13,34 @@ export default function ManualPaymentPage() {
   const [reference, setReference] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    loadUser();
+    checkAccess();
   }, []);
+
+  const checkAccess = async () => {
+    const validation = await validateFlowAccess(2);
+    
+    if (!validation.canAccess) {
+      if (validation.redirectTo) {
+        router.push(`/client/step${validation.redirectTo}`);
+      } else if (validation.error) {
+        setError(validation.error);
+      }
+      return;
+    }
+    
+    await loadUser();
+  };
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       router.push('/login');
       return;
-    }
-
-    // Ensure user exists in users table
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (!existingUser) {
-      // Insert into users table if not exists
-      await supabase
-        .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          role: 'client',
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        });
-    }
-
-    // Ensure user exists in user_roles table
-    const { data: existingRole } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!existingRole) {
-      await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          email: user.email,
-          role: 'client',
-          has_consented: false,
-          onboarding_complete: false,
-          onboarding_submitted: false,
-          has_paid: false,
-          created_at: new Date().toISOString(),
-        });
     }
 
     const { data: userData } = await supabase
@@ -82,6 +57,7 @@ export default function ManualPaymentPage() {
     const idPassport = userData?.idp_t1 || user.id.slice(0, 8);
     setReference(idPassport);
     setUser(user);
+    setLoading(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,8 +88,7 @@ export default function ManualPaymentPage() {
       .upload(fileName, popFile);
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-      setError(`Upload failed: ${uploadError.message}`);
+      setError('Failed to upload POP. Please try again.');
       setUploading(false);
       return false;
     }
@@ -137,25 +112,6 @@ export default function ManualPaymentPage() {
       return;
     }
 
-    // First, ensure the user exists in the referenced table
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single();
-
-    if (!existingUser) {
-      await supabase
-        .from('users')
-        .insert({
-          id: user.id,
-          email: user.email,
-          role: 'client',
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        });
-    }
-
     const { error: insertError } = await supabase
       .from('manual_payment_requests')
       .insert({
@@ -170,15 +126,24 @@ export default function ManualPaymentPage() {
       });
 
     if (insertError) {
-      console.error('Insert error:', insertError);
-      setError(`Database error: ${insertError.message}`);
+      setError('Failed to submit. Please try again.');
       setSubmitting(false);
       return;
+    }
+
+    // Advance to step 3 after successful payment request
+    const advance = await advanceToNextStep(2);
+    if (!advance.success) {
+      console.warn('Flow advance warning:', advance.error);
     }
 
     setSuccess(true);
     setSubmitting(false);
   };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
   if (success) {
     return (
@@ -204,6 +169,10 @@ export default function ManualPaymentPage() {
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-2">Manual EFT Payment</h1>
       <p className="text-gray-600 mb-6">Pay via bank transfer and upload proof</p>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded text-sm">{error}</div>
+      )}
 
       <div className="bg-gray-50 border rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">Bank Details</h2>
@@ -247,8 +216,6 @@ export default function ManualPaymentPage() {
             <span className="text-blue-600">{popFile ? popFile.name : 'Click to upload POP'}</span>
           </label>
         </div>
-
-        {error && <div className="mt-4 p-3 bg-red-50 text-red-700 rounded text-sm">{error}</div>}
       </div>
 
       <div className="flex gap-4">
