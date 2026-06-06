@@ -26,7 +26,7 @@ export default function ManualPaymentPage() {
     
     if (!validation.canAccess) {
       if (validation.redirectTo) {
-        router.push(`/client/step${validation.redirectTo}`);
+        router.push(`/client/step/${validation.redirectTo}`);
       } else if (validation.error) {
         setError(validation.error);
       }
@@ -41,6 +41,47 @@ export default function ManualPaymentPage() {
     if (!user) {
       router.push('/login');
       return;
+    }
+
+    // Ensure user exists in users table
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (!existingUser) {
+      await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          role: 'client',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        });
+    }
+
+    // Ensure user exists in user_roles table
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!existingRole) {
+      await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          role: 'client',
+          has_consented: false,
+          onboarding_complete: false,
+          onboarding_submitted: false,
+          has_paid: false,
+          created_at: new Date().toISOString(),
+        });
     }
 
     const { data: userData } = await supabase
@@ -132,10 +173,7 @@ export default function ManualPaymentPage() {
     }
 
     // Advance to step 3 after successful payment request
-    const advance = await advanceToNextStep(2);
-    if (!advance.success) {
-      console.warn('Flow advance warning:', advance.error);
-    }
+    await advanceToNextStep(2);
 
     setSuccess(true);
     setSubmitting(false);
