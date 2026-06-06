@@ -53,19 +53,17 @@ export default function SelectAdminPage() {
       return;
     }
 
-    // 1. Update users table (backward compatibility)
-    await supabase
-      .from('users')
-      .update({ admin_id: selectedAdminId })
-      .eq('id', user.id);
-
-    // 2. Update user_roles table
-    await supabase
+    // 1. Update user_roles table (assigned_admin_id)
+    const { error: roleError } = await supabase
       .from('user_roles')
       .update({ assigned_admin_id: selectedAdminId })
       .eq('user_id', user.id);
 
-    // 3. Update or insert client_flow_state
+    if (roleError) {
+      console.error('Error updating user_roles:', roleError);
+    }
+
+    // 2. Update client_flow_state
     const { data: existingFlow } = await supabase
       .from('client_flow_state')
       .select('id')
