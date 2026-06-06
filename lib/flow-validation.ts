@@ -20,29 +20,36 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
     };
   }
 
-  // Get flow state
-  const { data: flowState } = await supabase
+  // Get or create flow state
+  let { data: flowState } = await supabase
     .from('client_flow_state')
     .select('*')
     .eq('client_id', user.id)
     .single();
 
+  // If no flow state exists, create one for step 1
   if (!flowState) {
-    // No flow state means client is at step 1
-    if (targetStep === 1) {
+    const { data: newFlow, error: createError } = await supabase
+      .from('client_flow_state')
+      .insert({
+        client_id: user.id,
+        current_step: 1,
+        lock_type: 'unlocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (createError || !newFlow) {
       return {
-        canAccess: true,
-        redirectTo: null,
-        error: null,
+        canAccess: false,
+        redirectTo: 1,
+        error: 'Unable to initialize flow state',
         flowState: null
       };
     }
-    return {
-      canAccess: false,
-      redirectTo: 1,
-      error: 'Please complete Step 1 first',
-      flowState: null
-    };
+    flowState = newFlow;
   }
 
   // Check if permanently locked
