@@ -27,11 +27,17 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'rejected'>('pending');
   const [pendingCount, setPendingCount] = useState(0);
+  const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
     loadPayments();
   }, [role, adminId, agentId]);
+
+  const showToast = (message: string, type: string) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const loadPayments = async () => {
     setLoading(true);
@@ -114,7 +120,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       .createSignedUrl(popUrl, 300);
     
     if (error) {
-      alert('Error viewing POP: ' + error.message);
+      showToast('Error viewing POP: ' + error.message, 'error');
       return;
     }
     
@@ -124,7 +130,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === 'confirmed') {
+    if (status === 'confirmed' || status === 'approved') {
       return <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">✅ Confirmed</span>;
     }
     if (status === 'rejected') {
@@ -135,11 +141,24 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
 
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
+    if (filter === 'confirmed') return p.status === 'confirmed' || p.status === 'approved';
     return p.status === filter;
   });
 
+  if (loading) {
+    return <div className="text-center py-8">Loading payment requests...</div>;
+  }
+
   return (
     <div className="space-y-4">
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
+
       {pendingCount > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <p className="text-sm text-yellow-800">
@@ -149,14 +168,42 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       )}
 
       <div className="flex gap-2 border-b pb-2">
-        <button onClick={() => setFilter('pending')} className={`px-3 py-1 text-sm rounded ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'}`}>Pending</button>
-        <button onClick={() => setFilter('confirmed')} className={`px-3 py-1 text-sm rounded ${filter === 'confirmed' ? 'bg-green-100 text-green-800' : 'text-gray-500'}`}>Confirmed</button>
-        <button onClick={() => setFilter('rejected')} className={`px-3 py-1 text-sm rounded ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'text-gray-500'}`}>Rejected</button>
-        <button onClick={() => setFilter('all')} className={`px-3 py-1 text-sm rounded ${filter === 'all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500'}`}>All</button>
+        <button 
+          onClick={() => setFilter('pending')} 
+          className={`px-3 py-1 text-sm rounded ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'}`}
+        >
+          Pending ({payments.filter(p => p.status === 'pending').length})
+        </button>
+        <button 
+          onClick={() => setFilter('confirmed')} 
+          className={`px-3 py-1 text-sm rounded ${filter === 'confirmed' ? 'bg-green-100 text-green-800' : 'text-gray-500'}`}
+        >
+          Confirmed ({payments.filter(p => p.status === 'confirmed' || p.status === 'approved').length})
+        </button>
+        <button 
+          onClick={() => setFilter('rejected')} 
+          className={`px-3 py-1 text-sm rounded ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'text-gray-500'}`}
+        >
+          Rejected ({payments.filter(p => p.status === 'rejected').length})
+        </button>
+        <button 
+          onClick={() => setFilter('all')} 
+          className={`px-3 py-1 text-sm rounded ${filter === 'all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500'}`}
+        >
+          All ({payments.length})
+        </button>
+        <button 
+          onClick={loadPayments} 
+          className="ml-auto px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          🔄 Refresh
+        </button>
       </div>
 
       {filteredPayments.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">No payment requests found</div>
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
+          No {filter !== 'all' ? filter : ''} payment requests found
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -181,7 +228,9 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                   </td>
                   <td className="px-4 py-2 text-sm font-mono">{payment.reference}</td>
                   <td className="px-4 py-2">
-                    <button onClick={() => viewPOP(payment.pop_url)} className="text-blue-600 hover:underline text-sm">📄 View POP</button>
+                    <button onClick={() => viewPOP(payment.pop_url)} className="text-blue-600 hover:underline text-sm">
+                      📄 View POP
+                    </button>
                   </td>
                   <td className="px-4 py-2 text-sm">{new Date(payment.requested_at).toLocaleString()}</td>
                   <td className="px-4 py-2">{getStatusBadge(payment.status)}</td>
@@ -192,22 +241,40 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                           onClick={async () => {
                             if (!confirm(`Confirm payment for ${payment.client_email}?`)) return;
                             const { data: { user } } = await supabase.auth.getUser();
-                            await supabase.from('manual_payment_requests').update({ 
-                              status: 'confirmed', 
-                              confirmed_at: new Date().toISOString(), 
-                              confirmed_by: user?.id 
-                            }).eq('id', payment.id);
-                            await supabase.from('users').update({ 
-                              has_paid: true, 
-                              paid_at: new Date().toISOString() 
-                            }).eq('id', payment.client_id);
+                            
+                            const { error: updateError } = await supabase
+                              .from('manual_payment_requests')
+                              .update({ 
+                                status: 'confirmed', 
+                                confirmed_at: new Date().toISOString(), 
+                                confirmed_by: user?.id 
+                              })
+                              .eq('id', payment.id);
+                            
+                            if (updateError) {
+                              showToast('Error confirming payment: ' + updateError.message, 'error');
+                              return;
+                            }
+                            
+                            await supabase
+                              .from('user_roles')
+                              .update({ has_paid: true })
+                              .eq('user_id', payment.client_id);
+                            
+                            await supabase
+                              .from('users')
+                              .update({ has_paid: true, paid_at: new Date().toISOString() })
+                              .eq('id', payment.client_id);
+                            
                             await fetch('/api/send-payment-confirmation', { 
                               method: 'POST', 
                               headers: { 'Content-Type': 'application/json' }, 
                               body: JSON.stringify({ email: payment.client_email, clientId: payment.client_id, status: 'approved' }) 
                             });
-                            alert(`Payment confirmed for ${payment.client_email}`);
-                            loadPayments();
+                            
+                            showToast(`✅ Payment confirmed for ${payment.client_email}`, 'success');
+                            await loadPayments();
+                            setFilter('confirmed');
                           }}
                           className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
                         >
@@ -217,17 +284,21 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                           onClick={async () => {
                             const reason = prompt('Reason for rejection:');
                             if (!reason) return;
-                            await supabase.from('manual_payment_requests').update({ 
-                              status: 'rejected', 
-                              admin_notes: reason 
-                            }).eq('id', payment.id);
+                            
+                            await supabase
+                              .from('manual_payment_requests')
+                              .update({ status: 'rejected', admin_notes: reason })
+                              .eq('id', payment.id);
+                            
                             await fetch('/api/send-payment-confirmation', { 
                               method: 'POST', 
                               headers: { 'Content-Type': 'application/json' }, 
                               body: JSON.stringify({ email: payment.client_email, clientId: payment.client_id, status: 'rejected', adminNotes: reason }) 
                             });
-                            alert(`Payment rejected for ${payment.client_email}`);
-                            loadPayments();
+                            
+                            showToast(`❌ Payment rejected for ${payment.client_email}`, 'success');
+                            await loadPayments();
+                            setFilter('rejected');
                           }}
                           className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
                         >
