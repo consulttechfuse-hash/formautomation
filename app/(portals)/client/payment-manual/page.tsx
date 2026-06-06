@@ -65,16 +65,20 @@ export default function ManualPaymentPage() {
     const fileExt = popFile.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     
+    console.log('Uploading to path:', fileName);
+    
     const { error: uploadError } = await supabase.storage
       .from('pops')
       .upload(fileName, popFile);
 
     if (uploadError) {
-      setError('Failed to upload POP. Please try again.');
+      console.error('Upload error details:', uploadError);
+      setError(`Upload failed: ${uploadError.message}`);
       setUploading(false);
       return false;
     }
 
+    console.log('Upload successful');
     setUploading(false);
     return fileName;
   };
@@ -94,6 +98,8 @@ export default function ManualPaymentPage() {
       return;
     }
 
+    console.log('Inserting into manual_payment_requests...');
+    
     const { error: insertError } = await supabase
       .from('manual_payment_requests')
       .insert({
@@ -108,11 +114,13 @@ export default function ManualPaymentPage() {
       });
 
     if (insertError) {
-      setError('Failed to submit. Please try again.');
+      console.error('Insert error details:', insertError);
+      setError(`Database error: ${insertError.message}`);
       setSubmitting(false);
       return;
     }
 
+    console.log('Insert successful');
     setSuccess(true);
     setSubmitting(false);
   };
