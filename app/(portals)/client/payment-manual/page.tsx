@@ -13,49 +13,12 @@ export default function ManualPaymentPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [checkingAccess, setCheckingAccess] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    checkAccess();
+    loadUser();
   }, []);
-
-  const checkAccess = async () => {
-    setCheckingAccess(true);
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    // Direct database check for step 1 completion
-    const { data: flowState, error } = await supabase
-      .from('client_flow_state')
-      .select('step_1_admin_selected, current_step, lock_type')
-      .eq('client_id', user.id)
-      .single();
-
-    console.log('Payment page - FlowState:', flowState);
-    console.log('Payment page - Error:', error);
-
-    if (error || !flowState) {
-      console.log('No flow state, redirecting to select-admin');
-      router.push('/client/select-admin');
-      return;
-    }
-
-    if (flowState.step_1_admin_selected !== true) {
-      console.log('Step 1 not complete, redirecting to select-admin');
-      router.push('/client/select-admin');
-      return;
-    }
-
-    console.log('Access granted to payment page');
-    setCheckingAccess(false);
-    await loadUser();
-  };
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -105,6 +68,7 @@ export default function ManualPaymentPage() {
         });
     }
 
+    // Check if already paid
     const { data: userData } = await supabase
       .from('users')
       .select('has_paid, idp_t1')
@@ -193,26 +157,14 @@ export default function ManualPaymentPage() {
       return;
     }
 
-    // Update flow state to step 3
-    await supabase
-      .from('client_flow_state')
-      .update({
-        step_2_payment_completed: true,
-        current_step: 3,
-        step_2_completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('client_id', user.id);
-
     setSuccess(true);
     setSubmitting(false);
   };
 
-  if (checkingAccess || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-gray-600">Loading...</p>
       </div>
     );
   }
