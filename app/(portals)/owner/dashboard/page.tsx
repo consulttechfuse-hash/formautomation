@@ -17,6 +17,8 @@ import ClientGrowthChart from '../components/charts/ClientGrowth';
 import TopAgentsChart from '../components/charts/TopAgents';
 import RevenueByAdminChart from '../components/charts/RevenueByAdmin';
 import ConversionGauge from '../components/charts/ConversionGauge';
+import EmailLogs from '../components/EmailLogs';
+import DevOps from '../components/DevOps';
 
 export default function OwnerDashboard() {
   const router = useRouter();
@@ -33,6 +35,8 @@ export default function OwnerDashboard() {
     { id: 'agentPerformance', name: '📊 Agent Performance' },
     { id: 'adminRevenue', name: '💰 Admin Revenue' },
     { id: 'systemRevenue', name: '🏦 System Revenue' },
+    { id: 'clientCommunication', name: '📧 Client Communication' },
+    { id: 'devops', name: '🛠️ DevOps' },
   ];
 
   return (
@@ -76,11 +80,7 @@ export default function OwnerDashboard() {
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
-            
-            {/* Stats Cards */}
             <StatsCards />
-            
-            {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <RevenueTrendChart />
               <ClientGrowthChart />
@@ -92,7 +92,6 @@ export default function OwnerDashboard() {
             </div>
           </div>
         )}
-        
         {activeSection === 'admins' && <AdminManagement />}
         {activeSection === 'requests' && <RequestsStats />}
         {activeSection === 'clients' && <ClientManagement />}
@@ -101,6 +100,8 @@ export default function OwnerDashboard() {
         {activeSection === 'adminRevenue' && <AdminRevenueReport />}
         {activeSection === 'systemRevenue' && <SystemRevenueReport />}
         {activeSection === 'paymentVerification' && <PaymentVerification />}
+        {activeSection === 'clientCommunication' && <EmailLogs role="owner" />}
+        {activeSection === 'devops' && <DevOps />}
       </div>
     </div>
   );
