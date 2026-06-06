@@ -26,6 +26,48 @@ export default function ManualPaymentPage() {
       return;
     }
 
+    // Ensure user exists in users table
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (!existingUser) {
+      // Insert into users table if not exists
+      await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          role: 'client',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        });
+    }
+
+    // Ensure user exists in user_roles table
+    const { data: existingRole } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!existingRole) {
+      await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          role: 'client',
+          has_consented: false,
+          onboarding_complete: false,
+          onboarding_submitted: false,
+          has_paid: false,
+          created_at: new Date().toISOString(),
+        });
+    }
+
     const { data: userData } = await supabase
       .from('users')
       .select('has_paid, idp_t1')
@@ -65,20 +107,17 @@ export default function ManualPaymentPage() {
     const fileExt = popFile.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
     
-    console.log('Uploading to path:', fileName);
-    
     const { error: uploadError } = await supabase.storage
       .from('pops')
       .upload(fileName, popFile);
 
     if (uploadError) {
-      console.error('Upload error details:', uploadError);
+      console.error('Upload error:', uploadError);
       setError(`Upload failed: ${uploadError.message}`);
       setUploading(false);
       return false;
     }
 
-    console.log('Upload successful');
     setUploading(false);
     return fileName;
   };
@@ -98,8 +137,25 @@ export default function ManualPaymentPage() {
       return;
     }
 
-    console.log('Inserting into manual_payment_requests...');
-    
+    // First, ensure the user exists in the referenced table
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (!existingUser) {
+      await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          role: 'client',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        });
+    }
+
     const { error: insertError } = await supabase
       .from('manual_payment_requests')
       .insert({
@@ -114,13 +170,12 @@ export default function ManualPaymentPage() {
       });
 
     if (insertError) {
-      console.error('Insert error details:', insertError);
+      console.error('Insert error:', insertError);
       setError(`Database error: ${insertError.message}`);
       setSubmitting(false);
       return;
     }
 
-    console.log('Insert successful');
     setSuccess(true);
     setSubmitting(false);
   };
