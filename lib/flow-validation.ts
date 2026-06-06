@@ -12,6 +12,7 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
+    console.log('[validateFlowAccess] No user logged in');
     return {
       canAccess: false,
       redirectTo: null,
@@ -20,6 +21,8 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
     };
   }
 
+  console.log(`[validateFlowAccess] User: ${user.email}, Target Step: ${targetStep}`);
+
   // Get or create flow state
   let { data: flowState } = await supabase
     .from('client_flow_state')
@@ -27,8 +30,11 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
     .eq('client_id', user.id)
     .single();
 
+  console.log('[validateFlowAccess] Existing flowState:', flowState);
+
   // If no flow state exists, create one for step 1
   if (!flowState) {
+    console.log('[validateFlowAccess] No flow state found, creating new one');
     const { data: newFlow, error: createError } = await supabase
       .from('client_flow_state')
       .insert({
@@ -42,6 +48,7 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
       .single();
 
     if (createError || !newFlow) {
+      console.error('[validateFlowAccess] Error creating flow state:', createError);
       return {
         canAccess: false,
         redirectTo: 1,
@@ -50,10 +57,12 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
       };
     }
     flowState = newFlow;
+    console.log('[validateFlowAccess] Created new flowState:', flowState);
   }
 
   // Check if permanently locked
   if (flowState.lock_type === 'locked_permanent') {
+    console.log('[validateFlowAccess] Permanently locked');
     return {
       canAccess: false,
       redirectTo: null,
@@ -64,6 +73,7 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
 
   // Check if specific step is locked
   if (flowState.lock_type === 'locked_step' && flowState.locked_step === targetStep) {
+    console.log(`[validateFlowAccess] Step ${targetStep} is locked`);
     return {
       canAccess: false,
       redirectTo: null,
@@ -83,6 +93,7 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
   };
 
   const requiredSteps = prerequisites[targetStep] || [];
+  console.log(`[validateFlowAccess] Required steps for ${targetStep}:`, requiredSteps);
   
   for (const step of requiredSteps) {
     let isComplete = false;
@@ -104,7 +115,10 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
         break;
     }
     
+    console.log(`[validateFlowAccess] Step ${step} isComplete: ${isComplete}`);
+    
     if (!isComplete) {
+      console.log(`[validateFlowAccess] Redirecting to step ${step}`);
       return {
         canAccess: false,
         redirectTo: step,
@@ -114,6 +128,7 @@ export async function validateFlowAccess(targetStep: number): Promise<FlowValida
     }
   }
 
+  console.log(`[validateFlowAccess] Access granted to step ${targetStep}`);
   return {
     canAccess: true,
     redirectTo: null,
