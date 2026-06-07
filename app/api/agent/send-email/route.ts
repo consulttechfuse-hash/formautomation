@@ -77,8 +77,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
     }
 
-    // INSERT INTO EMAIL LOGS - THIS WAS MISSING
-    const { error: insertError } = await supabase
+    // Insert into email logs
+    await supabase
       .from('agent_email_logs')
       .insert({
         agent_id: user.id,
@@ -86,14 +86,9 @@ export async function POST(request: Request) {
         client_email: to,
         client_name: clientName,
         subject: subject,
-        message: message, // Store original message with placeholders
+        message: message,
         sent_at: new Date().toISOString(),
       });
-
-    if (insertError) {
-      console.error('Failed to log email:', insertError);
-      // Don't fail the request, just log the error
-    }
 
     return NextResponse.json({ success: true, messageId: data?.id });
   } catch (error) {

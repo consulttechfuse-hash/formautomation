@@ -56,7 +56,9 @@ export default function ClientPaymentOverview() {
       return;
     }
 
-    // Get clients assigned to this agent (using assigned_admin_id which holds agent ID)
+    console.log('Agent ID:', user.id);
+
+    // Get clients assigned to this agent - using assigned_agent_id field
     const { data: clientsData, error: clientsError } = await supabase
       .from('user_roles')
       .select(`
@@ -67,18 +69,21 @@ export default function ClientPaymentOverview() {
         has_paid,
         has_consented,
         assigned_admin_id,
+        assigned_agent_id,
         onboarding_complete,
         onboarding_submitted,
         created_at
       `)
       .eq('role', 'client')
-      .eq('assigned_admin_id', user.id);
+      .eq('assigned_agent_id', user.id);
 
     if (clientsError) {
       console.error('Error loading clients:', clientsError);
       setLoading(false);
       return;
     }
+
+    console.log('Clients found:', clientsData?.length || 0);
 
     if (!clientsData || clientsData.length === 0) {
       setClients([]);

@@ -31,10 +31,12 @@ export default function EmailLogs({ role }: EmailLogsProps) {
   const loadLogs = async () => {
     setLoading(true);
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('agent_email_logs')
       .select('*')
       .order('sent_at', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading email logs:', error);
@@ -58,18 +60,11 @@ export default function EmailLogs({ role }: EmailLogsProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold">Client Communication History</h2>
-        <button
-          onClick={loadLogs}
-          className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
-          🔄 Refresh
-        </button>
+        <button onClick={loadLogs} className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">🔄 Refresh</button>
       </div>
 
       {logs.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
-          No emails have been sent yet.
-        </div>
+        <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">No emails have been sent yet.</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -96,12 +91,7 @@ export default function EmailLogs({ role }: EmailLogsProps) {
                   <td className="px-4 py-2 text-sm max-w-xs truncate">{log.subject}</td>
                   <td className="px-4 py-2 text-sm">{new Date(log.sent_at).toLocaleString()}</td>
                   <td className="px-4 py-2">
-                    <button
-                      onClick={() => setSelectedLog(log)}
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      View Details
-                    </button>
+                    <button onClick={() => setSelectedLog(log)} className="text-blue-600 hover:underline text-sm">View Details</button>
                   </td>
                 </tr>
               ))}
@@ -110,51 +100,21 @@ export default function EmailLogs({ role }: EmailLogsProps) {
         </div>
       )}
 
-      {/* View Modal */}
       {selectedLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Email Details</h3>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                &times;
-              </button>
+              <button onClick={() => setSelectedLog(null)} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">To</label>
-                <p className="mt-1 text-gray-900">{selectedLog.client_email}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">From Agent</label>
-                <p className="mt-1 text-gray-900">{selectedLog.agent_name}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Subject</label>
-                <p className="mt-1 text-gray-900">{selectedLog.subject}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Sent Date</label>
-                <p className="mt-1 text-gray-900">{new Date(selectedLog.sent_at).toLocaleString()}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Message</label>
-                <div className="mt-1 p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">
-                  {selectedLog.message}
-                </div>
-              </div>
+              <div><label className="block text-sm font-medium text-gray-700">To</label><p className="mt-1 text-gray-900">{selectedLog.client_email}</p></div>
+              <div><label className="block text-sm font-medium text-gray-700">From Agent</label><p className="mt-1 text-gray-900">{selectedLog.agent_name}</p></div>
+              <div><label className="block text-sm font-medium text-gray-700">Subject</label><p className="mt-1 text-gray-900">{selectedLog.subject}</p></div>
+              <div><label className="block text-sm font-medium text-gray-700">Sent Date</label><p className="mt-1 text-gray-900">{new Date(selectedLog.sent_at).toLocaleString()}</p></div>
+              <div><label className="block text-sm font-medium text-gray-700">Message</label><div className="mt-1 p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">{selectedLog.message}</div></div>
             </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
+            <div className="mt-6 flex justify-end"><button onClick={() => setSelectedLog(null)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Close</button></div>
           </div>
         </div>
       )}
