@@ -58,7 +58,7 @@ export default function ClientPaymentOverview() {
 
     console.log('Agent ID:', user.id);
 
-    // Get clients assigned to this agent - using assigned_agent_id field
+    // Get clients assigned to this agent
     const { data: clientsData, error: clientsError } = await supabase
       .from('user_roles')
       .select(`
@@ -94,10 +94,19 @@ export default function ClientPaymentOverview() {
 
     // Get payment requests for these clients
     const clientIds = clientsData.map(c => c.user_id);
-    const { data: paymentRequests } = await supabase
+    console.log('Client IDs:', clientIds);
+    
+    const { data: paymentRequests, error: paymentError } = await supabase
       .from('manual_payment_requests')
       .select('client_id, status, requested_at')
       .in('client_id', clientIds);
+
+    console.log('Payment requests found:', paymentRequests?.length || 0);
+    console.log('Payment requests:', paymentRequests);
+    
+    if (paymentError) {
+      console.error('Payment requests error:', paymentError);
+    }
 
     const paymentMap = new Map();
     paymentRequests?.forEach(req => {
@@ -122,16 +131,24 @@ export default function ClientPaymentOverview() {
       
       let payment_status: 'pending' | 'confirmed' | 'rejected' | 'not_paid' = 'not_paid';
       
+      console.log(`Client ${client.email}: payment =`, payment);
+      
       if (payment) {
         if (payment.status === 'pending') {
           payment_status = 'pending';
+          console.log(`  -> Setting to PENDING`);
         } else if (payment.status === 'confirmed' || payment.status === 'approved') {
           payment_status = 'confirmed';
+          console.log(`  -> Setting to CONFIRMED`);
         } else if (payment.status === 'rejected') {
           payment_status = 'rejected';
+          console.log(`  -> Setting to REJECTED`);
         }
       } else if (client.has_paid === true) {
         payment_status = 'confirmed';
+        console.log(`  -> Setting to CONFIRMED (has_paid=true)`);
+      } else {
+        console.log(`  -> Setting to NOT_PAID (no payment request, has_paid=false)`);
       }
       
       return {
@@ -159,6 +176,8 @@ export default function ClientPaymentOverview() {
     const not_paid = clientsWithPayment.filter(c => c.payment_status === 'not_paid').length;
     const completed = clientsWithPayment.filter(c => c.onboarding_submitted === true || c.flow_completed === true).length;
     const total = clientsWithPayment.length;
+
+    console.log('Stats calculated:', { pending, confirmed, rejected, not_paid, completed, total });
 
     setStats({ pending, confirmed, rejected, not_paid, completed, total });
     setClients(clientsWithPayment);
