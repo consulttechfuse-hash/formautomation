@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ClientPaymentOverview from '../components/ClientPaymentOverview';
 import UnlockRequest from '../components/UnlockRequest';
+import EmailLogs from '../components/EmailLogs';
 
 export default function AgentDashboard() {
   const [loading, setLoading] = useState(true);
@@ -54,6 +55,7 @@ export default function AgentDashboard() {
         <div className="p-4 border-b border-gray-700"><h1 className="text-xl font-bold">Agent Portal</h1><p className="text-sm text-gray-400 truncate">{user?.email}</p></div>
         <nav className="flex-1 p-2">
           <button onClick={() => setActiveTab('clients')} className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${activeTab === 'clients' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'}`}>📊 Client Payment Overview</button>
+          <button onClick={() => setActiveTab('emails')} className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${activeTab === 'emails' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'}`}>📧 Client Communication</button>
           <button onClick={() => setActiveTab('unlock')} className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${activeTab === 'unlock' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'}`}>🔓 Unlock Requests</button>
           <button onClick={() => setActiveTab('profile')} className={`w-full text-left px-4 py-2 rounded-lg mb-1 transition-colors ${activeTab === 'profile' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'}`}>👤 My Profile</button>
         </nav>
@@ -64,6 +66,7 @@ export default function AgentDashboard() {
       </div>
       <div className="flex-1 overflow-auto p-6">
         {activeTab === 'clients' && <ClientPaymentOverview />}
+        {activeTab === 'emails' && <EmailLogs />}
         {activeTab === 'unlock' && <UnlockRequest />}
         {activeTab === 'profile' && (
           <div className="bg-white rounded-lg shadow p-6">
