@@ -24,25 +24,36 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Do not run on static files, API routes, or auth pages
+  // Public paths - no authentication required
   const { pathname } = request.nextUrl
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon.ico') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/auth') ||
-    pathname === '/sign-in' ||
-    pathname === '/sign-up' ||
-    pathname === '/invite-signup' ||
-    pathname === '/verify-invite'
-  ) {
+  const publicPaths = [
+    '/_next',
+    '/favicon.ico',
+    '/api',
+    '/auth',
+    '/sign-in',
+    '/sign-up',
+    '/invite-signup',
+    '/verify-invite',
+    '/form-automation',  // ✅ ADDED - Marketing page
+    '/client-signup',     // ✅ ADDED - Client signup page
+    '/forgot-password',   // ✅ ADDED - Password reset
+    '/reset-password',    // ✅ ADDED - Password reset
+    '/',                  // ✅ ADDED - Root
+  ]
+  
+  const isPublicPath = publicPaths.some(path => 
+    pathname === path || pathname.startsWith(path + '/')
+  )
+  
+  if (isPublicPath) {
     return supabaseResponse
   }
 
   // Refresh session if expired
   const { data: { user }, error } = await supabase.auth.getUser()
   
-  if (!user && pathname !== '/') {
+  if (!user) {
     // Redirect unauthenticated users to sign-in
     const redirectUrl = new URL('/sign-in', request.url)
     redirectUrl.searchParams.set('redirect', pathname)
