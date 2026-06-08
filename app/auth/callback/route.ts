@@ -28,24 +28,25 @@ export async function GET(request: NextRequest) {
         const role = userRole?.role || 'client';
         
         // Redirect based on role
-        const roleRedirects: Record<string, string> = {
-          owner: '/owner/dashboard',
-          admin: '/admin/dashboard',
-          agent: '/agent/dashboard',
-          client: redirect,
-        };
-        
-        const destination = roleRedirects[role] || redirect;
-        return NextResponse.redirect(new URL(destination, request.url));
+        if (role === 'owner') {
+          return NextResponse.redirect(new URL('/owner/dashboard', request.url));
+        }
+        if (role === 'admin') {
+          return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+        }
+        if (role === 'agent') {
+          return NextResponse.redirect(new URL('/agent/dashboard', request.url));
+        }
       }
       
+      // Default redirect for clients
       return NextResponse.redirect(new URL(redirect, request.url));
     }
     
     console.error('PKCE exchange error:', error);
-    return NextResponse.redirect(new URL('/sign-in?error=magic-link-failed', request.url));
+    return NextResponse.redirect(new URL('/client-signup?error=magic-link-failed', request.url));
   }
 
-  // If there's no code, redirect to sign-in
-  return NextResponse.redirect(new URL('/sign-in?error=no-code', request.url));
+  // If there's no code, redirect to signup
+  return NextResponse.redirect(new URL('/client-signup?error=no-code', request.url));
 }
