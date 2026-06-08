@@ -33,7 +33,7 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/login">
+          <Link href="/sign-in">
             <Button variant="outline">Sign In</Button>
           </Link>
         </div>
@@ -65,7 +65,7 @@ export function Header() {
               Support
             </Link>
             <div className="flex flex-col gap-2 pt-2">
-              <Link href="/login">
+              <Link href="/sign-in">
                 <Button variant="outline" className="w-full">Sign In</Button>
               </Link>
             </div>

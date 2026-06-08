@@ -24,13 +24,13 @@ export function HeroSection() {
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button size="lg" className="w-full sm:w-auto">
                 <LogIn className="mr-2 h-5 w-5" />
                 Sign In
               </Button>
             </Link>
-            <Link href="/signup">
+            <Link href="/client-signup">
               <Button size="lg" variant="outline" className="w-full sm:w-auto bg-foreground text-background hover:bg-foreground/90 hover:text-background">
                 <Mail className="mr-2 h-5 w-5" />
                 Sign Up
