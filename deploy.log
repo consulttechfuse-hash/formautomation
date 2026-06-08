@@ -1,0 +1,215 @@
+Vercel CLI 54.9.1 (Node.js 20.11.0)
+> [debug] [2026-06-08T12:15:15.795Z] Agent/TTY/nonInteractive: isAgent=false agentName=none stdin.isTTY=true --non-interactive=false explicitFalse=false => nonInteractive=false
+> [debug] [2026-06-08T12:15:15.800Z] user supplied a possible target for deployment or an extension
+> [debug] [2026-06-08T12:15:15.891Z] failed to find extension command with name "vercel---prod"
+> [debug] [2026-06-08T12:15:15.971Z] Setting target to production
+> [debug] [2026-06-08T12:15:16.021Z] Spinner invoked (Retrieving project…) with a 1000ms delay
+> [debug] [2026-06-08T12:15:16.024Z] Valid access token, skipping token refresh.
+> [debug] [2026-06-08T12:15:16.095Z] #1 → GET https://api.vercel.com/teams/team_d0echMSBbjEWsHVpDYkxCWxk?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+> [debug] [2026-06-08T12:15:16.097Z] #2 → GET https://api.vercel.com/v9/projects/prj_f2uH9Sz09TixPMWwIAwLKi9RAVlv?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+> [debug] [2026-06-08T12:15:17.161Z] #1 ← 200 OK: sfo1::sqjsf-1780920916979-ba122c85c6e1 [1.07s]
+> [debug] [2026-06-08T12:15:17.184Z] #2 ← 200 OK: sfo1::kffn8-1780920916975-dd1ab705a8e0 [1.09s]
+> [debug] [2026-06-08T12:15:17.227Z] Spinner invoked (Deploying consulttechfuse-hashs-projects/formautomation) with a 0ms delay
+[client-debug] 2026-06-08T12:15:17.228Z Creating deployment...
+[client-debug] 2026-06-08T12:15:17.228Z Provided 'path' is a directory.
+[client-debug] 2026-06-08T12:15:17.231Z Found 26 rules in .vercelignore
+[client-debug] 2026-06-08T12:15:17.231Z Building file tree...
+[client-debug] 2026-06-08T12:15:17.277Z Found 310 files in the specified directory
+[client-debug] 2026-06-08T12:15:17.589Z Yielding a 'hashes-calculated' event with 278 hashes
+[client-debug] 2026-06-08T12:15:17.589Z Using provided API URL: https://api.vercel.com
+[client-debug] 2026-06-08T12:15:17.590Z Using provided user agent: vercel 54.9.1 node-v20.11.0 linux (x64)
+[client-debug] 2026-06-08T12:15:17.590Z Setting platform version to harcoded value 2
+[client-debug] 2026-06-08T12:15:17.590Z Creating the deployment and starting upload...
+[client-debug] 2026-06-08T12:15:17.590Z Determining necessary files for upload...
+[client-debug] 2026-06-08T12:15:17.590Z Creating deployment
+[client-debug] 2026-06-08T12:15:17.592Z Sending deployment creation API request
+[client-debug] 2026-06-08T12:15:18.440Z Deployment response: {"error":{"code":"missing_files","message":"Missing files","missing":["3005e4a445046570703c067f27ad92e67551ea93","4a74483ac0dde7d3eb2f5757e3783407ca5da2a9"]}}
+[client-debug] 2026-06-08T12:15:18.440Z Error: Deployment request status is 400
+[client-debug] 2026-06-08T12:15:18.441Z 2 files are required to upload
+[client-debug] 2026-06-08T12:15:18.442Z Yielding a 'file-count' event
+> [debug] [2026-06-08T12:15:18.442Z] Total files 278, 2 changed
+> [debug] [2026-06-08T12:15:18.444Z] Spinner invoked (Uploading [--------------------] (0.0B/7.9KB)) with a 0ms delay
+[client-debug] 2026-06-08T12:15:18.445Z Building an upload list...
+[client-debug] 2026-06-08T12:15:18.450Z Starting upload
+[client-debug] 2026-06-08T12:15:18.452Z POST https://api.vercel.com/v2/files?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+[client-debug] 2026-06-08T12:15:18.457Z POST https://api.vercel.com/v2/files?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+> [debug] [2026-06-08T12:15:18.461Z] Spinner invoked (Uploading [====================] (7.9KB/7.9KB)) with a 0ms delay
+[client-debug] 2026-06-08T12:15:19.056Z DONE in 599ms: POST https://api.vercel.com/v2/files?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+[client-debug] 2026-06-08T12:15:19.056Z File 4a74483ac0dde7d3eb2f5757e3783407ca5da2a9 (/home/joey/techfuse-doccontrol/app/api/accept-invite/route.ts) uploaded
+[client-debug] 2026-06-08T12:15:19.056Z Yielding a 'file-uploaded' event
+> [debug] [2026-06-08T12:15:19.056Z] Uploaded: /home/joey/techfuse-doccontrol/app/api/accept-invite/route.ts (6.28KB)
+[client-debug] 2026-06-08T12:15:19.061Z DONE in 609ms: POST https://api.vercel.com/v2/files?teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+[client-debug] 2026-06-08T12:15:19.061Z File 3005e4a445046570703c067f27ad92e67551ea93 (/home/joey/techfuse-doccontrol/deploy.log) uploaded
+[client-debug] 2026-06-08T12:15:19.062Z Yielding a 'file-uploaded' event
+> [debug] [2026-06-08T12:15:19.062Z] Uploaded: /home/joey/techfuse-doccontrol/deploy.log (1.59KB)
+[client-debug] 2026-06-08T12:15:19.062Z All files uploaded
+[client-debug] 2026-06-08T12:15:19.062Z Yielding a 'all-files-uploaded' event
+[client-debug] 2026-06-08T12:15:19.062Z Starting deployment creation
+[client-debug] 2026-06-08T12:15:19.062Z Creating deployment
+[client-debug] 2026-06-08T12:15:19.066Z Sending deployment creation API request
+[client-debug] 2026-06-08T12:15:22.125Z Deployment response: {"alias":["formautomation-consulttechfuse-hashs-projects.vercel.app","formautomation-consulttechfuse-consulttechfuse-hashs-projects.vercel.app"],"aliasAssigned":false,"automaticAliases":["formautomation-consulttechfuse-hashs-projects.vercel.app","formautomation-consulttechfuse-consulttechfuse-hashs-projects.vercel.app"],"bootedAt":1780920919983,"buildingAt":1780920919983,"buildSkipped":false,"createdAt":1780920919983,"creator":{"uid":"haHo0jD0Z11gT7QiW2s1A4od","username":"consulttechfuse","avatar":"5a121a9f868485f9095952c971317c75ca42f9d3"},"id":"dpl_B9PXAdGHrN14cU46XWjMFV8UrYmj","name":"formautomation","meta":{"githubCommitAuthorName":"Techbatur","githubCommitAuthorEmail":"techbatur@gmail.com","githubCommitMessage":"fix: agent invite - remove conflicting client record and preserve role","githubCommitOrg":"consulttechfuse-hash","githubCommitRef":"main","githubCommitRepo":"formautomation","githubCommitSha":"7be73579267e29246d59382d2cc54e784a56e837","githubDeployment":"1","githubOrg":"consulttechfuse-hash","githubRepo":"formautomation","gitDirty":"1"},"originCacheRegion":"iad1","project":{"id":"prj_f2uH9Sz09TixPMWwIAwLKi9RAVlv","name":"formautomation","framework":"nextjs"},"public":false,"readyState":"INITIALIZING","regions":["iad1"],"source":"cli","status":"INITIALIZING","target":"production","team":{"id":"team_d0echMSBbjEWsHVpDYkxCWxk","name":"consulttechfuse-hash's projects","slug":"consulttechfuse-hashs-projects"},"type":"LAMBDAS","url":"formautomation-6ou209ao5-consulttechfuse-hashs-projects.vercel.app","version":2,"previewCommentsEnabled":true,"oidcTokenClaims":{"sub":"owner:consulttechfuse-hashs-projects:project:formautomation:environment:production","iss":"https://oidc.vercel.com/consulttechfuse-hashs-projects","scope":"owner:consulttechfuse-hashs-projects:project:formautomation:environment:production","aud":"https://vercel.com/consulttechfuse-hashs-projects","owner":"consulttechfuse-hashs-projects","owner_id":"team_d0echMSBbjEWsHVpDYkxCWxk","project":"formautomation","project_id":"prj_f2uH9Sz09TixPMWwIAwLKi9RAVlv","environment":"production","plan":"hobby"},"lambdas":[{"id":"bld_93kn60ytk","createdAt":1780920921434,"entrypoint":".","readyState":"READY","readyStateAt":1780920921434,"output":[]}],"aliasAssignedAt":null,"build":{"env":[]},"builds":[],"createdIn":"sfo1","env":[],"functions":null,"inspectorUrl":"https://vercel.com/consulttechfuse-hashs-projects/formautomation/B9PXAdGHrN14cU46XWjMFV8UrYmj","isInConcurrentBuildsQueue":false,"isInSystemBuildsQueue":true,"ownerId":"team_d0echMSBbjEWsHVpDYkxCWxk","plan":"hobby","projectId":"prj_f2uH9Sz09TixPMWwIAwLKi9RAVlv","projectSettings":{"buildCommand":null,"devCommand":null,"framework":"nextjs","commandForIgnoringBuildStep":null,"installCommand":null,"outputDirectory":null,"speedInsights":{"id":"d47eu3i1A9BWPLmzZpMO1bi5LOL","hasData":false},"webAnalytics":{"id":"AUN7nnY1fJrzLzbMT2NpmAdKs","enabledAt":1779824541193},"nodeVersion":"24.x"},"routes":null,"config":{"version":1,"secureComputePrimaryRegion":null,"secureComputeFallbackRegion":null,"functionTimeout":300,"functionType":"fluid","functionMemoryType":"standard","isUsingActiveCPU":true,"resourceConfig":{"buildQueue":{"configuration":"SKIP_NAMESPACE_QUEUE"}}},"attribution":{"commitMeta":{"name":"Techbatur","email":"techbatur@gmail.com","isVerified":false},"gitUser":{"id":279244682,"login":"techbatur-alt","type":"user","provider":"github"}}}
+[client-debug] 2026-06-08T12:15:22.127Z Deployment created
+[client-debug] 2026-06-08T12:15:22.127Z Yielding a 'created' event
+  Inspect     https://vercel.com/consulttechfuse-hashs-projects/formautomation/B9PXAdGHrN14cU46XWjMFV8UrYmj
+▲ Production  https://formautomation-6ou209ao5-consulttechfuse-hashs-projects.vercel.app
+https://formautomation-6ou209ao5-consulttechfuse-hashs-projects.vercel.app> [debug] [2026-06-08T12:15:22.130Z] Spinner invoked (Building…) with a 0ms delay
+> [debug] [2026-06-08T12:15:22.132Z] #3 → GET https://api.vercel.com/v3/now/deployments/dpl_B9PXAdGHrN14cU46XWjMFV8UrYmj/events?direction=forward&follow=1&format=lines&teamId=team_d0echMSBbjEWsHVpDYkxCWxk
+[client-debug] 2026-06-08T12:15:22.132Z Waiting for deployment to be ready...
+[client-debug] 2026-06-08T12:15:22.134Z Waiting for builds and the deployment to complete...
+[client-debug] 2026-06-08T12:15:22.744Z Deployment state changed to BUILDING
+[client-debug] 2026-06-08T12:15:22.744Z Yielding a 'building' event
+> [debug] [2026-06-08T12:15:22.744Z] Spinner invoked (Building…) with a 0ms delay
+> [debug] [2026-06-08T12:15:24.018Z] #3 ← 200 OK: sfo1::gpvpt-1780920922307-6288b70f38d3 [1.89s]
+> [debug] [2026-06-08T12:15:24.025Z] Spinner invoked (Running build in Washington, D.C., USA (East) – iad1) with a 0ms delay
+> [debug] [2026-06-08T12:15:24.026Z] Spinner invoked (Build machine configuration: 2 cores, 8 GB) with a 0ms delay
+> [debug] [2026-06-08T12:15:24.026Z] Spinner invoked (Retrieving list of deployment files...) with a 0ms delay
+> [debug] [2026-06-08T12:15:24.026Z] Spinner invoked (Skipping build cache, deployment was triggered without cache.) with a 0ms delay
+> [debug] [2026-06-08T12:15:24.026Z] Spinner invoked (Downloading 310 deployment files...) with a 0ms delay
+> [debug] [2026-06-08T12:15:27.956Z] Spinner invoked (Running "vercel build") with a 0ms delay
+> [debug] [2026-06-08T12:15:27.957Z] Spinner invoked (Vercel CLI 54.9.0) with a 0ms delay
+> [debug] [2026-06-08T12:15:27.957Z] Spinner invoked (Installing dependencies...) with a 0ms delay
+> [debug] [2026-06-08T12:15:33.135Z] Spinner invoked (npm warn deprecated recharts@2.15.4: 1.x and 2.x branches are no longer active. Bump to Recharts v3 to receive latest features and bugfixes. See https://github.com/recharts/recharts/wiki/3.0-migration-guide) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (added 195 packages in 12s) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (32 packages are looking for funding) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (run `npm fund` for details) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (Detected Next.js version: 16.2.6) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (Running "npm run build") with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (> techfuse-doccontrol@0.1.0 build) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (> next build) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (Applying modifyConfig from Vercel) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (Attention: Next.js now collects completely anonymous telemetry regarding usage.) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.042Z] Spinner invoked (This information is used to shape Next.js' roadmap and prioritize features.) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.043Z] Spinner invoked (You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.043Z] Spinner invoked (https://nextjs.org/telemetry) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.043Z] Spinner invoked (▲ Next.js 16.2.6 (Turbopack)) with a 0ms delay
+> [debug] [2026-06-08T12:15:40.043Z] Spinner invoked (Creating an optimized production build ...) with a 0ms delay
+> [debug] [2026-06-08T12:15:58.236Z] Spinner invoked (✓ Compiled successfully in 17.7s) with a 0ms delay
+> [debug] [2026-06-08T12:15:58.236Z] Spinner invoked (Running TypeScript ...) with a 0ms delay
+> [debug] [2026-06-08T12:16:10.352Z] Spinner invoked (Finished TypeScript in 11.3s ...) with a 0ms delay
+> [debug] [2026-06-08T12:16:10.353Z] Spinner invoked (Collecting page data using 1 worker ...) with a 0ms delay
+> [debug] [2026-06-08T12:16:10.353Z] Spinner invoked (Generating static pages using 1 worker (0/82) ...) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.688Z] Spinner invoked (Generating static pages using 1 worker (20/82)) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.688Z] Spinner invoked (Generating static pages using 1 worker (40/82)) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.688Z] Spinner invoked (Generating static pages using 1 worker (61/82)) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.688Z] Spinner invoked (✓ Generating static pages using 1 worker (82/82) in 944ms) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.688Z] Spinner invoked (Finalizing page optimization ...) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (Running onBuildComplete from Vercel) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (Route (app)) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (┌ ○ /) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (├ ○ /_not-found) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (├ ○ /about/contact) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.689Z] Spinner invoked (├ ○ /about/founder) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.690Z] Spinner invoked (├ ○ /about/founder/cv) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.691Z] Spinner invoked (├ ○ /about/mission) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.691Z] Spinner invoked (├ ○ /about/vision) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.691Z] Spinner invoked (├ ○ /aboutus) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.691Z] Spinner invoked (├ ○ /accept-invite) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ○ /admin/dashboard) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ○ /admin/profile) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ○ /advisory) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ○ /agent/dashboard) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ƒ /api/accept-invite) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ƒ /api/admin/invite-agent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ƒ /api/admin/profile) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.692Z] Spinner invoked (├ ƒ /api/admin/reassign-agent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.693Z] Spinner invoked (├ ƒ /api/admin/reassign-client) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.693Z] Spinner invoked (├ ƒ /api/admin/unlock-requests) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.693Z] Spinner invoked (├ ƒ /api/agent/assign) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.694Z] Spinner invoked (├ ƒ /api/agent/send-email) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.694Z] Spinner invoked (├ ƒ /api/agent/unlock-request) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.694Z] Spinner invoked (├ ƒ /api/auth/callback) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.694Z] Spinner invoked (├ ƒ /api/auth/signin) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/auth/verify) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/check-user-exists) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/client/assign-admin) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/client/assign-agent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/client/flow) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/client/flow/advance) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.695Z] Spinner invoked (├ ƒ /api/email/send) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/invite) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/owner/flow/override) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/owner/invite-admin) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/owner/templates) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/payment/create-intent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/send-payment-confirmation) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.696Z] Spinner invoked (├ ƒ /api/storage/proxy) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.697Z] Spinner invoked (├ ƒ /api/test-email) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.697Z] Spinner invoked (├ ƒ /api/verify-invite) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.697Z] Spinner invoked (├ ○ /auth/callback) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /business-development) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client-signup) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/consent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/dashboard) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/form-01) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/forms) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ƒ /client/forms/[formNumber]) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/forms/complete) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.698Z] Spinner invoked (├ ○ /client/payment) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.699Z] Spinner invoked (├ ○ /client/payment-manual) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.699Z] Spinner invoked (├ ○ /client/payment-result) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.699Z] Spinner invoked (├ ○ /client/payment-success) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.700Z] Spinner invoked (├ ○ /client/select-admin) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.700Z] Spinner invoked (├ ○ /client/select-payment) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.700Z] Spinner invoked (├ ○ /client/step) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.700Z] Spinner invoked (├ ƒ /client/step/[stepNumber]) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /client/upload-picture) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /consulting) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /contact) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /education) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /envirogreen) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.701Z] Spinner invoked (├ ○ /forgot-password) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.702Z] Spinner invoked (├ ○ /form-automation) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.702Z] Spinner invoked (├ ƒ /forms/[id]) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.702Z] Spinner invoked (├ ○ /forms/check-submit) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.702Z] Spinner invoked (├ ○ /foundation/envirogreen) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.702Z] Spinner invoked (├ ○ /foundation/npo) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.703Z] Spinner invoked (├ ○ /founder) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.703Z] Spinner invoked (├ ○ /infrastructure) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.703Z] Spinner invoked (├ ○ /invite-signup) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /login) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /mining) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /mission) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /missionpage) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /npo) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.704Z] Spinner invoked (├ ○ /oauth/consent) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.705Z] Spinner invoked (├ ○ /owner/dashboard) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.705Z] Spinner invoked (├ ○ /photo) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.705Z] Spinner invoked (├ ○ /profile) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.706Z] Spinner invoked (├ ○ /projects/education) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.706Z] Spinner invoked (├ ○ /projects/infrastructure) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.706Z] Spinner invoked (├ ○ /projects/mining) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.706Z] Spinner invoked (├ ○ /reset-password) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.706Z] Spinner invoked (├ ○ /services) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.707Z] Spinner invoked (├ ○ /services/advisory) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.707Z] Spinner invoked (├ ○ /services/business-development) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.707Z] Spinner invoked (├ ○ /services/consulting) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.708Z] Spinner invoked (├ ○ /servicesadvisory) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.708Z] Spinner invoked (├ ○ /servicesbizdev) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.708Z] Spinner invoked (├ ○ /servicesconsult) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.709Z] Spinner invoked (├ ○ /set-password) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.709Z] Spinner invoked (├ ○ /signup) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.709Z] Spinner invoked (├ ○ /test-email) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.709Z] Spinner invoked (├ ○ /test-replace) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.709Z] Spinner invoked (├ ○ /test-template) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.710Z] Spinner invoked (├ ○ /unauthorized) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.710Z] Spinner invoked (├ ○ /vision) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.710Z] Spinner invoked (└ ○ /visionpage) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.710Z] Spinner invoked (ƒ Proxy (Middleware)) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.711Z] Spinner invoked (○  (Static)   prerendered as static content) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.711Z] Spinner invoked (ƒ  (Dynamic)  server-rendered on demand) with a 0ms delay
+> [debug] [2026-06-08T12:16:11.712Z] Spinner invoked (Build Completed in /vercel/output [45s]) with a 0ms delay
+> [debug] [2026-06-08T12:16:14.551Z] Spinner invoked (Deploying outputs...) with a 0ms delay
+[client-debug] 2026-06-08T12:16:22.547Z Deployment state changed to READY
+[client-debug] 2026-06-08T12:16:22.547Z Yielding a 'ready' event
+[2K[1A[2K[G▲ Production  https://formautomation-6ou209ao5-consulttechfuse-hashs-projects.vercel.app
+> [debug] [2026-06-08T12:16:22.553Z] Spinner invoked (Completing…) with a 0ms delay
+[client-debug] 2026-06-08T12:16:22.553Z Deployment alias assigned
+[client-debug] 2026-06-08T12:16:22.553Z Deployment is ready
+[client-debug] 2026-06-08T12:16:22.553Z Yielding a 'alias-assigned' event
+▲ Aliased     https://techfuseconsult.online
+
+✓ Ready in 1m
+> [debug] [2026-06-08T12:16:23.356Z] Vercel CLI 54.9.1 (Node.js 20.11.0)
+
+> [debug] [2026-06-08T12:16:24.404Z] Telemetry event tracked
+> [debug] [2026-06-08T12:16:24.450Z] Telemetry subprocess exited with code 0
