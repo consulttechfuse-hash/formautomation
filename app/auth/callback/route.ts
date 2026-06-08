@@ -5,7 +5,6 @@ import { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const redirect = requestUrl.searchParams.get('redirect') || '/client/select-admin';
 
   if (code) {
     const supabase = await createClient();
@@ -39,8 +38,9 @@ export async function GET(request: NextRequest) {
         }
       }
       
-      // Default redirect for clients
-      return NextResponse.redirect(new URL(redirect, request.url));
+      // Default redirect for clients - GO TO DASHBOARD (not select-admin)
+      // The dashboard will show Step 1 (Select Admin) as incomplete
+      return NextResponse.redirect(new URL('/client/dashboard', request.url));
     }
     
     console.error('PKCE exchange error:', error);
