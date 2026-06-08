@@ -13,10 +13,10 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const supabaseAdmin = createAdminClient();
 
-    // Verify the invitation token in user_roles
+    // 1. Verify the invitation token
     const { data: invitation, error: inviteError } = await supabase
       .from('user_roles')
-      .select('id')
+      .select('id, role, assigned_admin_id, invited_by')
       .eq('invitation_token', token)
       .is('user_id', null)
       .is('accepted_at', null)
@@ -27,15 +27,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid or expired invitation' }, { status: 404 });
     }
 
-    // Check if user exists in Supabase Auth
+    // 2. Check if user already exists in auth
     const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
     const existing = existingUser.users.find((u: any) => u.email === email);
 
     let userId: string;
+    let isExistingUser = false;
 
     if (existing) {
       userId = existing.id;
+      isExistingUser = true;
+      // Update password for existing user
       await supabaseAdmin.auth.admin.updateUserById(userId, { password });
+      console.log(`Existing user found: ${userId} for ${email}`);
     } else {
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -54,13 +58,36 @@ export async function POST(request: Request) {
       }
 
       userId = newUser.user.id;
+      console.log(`New user created: ${userId} for ${email}`);
     }
 
-    // Update user_roles table
+    // 3. PERMANENT FIX: Delete ANY existing user_roles records for this email (client, agent, etc.)
+    // This prevents role conflicts
+    const { data: existingRoles } = await supabase
+      .from('user_roles')
+      .select('id, role')
+      .eq('email', email)
+      .neq('invitation_token', token); // Don't delete the current invitation
+
+    if (existingRoles && existingRoles.length > 0) {
+      console.log(`Found ${existingRoles.length} existing role(s) for ${email}:`, existingRoles.map(r => r.role));
+      
+      // Delete all existing roles for this email
+      for (const roleRecord of existingRoles) {
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('id', roleRecord.id);
+        console.log(`Deleted existing role ${roleRecord.role} for ${email}`);
+      }
+    }
+
+    // 4. Update the invitation record (now the ONLY record for this email)
     const { error: updateRoleError } = await supabase
       .from('user_roles')
       .update({
         user_id: userId,
+        role: role, // 'agent' from invitation
         first_name: firstName,
         last_name: lastName,
         phone_number: phoneNumber,
@@ -71,14 +98,15 @@ export async function POST(request: Request) {
 
     if (updateRoleError) {
       console.error('user_roles update error:', updateRoleError);
+      return NextResponse.json({ error: 'Failed to update user role' }, { status: 500 });
     }
 
-    // Update or insert into public.users table
+    // 5. Update or insert into public.users table (replace role)
     const { data: existingUserRecord } = await supabase
       .from('users')
       .select('id')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!existingUserRecord) {
       await supabase
@@ -86,7 +114,7 @@ export async function POST(request: Request) {
         .insert({
           id: userId,
           email: email,
-          role: role,
+          role: role, // Use the invited role (agent)
           status: 'active',
           first_name: firstName,
           last_name: lastName,
@@ -95,11 +123,12 @@ export async function POST(request: Request) {
           created_at: new Date().toISOString(),
         });
     } else {
+      // Update existing user record - CHANGE THEIR ROLE to the invited role
       await supabase
         .from('users')
         .update({
           email: email,
-          role: role,
+          role: role, // OVERWRITE old role with new invited role
           status: 'active',
           first_name: firstName,
           last_name: lastName,
@@ -110,7 +139,9 @@ export async function POST(request: Request) {
         .eq('id', userId);
     }
 
-    // Sign the user in
+    console.log(`Successfully accepted invite for ${email} as role: ${role}`);
+
+    // 6. Sign the user in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
