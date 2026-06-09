@@ -27,6 +27,8 @@ function CallbackContent() {
 
       const user = session.user;
       
+      // Check if user needs to set a password
+      // New users created via magic link have created_at == updated_at
       if (user.created_at === user.updated_at && !user.user_metadata?.has_password) {
         setStep('password');
       } else {
@@ -51,7 +53,7 @@ function CallbackContent() {
       .single();
 
     const role = userRole?.role || 'client';
-    const redirects = {
+    const redirects: Record<string, string> = {
       owner: '/owner/dashboard',
       admin: '/admin/dashboard',
       agent: '/agent/dashboard',
