@@ -10,12 +10,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Client ID and Admin ID are required' }, { status: 400 });
     }
 
-    // Get all active agents under this admin
+    // Get all active agents under this admin - FIX: use assigned_admin_id
     const { data: agents, error: agentsError } = await supabase
       .from('user_roles')
       .select('user_id, email, first_name, last_name')
       .eq('role', 'agent')
-      .eq('invited_by', adminId);
+      .eq('assigned_admin_id', adminId);
 
     if (agentsError) {
       console.error('Error fetching agents:', agentsError);
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         .eq('admin_id', adminId);
     }
 
-    // Assign agent to client using assigned_agent_id field
+    // Assign agent to client
     const { error: updateError } = await supabase
       .from('user_roles')
       .update({ assigned_agent_id: selectedAgent.user_id })
