@@ -31,7 +31,6 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   const supabase = createClient();
 
   const loadPayments = useCallback(async () => {
-    setLoading(true);
     let query = supabase.from('manual_payment_requests').select('*');
 
     if (role === 'owner') {
@@ -49,7 +48,6 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
         query = query.in('client_id', uniqueClientIds).order('requested_at', { ascending: false });
       } else {
         setPayments([]);
-        setPendingCount(0);
         setLoading(false);
         return;
       }
@@ -66,7 +64,6 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
         query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
       } else {
         setPayments([]);
-        setPendingCount(0);
         setLoading(false);
         return;
       }
@@ -76,24 +73,22 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
     setPayments(data || []);
     setPendingCount(data?.filter(p => p.status === 'pending').length || 0);
     setLoading(false);
-  }, [role, adminId, agentId, supabase]);
+  }, [role, adminId, agentId]);
 
-  // Initial load and polling for admin/agent roles (refresh every 10 seconds)
   useEffect(() => {
     loadPayments();
-    
-    // Poll every 10 seconds for admin and agent roles to see status updates
-    let interval: NodeJS.Timeout | null = null;
-    if (role === 'admin' || role === 'agent') {
-      interval = setInterval(() => {
+
+    const channel = supabase
+      .channel('payment-status-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'manual_payment_requests' }, () => {
         loadPayments();
-      }, 10000); // Refresh every 10 seconds
-    }
-    
+      })
+      .subscribe();
+
     return () => {
-      if (interval) clearInterval(interval);
+      supabase.removeChannel(channel);
     };
-  }, [loadPayments, role]);
+  }, [loadPayments]);
 
   const showToast = (message: string, type: string) => {
     setToast({ message, type });
@@ -101,15 +96,11 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   };
 
   const viewPOP = async (popUrl: string) => {
-    const { data, error } = await supabase.storage
-      .from('pops')
-      .createSignedUrl(popUrl, 300);
-    
+    const { data, error } = await supabase.storage.from('pops').createSignedUrl(popUrl, 300);
     if (error) {
       showToast('Error viewing POP: ' + error.message, 'error');
       return;
     }
-    
     if (data?.signedUrl) {
       window.open(data.signedUrl, '_blank');
     }
@@ -128,10 +119,11 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
     if (filter === 'confirmed') return p.status === 'confirmed' || p.status === 'approved';
-    return p.status === filter;
+    if (filter === 'rejected') return p.status === 'rejected';
+    return p.status === 'pending';
   });
 
-  if (loading) {
+  if (loading && payments.length === 0) {
     return <div className="text-center py-8">Loading payment requests...</div>;
   }
 
@@ -145,43 +137,20 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
         </div>
       )}
 
-      {pendingCount > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-sm text-yellow-800">
-            ⚠️ {pendingCount} new payment request(s) pending verification
-          </p>
-        </div>
-      )}
-
       <div className="flex gap-2 border-b pb-2">
-        <button 
-          onClick={() => setFilter('pending')} 
-          className={`px-3 py-1 text-sm rounded ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setFilter('pending')} className={`px-3 py-1 text-sm rounded ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'}`}>
           Pending ({payments.filter(p => p.status === 'pending').length})
         </button>
-        <button 
-          onClick={() => setFilter('confirmed')} 
-          className={`px-3 py-1 text-sm rounded ${filter === 'confirmed' ? 'bg-green-100 text-green-800' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setFilter('confirmed')} className={`px-3 py-1 text-sm rounded ${filter === 'confirmed' ? 'bg-green-100 text-green-800' : 'text-gray-500'}`}>
           Confirmed ({payments.filter(p => p.status === 'confirmed' || p.status === 'approved').length})
         </button>
-        <button 
-          onClick={() => setFilter('rejected')} 
-          className={`px-3 py-1 text-sm rounded ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setFilter('rejected')} className={`px-3 py-1 text-sm rounded ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'text-gray-500'}`}>
           Rejected ({payments.filter(p => p.status === 'rejected').length})
         </button>
-        <button 
-          onClick={() => setFilter('all')} 
-          className={`px-3 py-1 text-sm rounded ${filter === 'all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setFilter('all')} className={`px-3 py-1 text-sm rounded ${filter === 'all' ? 'bg-gray-200 text-gray-800' : 'text-gray-500'}`}>
           All ({payments.length})
         </button>
-        <button 
-          onClick={loadPayments} 
-          className="ml-auto px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-        >
+        <button onClick={loadPayments} className="ml-auto px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
           🔄 Refresh
         </button>
       </div>
@@ -207,7 +176,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredPayments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
+                <tr key={payment.id}>
                   <td className="px-4 py-2">
                     <div className="font-medium">{payment.client_email}</div>
                     <div className="text-xs text-gray-500">{payment.client_name}</div>
@@ -241,6 +210,16 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                               .from('user_roles')
                               .update({ has_paid: true })
                               .eq('user_id', payment.client_id);
+                            
+                            // FIX: Update client flow state
+                            await supabase
+                              .from('client_flow_state')
+                              .update({ 
+                                step_2_payment_completed: true,
+                                current_step: 3,
+                                updated_at: new Date().toISOString()
+                              })
+                              .eq('client_id', payment.client_id);
                             
                             await fetch('/api/send-payment-confirmation', { 
                               method: 'POST', 
@@ -281,6 +260,11 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                           ✗ Reject
                         </button>
                       </div>
+                    </td>
+                  )}
+                  {role === 'owner' && payment.status !== 'pending' && (
+                    <td className="px-4 py-2">
+                      <span className="text-gray-400 text-sm">✓ Processed</span>
                     </td>
                   )}
                 </tr>
