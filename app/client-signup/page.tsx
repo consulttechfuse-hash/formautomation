@@ -1,13 +1,14 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useRouter } catch(e) {}
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 function ClientSignupContent() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
