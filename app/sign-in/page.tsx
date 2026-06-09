@@ -1,8 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
@@ -10,28 +9,15 @@ import { Turnstile } from '@marsidev/react-turnstile';
 
 function SignInContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/dashboard';
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-
   const supabase = createClient();
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
-  const onTurnstileSuccess = (token: string) => {
-    setCaptchaToken(token);
-    setError(null);
-  };
-
-  const onTurnstileError = () => {
-    setError('Security verification failed. Please refresh and try again.');
-  };
-
-  const handlePasswordSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!captchaToken) {
@@ -40,103 +26,76 @@ function SignInContent() {
     }
 
     setLoading(true);
-    setError(null);
+    setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({ 
+    const { error: signInError } = await supabase.auth.signInWithPassword({ 
       email, 
       password,
       options: { captchaToken }
     });
 
-    if (error) {
-      setError(error.message);
+    if (signInError) {
+      setError(signInError.message);
       setLoading(false);
       return;
     }
 
-    router.push(redirect);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      
+      const role = userRole?.role || 'client';
+      
+      if (role === 'owner') router.push('/owner/dashboard');
+      else if (role === 'admin') router.push('/admin/dashboard');
+      else if (role === 'agent') router.push('/agent/dashboard');
+      else router.push('/client/dashboard');
+    } else {
+      router.push('/client/dashboard');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-6">
-          <Link href="/" className="inline-block">
+          <Link href="/">
             <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
           </Link>
         </div>
-
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Sign in to Techfuse</h1>
-          <p className="text-gray-600 mt-2">
-            Or{' '}
-            <Link href="/client-signup" className="text-blue-600 hover:text-blue-800 font-medium">
-              create a new account
-            </Link>
-          </p>
-        </div>
-
-        <form className="space-y-4" onSubmit={handlePasswordSignIn}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="you@example.com"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          {siteKey && (
-            <div className="flex justify-center">
-              <Turnstile
-                siteKey={siteKey}
-                onSuccess={onTurnstileSuccess}
-                onError={onTurnstileError}
-                options={{ theme: 'light' }}
-              />
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !captchaToken}
-            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+        <h1 className="text-2xl font-bold text-center mb-8">Sign In</h1>
+        <form onSubmit={handleSignIn} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border rounded-lg p-2"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border rounded-lg p-2"
+            required
+          />
+          {siteKey && <Turnstile siteKey={siteKey} onSuccess={setCaptchaToken} options={{ theme: 'light' }} />}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+          <button type="submit" disabled={loading || !captchaToken} className="w-full bg-blue-600 text-white p-2 rounded-lg">
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
-            Forgot your password?
-          </Link>
+        <div className="mt-4 text-center">
+          <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+        </div>
+        <div className="mt-2 text-center text-sm">
+          Don't have an account? <Link href="/client-signup" className="text-blue-600 hover:underline">Sign up</Link>
         </div>
       </div>
     </div>
@@ -145,7 +104,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">Loading...</div>}>
       <SignInContent />
     </Suspense>
   );

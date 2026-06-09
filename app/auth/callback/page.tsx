@@ -21,32 +21,24 @@ function CallbackContent() {
       const code = searchParams.get('code');
       
       if (code) {
-        // Exchange the code for a session
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        
         if (exchangeError) {
-          console.error('Exchange error:', exchangeError);
           setStep('error');
-          setError('Invalid or expired magic link. Please request a new one.');
+          setError('Invalid or expired magic link.');
           return;
         }
       }
       
-      // Check if we have a session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         setStep('error');
-        setError('No session found. Please sign up again.');
+        setError('No session found.');
         return;
       }
 
-      const user = session.user;
-      
-      // Check if user needs to set a password
-      // New users have no password hash
-      const { data: { user: freshUser } } = await supabase.auth.getUser();
-      const needsPassword = !freshUser?.user_metadata?.has_password;
+      const { data: { user } } = await supabase.auth.getUser();
+      const needsPassword = !user?.user_metadata?.password_set;
       
       if (needsPassword) {
         setStep('password');
@@ -72,13 +64,11 @@ function CallbackContent() {
       .single();
 
     const role = userRole?.role || 'client';
-    const redirects: Record<string, string> = {
-      owner: '/owner/dashboard',
-      admin: '/admin/dashboard',
-      agent: '/agent/dashboard',
-      client: '/client/dashboard',
-    };
-    router.push(redirects[role]);
+    
+    if (role === 'owner') router.push('/owner/dashboard');
+    else if (role === 'admin') router.push('/admin/dashboard');
+    else if (role === 'agent') router.push('/agent/dashboard');
+    else router.push('/client/dashboard');
   };
 
   const handleSetPassword = async (e: React.FormEvent) => {
@@ -88,6 +78,7 @@ function CallbackContent() {
       setError('Passwords do not match');
       return;
     }
+    
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -97,8 +88,8 @@ function CallbackContent() {
     setError('');
 
     const { error: updateError } = await supabase.auth.updateUser({
-      password,
-      data: { has_password: true }
+      password: password,
+      data: { password_set: true }
     });
 
     if (updateError) {
@@ -115,7 +106,7 @@ function CallbackContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying your account...</p>
+          <p className="mt-4 text-gray-600">Verifying...</p>
         </div>
       </div>
     );
@@ -129,7 +120,7 @@ function CallbackContent() {
           <h1 className="text-xl font-bold text-gray-800 mb-2">Verification Failed</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Link href="/client-signup" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg">
-            Request New Link
+            Try Again
           </Link>
         </div>
       </div>
@@ -140,49 +131,31 @@ function CallbackContent() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-6">
-          <Link href="/" className="inline-block">
+          <Link href="/">
             <Image src="/logo.png" alt="Techfuse" width={120} height={60} className="mx-auto" />
           </Link>
         </div>
-
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">Set Your Password</h1>
-          <p className="text-gray-600 mt-2">Create a password to secure your account</p>
-        </div>
-
+        <h1 className="text-2xl font-bold text-center mb-8">Set Your Password</h1>
         <form onSubmit={handleSetPassword} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-              placeholder="Minimum 6 characters"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-              placeholder="Confirm your password"
-              required
-            />
-          </div>
-
-          {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">{error}</div>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Setting up...' : 'Continue to Dashboard'}
+          <input
+            type="password"
+            placeholder="Password (min 6 chars)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border rounded-lg p-2"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full border rounded-lg p-2"
+            required
+          />
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+          <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-2 rounded-lg">
+            {loading ? 'Setting up...' : 'Continue'}
           </button>
         </form>
       </div>
