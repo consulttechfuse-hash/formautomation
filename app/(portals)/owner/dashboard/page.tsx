@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import PaymentVerification from '../components/PaymentVerification';
 import { useRouter } from 'next/navigation';
 import StatsCards from '../components/StatsCards';
 import AdminManagement from '../components/AdminManagement';
@@ -75,19 +74,25 @@ export default function OwnerDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Stacked layout */}
       <div className="flex-1 overflow-auto p-6">
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
             <StatsCards />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            
+            {/* Stacked charts - full width each */}
+            <div className="mt-6">
               <RevenueTrendChart />
+            </div>
+            <div className="mt-6">
               <ClientGrowthChart />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <TopAgentsChart />
               <RevenueByAdminChart />
+            </div>
+            <div className="mt-6">
               <ConversionGauge />
             </div>
           </div>
@@ -99,7 +104,7 @@ export default function OwnerDashboard() {
         {activeSection === 'agentPerformance' && <AgentPerformanceReport />}
         {activeSection === 'adminRevenue' && <AdminRevenueReport />}
         {activeSection === 'systemRevenue' && <SystemRevenueReport />}
-        {activeSection === 'paymentVerification' && <PaymentVerification />}
+        {activeSection === 'paymentVerification' && <div id="paymentVerification">Payment verification section coming soon</div>}
         {activeSection === 'clientCommunication' && <EmailLogs role="owner" />}
         {activeSection === 'devops' && <DevOps />}
       </div>
