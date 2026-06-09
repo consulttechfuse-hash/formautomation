@@ -26,7 +26,6 @@ function ClientSignupContent() {
     setLoading(true);
     setError('');
 
-    // EXPLICITLY set the redirect to /auth/callback
     const { error: signUpError } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
@@ -53,6 +52,7 @@ function ClientSignupContent() {
           <p className="text-gray-600 mb-4">
             We've sent a magic link to <strong>{email}</strong>
           </p>
+          <p className="text-gray-500 text-sm">Click the link in your email to set up your password.</p>
           <Link href="/sign-in" className="inline-block mt-6 text-blue-600 hover:underline">
             Back to Sign In
           </Link>
