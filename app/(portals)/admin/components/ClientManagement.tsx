@@ -194,7 +194,7 @@ export default function ClientManagement() {
     const flow = flowStates.get(client.user_id);
     if (flow?.step_6_completed) return { text: 'Completed', color: 'bg-green-100 text-green-800', icon: CheckCircle };
     if (flow?.lock_type === 'locked_step' || flow?.lock_type === 'locked_permanent') return { text: 'Locked', color: 'bg-red-100 text-red-800', icon: Lock };
-    if (flow?.current_step >= 4 && flow?.step_4_form01_completed) return { text: 'Forms Submitted', color: 'bg-blue-100 text-blue-800', icon: CheckCircle };
+    if (flow && flow.current_step >= 4 && flow.step_4_form01_completed) return { text: 'Forms Submitted', color: 'bg-blue-100 text-blue-800', icon: CheckCircle };
     if (client.has_paid) return { text: 'Payment Verified', color: 'bg-green-100 text-green-800', icon: CheckCircle };
     return { text: 'Pending Payment', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
   };
@@ -329,7 +329,7 @@ export default function ClientManagement() {
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     No clients found
-                  </td>
+                   </td>
                 </tr>
               ) : (
                 filteredClients.map((client) => {
@@ -341,24 +341,24 @@ export default function ClientManagement() {
                     <tr key={client.user_id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <div className="font-medium">{client.first_name || 'N/A'} {client.last_name || ''}</div>
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm">{client.email}</div>
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${client.has_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {client.has_paid ? 'Paid ✓' : 'Pending'}
                         </span>
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${flowStatus.color}`}>
                           <flowStatus.icon className="h-3 w-3 inline mr-1" />
                           {flowStatus.text}
                         </span>
-                      </td>
+                       </td>
                       <td className="px-4 py-3 text-sm">
                         {client.assigned_agent_id ? 'Assigned' : 'Unassigned'}
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           {isLocked && (
@@ -376,13 +376,13 @@ export default function ClientManagement() {
                             <Eye className="h-3 w-3" /> View
                           </button>
                         </div>
-                      </td>
+                       </td>
                     </tr>
                   );
                 })
               )}
             </tbody>
-          </table>
+           </table>
         </div>
       </div>
 
