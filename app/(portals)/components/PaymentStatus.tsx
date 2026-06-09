@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface PaymentRequest {
@@ -30,16 +30,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadPayments();
-  }, [role, adminId, agentId]);
-
-  const showToast = (message: string, type: string) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     setLoading(true);
     let query = supabase.from('manual_payment_requests').select('*');
 
@@ -47,23 +38,12 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       query = query.order('requested_at', { ascending: false });
     } 
     else if (role === 'admin' && adminId) {
-      const { data: clients } = await supabase
-        .from('users')
-        .select('id')
-        .eq('admin_id', adminId)
-        .eq('role', 'client');
-      
       const { data: userRoleClients } = await supabase
         .from('user_roles')
         .select('user_id')
         .eq('assigned_admin_id', adminId);
       
-      const allClientIds = [
-        ...(clients?.map(c => c.id) || []),
-        ...(userRoleClients?.map(c => c.user_id) || [])
-      ];
-      
-      const uniqueClientIds = [...new Set(allClientIds)];
+      const uniqueClientIds = [...new Set(userRoleClients?.map(c => c.user_id) || [])];
       
       if (uniqueClientIds.length > 0) {
         query = query.in('client_id', uniqueClientIds).order('requested_at', { ascending: false });
@@ -75,31 +55,15 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
       }
     }
     else if (role === 'agent' && agentId) {
-      const { data: agentData } = await supabase
-        .from('users')
-        .select('admin_id')
-        .eq('id', agentId)
-        .single();
+      const { data: userRoleClients } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('assigned_agent_id', agentId);
       
-      const agentAdminId = agentData?.admin_id;
+      const clientIds = userRoleClients?.map(c => c.user_id) || [];
       
-      if (agentAdminId) {
-        const { data: clients } = await supabase
-          .from('users')
-          .select('id')
-          .eq('admin_id', agentAdminId)
-          .eq('role', 'client');
-        
-        const clientIds = clients?.map(c => c.id) || [];
-        
-        if (clientIds.length > 0) {
-          query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
-        } else {
-          setPayments([]);
-          setPendingCount(0);
-          setLoading(false);
-          return;
-        }
+      if (clientIds.length > 0) {
+        query = query.in('client_id', clientIds).order('requested_at', { ascending: false });
       } else {
         setPayments([]);
         setPendingCount(0);
@@ -112,6 +76,28 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
     setPayments(data || []);
     setPendingCount(data?.filter(p => p.status === 'pending').length || 0);
     setLoading(false);
+  }, [role, adminId, agentId, supabase]);
+
+  // Initial load and polling for admin/agent roles (refresh every 10 seconds)
+  useEffect(() => {
+    loadPayments();
+    
+    // Poll every 10 seconds for admin and agent roles to see status updates
+    let interval: NodeJS.Timeout | null = null;
+    if (role === 'admin' || role === 'agent') {
+      interval = setInterval(() => {
+        loadPayments();
+      }, 10000); // Refresh every 10 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [loadPayments, role]);
+
+  const showToast = (message: string, type: string) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const viewPOP = async (popUrl: string) => {
@@ -242,7 +228,7 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                             if (!confirm(`Confirm payment for ${payment.client_email}?`)) return;
                             const { data: { user } } = await supabase.auth.getUser();
                             
-                            const { error: updateError } = await supabase
+                            await supabase
                               .from('manual_payment_requests')
                               .update({ 
                                 status: 'confirmed', 
@@ -251,20 +237,10 @@ export default function PaymentStatus({ role, adminId, agentId }: PaymentStatusP
                               })
                               .eq('id', payment.id);
                             
-                            if (updateError) {
-                              showToast('Error confirming payment: ' + updateError.message, 'error');
-                              return;
-                            }
-                            
                             await supabase
                               .from('user_roles')
                               .update({ has_paid: true })
                               .eq('user_id', payment.client_id);
-                            
-                            await supabase
-                              .from('users')
-                              .update({ has_paid: true, paid_at: new Date().toISOString() })
-                              .eq('id', payment.client_id);
                             
                             await fetch('/api/send-payment-confirmation', { 
                               method: 'POST', 
