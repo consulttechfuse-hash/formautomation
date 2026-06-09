@@ -1,13 +1,14 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
 function CallbackContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<'loading' | 'password' | 'error'>('loading');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,28 +17,46 @@ function CallbackContent() {
   const supabase = createClient();
 
   useEffect(() => {
-    const checkSession = async () => {
+    const handleCallback = async () => {
+      const code = searchParams.get('code');
+      
+      if (code) {
+        // Exchange the code for a session
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (exchangeError) {
+          console.error('Exchange error:', exchangeError);
+          setStep('error');
+          setError('Invalid or expired magic link. Please request a new one.');
+          return;
+        }
+      }
+      
+      // Check if we have a session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         setStep('error');
-        setError('No session found. Please try signing up again.');
+        setError('No session found. Please sign up again.');
         return;
       }
 
       const user = session.user;
       
       // Check if user needs to set a password
-      // New users created via magic link have created_at == updated_at
-      if (user.created_at === user.updated_at && !user.user_metadata?.has_password) {
+      // New users have no password hash
+      const { data: { user: freshUser } } = await supabase.auth.getUser();
+      const needsPassword = !freshUser?.user_metadata?.has_password;
+      
+      if (needsPassword) {
         setStep('password');
       } else {
         await redirectToDashboard();
       }
     };
 
-    checkSession();
-  }, []);
+    handleCallback();
+  }, [searchParams]);
 
   const redirectToDashboard = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -110,7 +129,7 @@ function CallbackContent() {
           <h1 className="text-xl font-bold text-gray-800 mb-2">Verification Failed</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Link href="/client-signup" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg">
-            Try Again
+            Request New Link
           </Link>
         </div>
       </div>
