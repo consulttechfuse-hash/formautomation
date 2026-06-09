@@ -18,7 +18,26 @@ function CallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Check if we already have a session (from route.ts exchange)
+      // Get code from URL
+      const code = searchParams.get('code');
+      
+      console.log('Callback: code present =', !!code);
+      
+      if (code) {
+        // Exchange the code for session (PKCE handled by supabase-ssr client)
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (exchangeError) {
+          console.error('Exchange error:', exchangeError);
+          setStep('error');
+          setError('Invalid or expired magic link: ' + exchangeError.message);
+          return;
+        }
+        
+        console.log('Exchange successful, session created');
+      }
+      
+      // Get session
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -32,6 +51,8 @@ function CallbackContent() {
       // Check if user needs to set a password
       const needsPassword = !user?.user_metadata?.password_set;
       
+      console.log('User needs password?', needsPassword);
+      
       if (needsPassword) {
         setStep('password');
       } else {
@@ -40,7 +61,7 @@ function CallbackContent() {
     };
 
     handleCallback();
-  }, []);
+  }, [searchParams]);
 
   const redirectToDashboard = async () => {
     const { data: { user } } = await supabase.auth.getUser();
