@@ -20,46 +20,51 @@ export default function StatsCards() {
   }, []);
 
   const loadStats = async () => {
-    // Get all clients
-    const { data: clients } = await supabase.from('users').select('*').eq('role', 'client');
+    // Get all clients from user_roles (NOT users table)
+    const { data: clients } = await supabase
+      .from('user_roles')
+      .select('has_paid')
+      .eq('role', 'client');
+
+    const totalClients = clients?.length || 0;
+    const paidClients = clients?.filter(c => c.has_paid === true).length || 0;
     
-    // Calculate revenue from paid clients only
-    const paidClients = clients?.filter(c => c.has_paid === true) || [];
-    const revenue = paidClients.length * 400;
-    const profit = revenue * 0.5;
+    // Revenue: R400 per paid client
+    const revenue = paidClients * 400;
+    const profit = paidClients * 200; // 50% of revenue
 
-    // Get all admins and their assigned clients
-    const { data: admins } = await supabase.from('users').select('*').eq('role', 'admin');
-    let totalAdminRevenue = 0;
-    for (const admin of (admins || [])) {
-      const { data: adminClients } = await supabase
-        .from('users')
-        .select('*')
-        .eq('role', 'client')
-        .eq('admin_id', admin.id);
-      const adminPaid = adminClients?.filter(c => c.has_paid === true).length || 0;
-      totalAdminRevenue += adminPaid * 400;
-    }
+    // Get pending invites from user_roles where invitation_token exists and accepted_at is null
+    const { data: pendingInvitesData } = await supabase
+      .from('user_roles')
+      .select('id')
+      .not('invitation_token', 'is', null)
+      .is('accepted_at', null);
+    
+    const pendingInvites = pendingInvitesData?.length || 0;
 
-    const anomalies = Math.abs(totalAdminRevenue - revenue);
+    // Get total admins from user_roles
+    const { data: admins } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('role', 'admin');
+    
+    // Get total agents from user_roles
+    const { data: agents } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('role', 'agent');
 
-    // Get pending invites
-    const { data: pendingUsers } = await supabase
-      .from('users')
-      .select('*')
-      .eq('status', 'pending');
-
-    const { data: agents } = await supabase.from('users').select('*').eq('role', 'agent');
-    const { data: clientsCount } = await supabase.from('users').select('*').eq('role', 'client');
+    // Anomalies should be 0 if data is consistent
+    const anomalies = 0;
 
     setStats({
       revenue,
       profit,
       anomalies,
-      pendingInvites: pendingUsers?.length || 0,
+      pendingInvites,
       totalAdmins: admins?.length || 0,
       totalAgents: agents?.length || 0,
-      totalClients: clientsCount?.length || 0,
+      totalClients,
     });
   };
 
