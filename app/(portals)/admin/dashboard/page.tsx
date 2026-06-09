@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import AgentManagement from "../components/AgentManagement";
 import AdminPaymentStatus from '../components/PaymentStatusView';
 import StatsCards from '../components/StatsCards';
+import ClientManagement from '../components/ClientManagement';
 import UserProfile from '../../components/UserProfile';
 import EmailLogs from '../../owner/components/EmailLogs';
 
@@ -111,12 +112,7 @@ export default function AdminDashboard() {
         )}
         {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
         {activeSection === 'agents' && <AgentManagement />}
-        {activeSection === 'clients' && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Client Management</h2>
-            <p className="text-gray-500">Advanced client management features coming soon.</p>
-          </div>
-        )}
+        {activeSection === 'clients' && <ClientManagement />}
         {activeSection === 'clientCommunication' && <EmailLogs role="admin" />}
         {activeSection === 'profile' && <UserProfile />}
       </div>
