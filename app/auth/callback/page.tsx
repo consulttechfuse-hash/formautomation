@@ -18,26 +18,18 @@ function CallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      const code = searchParams.get('code');
-      
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          setStep('error');
-          setError('Invalid or expired magic link.');
-          return;
-        }
-      }
-      
+      // Check if we already have a session (from route.ts exchange)
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         setStep('error');
-        setError('No session found.');
+        setError('No session found. Please request a new magic link.');
         return;
       }
 
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Check if user needs to set a password
       const needsPassword = !user?.user_metadata?.password_set;
       
       if (needsPassword) {
@@ -48,7 +40,7 @@ function CallbackContent() {
     };
 
     handleCallback();
-  }, [searchParams]);
+  }, []);
 
   const redirectToDashboard = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -93,6 +85,7 @@ function CallbackContent() {
     });
 
     if (updateError) {
+      console.error('Update password error:', updateError);
       setError(updateError.message);
       setLoading(false);
       return;
@@ -106,7 +99,7 @@ function CallbackContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verifying...</p>
+          <p className="mt-4 text-gray-600">Verifying your account...</p>
         </div>
       </div>
     );
@@ -120,7 +113,7 @@ function CallbackContent() {
           <h1 className="text-xl font-bold text-gray-800 mb-2">Verification Failed</h1>
           <p className="text-gray-600 mb-6">{error}</p>
           <Link href="/client-signup" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg">
-            Try Again
+            Request New Link
           </Link>
         </div>
       </div>
