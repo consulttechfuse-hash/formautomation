@@ -20,9 +20,10 @@ export default function RevenueTrendChart() {
   }, []);
 
   const loadData = async () => {
-    const { data: clients } = await supabase
-      .from('users')
-      .select('paid_at, created_at')
+    // Get paid clients from user_roles
+    const { data: paidClients } = await supabase
+      .from('user_roles')
+      .select('created_at, updated_at')
       .eq('role', 'client')
       .eq('has_paid', true);
 
@@ -36,8 +37,8 @@ export default function RevenueTrendChart() {
       monthlyMap.set(monthKey, { revenue: 0, clients: 0 });
     }
 
-    (clients || []).forEach(client => {
-      const paidDate = new Date(client.paid_at || client.created_at);
+    (paidClients || []).forEach(client => {
+      const paidDate = new Date(client.updated_at);
       const monthKey = `${paidDate.getFullYear()}-${(paidDate.getMonth() + 1).toString().padStart(2, '0')}`;
       const existing = monthlyMap.get(monthKey);
       if (existing) {

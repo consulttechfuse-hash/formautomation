@@ -22,23 +22,23 @@ export default function RevenueByAdminChart() {
 
   const loadData = async () => {
     const { data: admins } = await supabase
-      .from('users')
-      .select('id, email')
+      .from('user_roles')
+      .select('user_id, email, first_name, last_name')
       .eq('role', 'admin');
 
     const revenueData: RevenueData[] = [];
     for (const admin of (admins || [])) {
       const { data: clients } = await supabase
-        .from('users')
-        .select('*')
+        .from('user_roles')
+        .select('has_paid')
         .eq('role', 'client')
-        .eq('admin_id', admin.id)
+        .eq('assigned_admin_id', admin.user_id)
         .eq('has_paid', true);
 
       const revenue = (clients?.length || 0) * 400;
       if (revenue > 0) {
         revenueData.push({
-          name: admin.email.split('@')[0],
+          name: admin.first_name || admin.email.split('@')[0],
           revenue,
         });
       }
