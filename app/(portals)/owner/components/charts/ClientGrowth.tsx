@@ -21,7 +21,7 @@ export default function ClientGrowthChart() {
 
   const loadData = async () => {
     const { data: clients } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('created_at')
       .eq('role', 'client');
 

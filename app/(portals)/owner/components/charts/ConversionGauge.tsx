@@ -14,7 +14,7 @@ export default function ConversionGauge() {
 
   const loadData = async () => {
     const { data: clients } = await supabase
-      .from('users')
+      .from('user_roles')
       .select('has_paid')
       .eq('role', 'client');
 

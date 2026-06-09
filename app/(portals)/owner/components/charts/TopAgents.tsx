@@ -21,23 +21,24 @@ export default function TopAgentsChart() {
 
   const loadData = async () => {
     const { data: agents } = await supabase
-      .from('users')
-      .select('id, email')
+      .from('user_roles')
+      .select('user_id, email, first_name, last_name')
       .eq('role', 'agent');
 
     const stats = await Promise.all((agents || []).map(async (agent) => {
       const { data: clients } = await supabase
-        .from('users')
-        .select('*')
+        .from('user_roles')
+        .select('has_paid, onboarding_submitted')
         .eq('role', 'client')
-        .eq('agent_id', agent.id);
+        .eq('assigned_agent_id', agent.user_id);
 
       const total = clients?.length || 0;
       const completed = clients?.filter(c => c.onboarding_submitted === true).length || 0;
       const completion = total > 0 ? (completed / total) * 100 : 0;
 
+      const agentName = agent.first_name || agent.email.split('@')[0];
       return {
-        name: agent.email.split('@')[0],
+        name: agentName,
         completion: Math.round(completion),
         clients: total,
       };
@@ -49,6 +50,15 @@ export default function TopAgentsChart() {
   };
 
   if (loading) return <div className="h-64 flex items-center justify-center">Loading chart...</div>;
+
+  if (data.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="font-semibold text-lg mb-4">Top 5 Agents by Completion Rate</h3>
+        <div className="h-64 flex items-center justify-center text-gray-500">No agent data available</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
