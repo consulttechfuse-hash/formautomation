@@ -15,8 +15,15 @@ interface EmailLog {
   sent_at: string;
 }
 
+interface AssignedClient {
+  email: string;
+  name: string;
+  user_id: string;
+}
+
 export default function EmailLogs() {
   const [logs, setLogs] = useState<EmailLog[]>([]);
+  const [clients, setClients] = useState<AssignedClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLog, setSelectedLog] = useState<EmailLog | null>(null);
   const [contactModal, setContactModal] = useState<{ isOpen: boolean; email: string; name: string }>({
@@ -27,50 +34,64 @@ export default function EmailLogs() {
   const supabase = createClient();
 
   useEffect(() => {
-    loadLogs();
+    loadData();
   }, []);
 
-  const loadLogs = async () => {
+  const loadData = async () => {
     setLoading(true);
     
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    const { data, error } = await supabase
+    // 1. Load email logs
+    const { data: logsData, error: logsError } = await supabase
       .from('agent_email_logs')
       .select('*')
       .eq('agent_id', user.id)
       .order('sent_at', { ascending: false });
 
-    if (error) {
-      console.error('Error loading email logs:', error);
-    } else {
-      setLogs(data || []);
+    if (!logsError) {
+      setLogs(logsData || []);
+    }
+
+    // 2. Load ALL assigned clients (FIX: not just those with email history)
+    const { data: assignedClients, error: clientsError } = await supabase
+      .from('user_roles')
+      .select('email, first_name, last_name, user_id')
+      .eq('role', 'client')
+      .eq('assigned_agent_id', user.id);
+
+    if (!clientsError && assignedClients) {
+      const formattedClients = assignedClients.map(client => ({
+        email: client.email,
+        name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email.split('@')[0],
+        user_id: client.user_id
+      }));
+      setClients(formattedClients);
     }
     
     setLoading(false);
   };
 
-  const getClientsFromLogs = () => {
-    const uniqueClients = new Map();
-    logs.forEach(log => {
-      if (!uniqueClients.has(log.client_email)) {
-        uniqueClients.set(log.client_email, {
-          email: log.client_email,
-          name: log.client_name
-        });
-      }
-    });
-    return Array.from(uniqueClients.values());
+  const handleClientSelect = (email: string) => {
+    const selected = clients.find(c => c.email === email);
+    if (selected) {
+      setContactModal({
+        isOpen: true,
+        email: selected.email,
+        name: selected.name
+      });
+    }
   };
-
-  const clients = getClientsFromLogs();
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading communication history...</span>
+        <span className="ml-2 text-gray-600">Loading...</span>
       </div>
     );
   }
@@ -83,59 +104,55 @@ export default function EmailLogs() {
         <p className="text-sm text-gray-600 mb-4">
           Send an email to a client. You can attach documents up to 5MB.
         </p>
-        <div className="flex gap-4">
-          <select
-            onChange={(e) => {
-              const selected = clients.find(c => c.email === e.target.value);
-              if (selected) {
-                setContactModal({
-                  isOpen: true,
-                  email: selected.email,
-                  name: selected.name || selected.email.split('@')[0]
-                });
-              }
-            }}
-            className="flex-1 border rounded-lg px-3 py-2"
-            defaultValue=""
-          >
-            <option value="" disabled>Select a client...</option>
-            {clients.map((client) => (
-              <option key={client.email} value={client.email}>
-                {client.name || client.email}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              if (clients.length > 0) {
-                setContactModal({
-                  isOpen: true,
-                  email: clients[0].email,
-                  name: clients[0].name || clients[0].email.split('@')[0]
-                });
-              } else {
-                alert('No clients found. Send an email from the Client Payment Overview first.');
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Compose Email
-          </button>
-        </div>
+        
+        {clients.length === 0 ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+            No clients assigned to you yet. Clients will appear here once they select your admin and are assigned to you.
+          </div>
+        ) : (
+          <div className="flex gap-4">
+            <select
+              onChange={(e) => handleClientSelect(e.target.value)}
+              className="flex-1 border rounded-lg px-3 py-2"
+              defaultValue=""
+            >
+              <option value="" disabled>Select a client...</option>
+              {clients.map((client) => (
+                <option key={client.email} value={client.email}>
+                  {client.name} ({client.email})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                if (clients.length > 0) {
+                  setContactModal({
+                    isOpen: true,
+                    email: clients[0].email,
+                    name: clients[0].name
+                  });
+                }
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Compose Email
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Email History Section */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Sent Email History</h2>
-          <button onClick={loadLogs} className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
+          <button onClick={loadData} className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600">
             🔄 Refresh
           </button>
         </div>
 
         {logs.length === 0 ? (
           <div className="bg-gray-50 rounded-lg p-6 text-center text-gray-500">
-            No emails sent yet. Use the form above to send your first email.
+            No emails sent yet. Select a client above to send your first email.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -200,7 +217,7 @@ export default function EmailLogs() {
         clientEmail={contactModal.email}
         clientName={contactModal.name}
         onSuccess={() => {
-          loadLogs();
+          loadData();
           setContactModal({ isOpen: false, email: '', name: '' });
         }}
       />
