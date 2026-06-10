@@ -97,6 +97,9 @@ export default function Form01Page() {
     // Apply formatting rules
     if (field === 'fn_t1' || field === 'srn_t1') {
       formattedValue = toSentenceCase(value).replace(/\s/g, '');
+    } else if (field === 'bsrn_t1') {
+      // Surname at Birth - capitalize each word
+      formattedValue = toCapitalizeEachWord(value);
     } else if (field === 'mr1_t1' || field === 'mdn_t1' || field === 'pffn_t1' || field === 'pmfn_t1') {
       formattedValue = toCapitalizeEachWord(value);
     } else if (field === 'strn_t1' || field === 'sbn_t1' || field === 'aptn_t1' || field === 'ctn_t1' || field === 'dstr_t1' || field === 'spn_t1') {
@@ -138,14 +141,38 @@ export default function Form01Page() {
     if (!validateForm()) return;
     setSaving(true);
     
-    const { error } = await supabase
+    // First check if record exists
+    const { data: existing } = await supabase
       .from('form01_data')
-      .upsert({
-        user_id: userId,
-        user_email: formData.user_email,
-        updated_at: new Date().toISOString(),
-        ...formData
-      }, { onConflict: 'user_id' });
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    let error;
+    if (existing) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('form01_data')
+        .update({
+          user_email: formData.user_email,
+          updated_at: new Date().toISOString(),
+          ...formData
+        })
+        .eq('user_id', userId);
+      error = updateError;
+    } else {
+      // Insert new record
+      const { error: insertError } = await supabase
+        .from('form01_data')
+        .insert({
+          user_id: userId,
+          user_email: formData.user_email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...formData
+        });
+      error = insertError;
+    }
 
     if (error) {
       alert('Error saving form: ' + error.message);
@@ -332,12 +359,57 @@ export default function Form01Page() {
               </div>
             </div>
 
-            {/* SECTION N1.6 - Genders */}
+            {/* SECTION N1.6 - Genders (Complete with all types) */}
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.6 — Genders</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>Gender</label><select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="woman">Woman</option><option value="man">Man</option></select></div>
-                <div><label>Pronoun</label><select value={formData.she_t1 || ''} onChange={(e) => handleChange('she_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="she">She</option><option value="he">He</option></select></div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender Type</label>
+                  <select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select</option>
+                    <option value="woman">Woman</option>
+                    <option value="man">Man</option>
+                    <option value="non-binary">Non-Binary</option>
+                    <option value="genderqueer">Genderqueer</option>
+                    <option value="agender">Agender</option>
+                    <option value="bigender">Bigender</option>
+                    <option value="prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pronoun</label>
+                  <select value={formData.she_t1 || ''} onChange={(e) => handleChange('she_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select</option>
+                    <option value="she">She/Her/Hers</option>
+                    <option value="he">He/Him/His</option>
+                    <option value="they">They/Them/Theirs</option>
+                    <option value="ze">Ze/Zir/Zirs</option>
+                    <option value="xe">Xe/Xem/Xyrs</option>
+                    <option value="prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender Reference</label>
+                  <select value={formData.bgr_t1 || ''} onChange={(e) => handleChange('bgr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select</option>
+                    <option value="girl">Girl</option>
+                    <option value="boy">Boy</option>
+                    <option value="child">Child</option>
+                    <option value="person">Person</option>
+                    <option value="individual">Individual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Possessive</label>
+                  <select value={formData.his_t1 || ''} onChange={(e) => handleChange('his_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select</option>
+                    <option value="hers">Hers</option>
+                    <option value="his">His</option>
+                    <option value="theirs">Theirs</option>
+                    <option value="zirs">Zirs</option>
+                    <option value="xyrs">Xyrs</option>
+                  </select>
+                </div>
               </div>
             </div>
 
