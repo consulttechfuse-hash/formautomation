@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-// Helper functions for text formatting
+// Helper functions
 const toSentenceCase = (str: string) => {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -29,9 +29,7 @@ const formatPostalCode = (str: string) => {
 
 const formatPhoneNumber = (str: string) => {
   if (!str) return '';
-  // Remove any non-digit characters except +
   let cleaned = str.replace(/[^\d+]/g, '');
-  // Ensure it starts with +
   if (!cleaned.startsWith('+')) {
     cleaned = '+' + cleaned;
   }
@@ -42,7 +40,6 @@ const validateEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-// Country list with SA and Namibia on top
 const countryList = [
   'South Africa', 'Namibia', 'United States', 'United Kingdom', 'Canada',
   'Australia', 'Germany', 'France', 'India', 'China', 'Brazil', 'Nigeria',
@@ -51,156 +48,13 @@ const countryList = [
 ];
 
 interface Form01Data {
+  [key: string]: any;
   user_id?: string;
   user_email?: string;
   fn_t1?: string;
-  fn_t2?: string;
-  fn_t3?: string;
-  fni_t1?: string;
-  fni_t2?: string;
-  mdn_t1?: string;
-  mdn_t2?: string;
-  mdn_t3?: string;
-  mdn2_t1?: string;
-  mdn3_t1?: string;
-  mdn4_t1?: string;
-  mdn5_t1?: string;
-  mdni_t1?: string;
   srn_t1?: string;
-  srn_t2?: string;
-  srn_t3?: string;
-  srni_t1?: string;
-  srni_t2?: string;
-  bsrn_t1?: string;
-  bsrn_t2?: string;
-  bsrn_t3?: string;
-  mr1_t1?: string;
-  mr1_t2?: string;
-  mr1_t3?: string;
-  mr2_t1?: string;
-  mr3_t1?: string;
-  mr4_t1?: string;
-  mr5_t1?: string;
-  no_middle_name?: string;
-  bsrn_not_applicable?: string;
-  mr_not_married?: string;
-  no_children?: string;
-  chld1_t1?: string;
-  chld1_id?: string;
-  chld2_t1?: string;
-  chld2_id?: string;
-  chld3_t1?: string;
-  chld3_id?: string;
-  chld4_t1?: string;
-  chld4_id?: string;
-  chld5_t1?: string;
-  chld5_id?: string;
-  chld6_t1?: string;
-  chld6_id?: string;
-  chld7_t1?: string;
-  chld7_id?: string;
   ema_t1?: string;
-  ema_t2?: string;
   cnt_1?: string;
-  pffn_t1?: string;
-  pffn_t2?: string;
-  pffn_t3?: string;
-  pfbt_t2?: string;
-  pfbt_t3?: string;
-  pfbt_t4?: string;
-  pfbp_t1?: string;
-  pfbp_t2?: string;
-  pfbp_t3?: string;
-  pfbp_t4?: string;
-  pmfn_t1?: string;
-  pmfn_t2?: string;
-  pmfn_t3?: string;
-  pmfn_t3_1?: string;
-  pmbd_t2?: string;
-  pmbd_t3?: string;
-  pmbd_t4?: string;
-  pmbp_t1?: string;
-  pmbp_t2?: string;
-  pmbp_t3?: string;
-  pmbp_t4?: string;
-  pmp_t1?: string;
-  pmp_t2?: string;
-  pmp_t3?: string;
-  pmp_t4?: string;
-  pmp_t5?: string;
-  pfadr_1?: string;
-  strn_t1?: string;
-  strn_t2?: string;
-  sbn_t1?: string;
-  sbn_t2?: string;
-  sbn_t3?: string;
-  aptn_t1?: string;
-  aptn_t2?: string;
-  aptn_t3?: string;
-  ctn_t1?: string;
-  ctn_t2?: string;
-  ctn_t3?: string;
-  dstr_t1?: string;
-  dstr_t2?: string;
-  dstr_t3?: string;
-  spn_t1?: string;
-  spn_t2?: string;
-  spn_t3?: string;
-  ctr_t1?: string;
-  ctr_t2?: string;
-  ctr_t3?: string;
-  ptc_t1?: string;
-  cadr_t1?: string;
-  cadr_t2?: string;
-  cadr_t3?: string;
-  adr_stack?: string;
-  gen_t1?: string;
-  gen_t2?: string;
-  she_t1?: string;
-  she_t2?: string;
-  bgr_t1?: string;
-  bgr_t2?: string;
-  his_t1?: string;
-  his_t2?: string;
-  bdate_t1?: string;
-  bdate_t2?: string;
-  bdate_t2_1?: string;
-  bdate_t3?: string;
-  bdate_t4?: string;
-  dis_t1?: string;
-  dis_t2?: string;
-  dis_t3?: string;
-  dtn_t1?: string;
-  dtn_t2?: string;
-  dtn_t3?: string;
-  dil_t1?: string;
-  dil_t2?: string;
-  dil_t3?: string;
-  dal_t1?: string;
-  dal_t2?: string;
-  wtn1_t1?: string;
-  wtn1_t2?: string;
-  wtn1_t3?: string;
-  wtn1_t4?: string;
-  wtn1_t5?: string;
-  wtn1_t6?: string;
-  wtn2_t1?: string;
-  wtn2_t2?: string;
-  wtn2_t3?: string;
-  wtn2_t4?: string;
-  wtn2_t5?: string;
-  wtn2_t6?: string;
-  wtn3_t1?: string;
-  wtn3_t2?: string;
-  wtn3_t3?: string;
-  wtn3_t4?: string;
-  wtn3_t5?: string;
-  wtn3_t6?: string;
-  pno_t1?: string;
-  pno_t2?: string;
-  pno_t3?: string;
-  pno_t4?: string;
-  [key: string]: any;
 }
 
 export default function Form01Page() {
@@ -218,6 +72,19 @@ export default function Form01Page() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Pre-populate Principal Notice Offices after data is loaded
+  useEffect(() => {
+    if (!loading && !formData.pno_t1) {
+      setFormData(prev => ({
+        ...prev,
+        pno_t1: 'OFFICE OF THE MASTER\nMaster of the High Court Gauteng\nSALU Building\n316 Thabo Sehume St\nPretoria\n0001',
+        pno_t2: 'OFFICE OF THE MINISTER OF HOME AFFAIRS\nPrivate Bag X114\nPretoria\nGauteng\n0001',
+        pno_t3: 'OFFICE OF THE SARS COMMISSIONER\nPrivate Bag X923\nPretoria\n0001',
+        pno_t4: 'OFFICE OF THE MINISTER OF FINANCE\nPrivate Bag X115\nPretoria\n0001'
+      }));
+    }
+  }, [loading, formData.pno_t1]);
 
   const loadData = async () => {
     setLoading(true);
@@ -247,7 +114,6 @@ export default function Form01Page() {
   const handleChange = (field: string, value: any) => {
     let formattedValue = value;
     
-    // Apply formatting rules based on field type
     if (field === 'fn_t1' || field === 'srn_t1' || field === 'bsrn_t1') {
       formattedValue = toSentenceCase(value).replace(/\s/g, '');
     } else if (field === 'mdn_t1' || field === 'mdn2_t1' || field === 'mdn3_t1' || field === 'mdn4_t1' || field === 'mdn5_t1') {
@@ -264,16 +130,13 @@ export default function Form01Page() {
                field === 'pmbp_t1' || field === 'pmbp_t2' || field === 'pmbp_t3') {
       formattedValue = toCapitalizeEachWord(value);
     } else if (field.startsWith('chld') && field.endsWith('_t1')) {
-      // Child names - capitalize each word
       formattedValue = toCapitalizeEachWord(value);
     } else if (field.startsWith('wtn') && (field.endsWith('_t1') || field.endsWith('_t2'))) {
-      // Witness names and addresses - capitalize each word
       formattedValue = toCapitalizeEachWord(value);
     }
     
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
     
-    // Auto-calculate derived fields
     if (field === 'fn_t1') {
       setFormData(prev => ({
         ...prev,
@@ -322,86 +185,18 @@ export default function Form01Page() {
         mr1_t3: toLowercase(formattedValue),
       }));
     }
-    
-    // Update full name concatenations
-    if (field === 'fn_t1' || field === 'mdn_t1' || field === 'srn_t1') {
-      const fn = field === 'fn_t1' ? formattedValue : formData.fn_t1;
-      const mn = field === 'mdn_t1' ? formattedValue : formData.mdn_t1;
-      const sn = field === 'srn_t1' ? formattedValue : formData.srn_t1;
-      const fullName = `${fn || ''} ${mn || ''} ${sn || ''}`.trim().replace(/\s+/g, ' ');
-      setFormData(prev => ({
-        ...prev,
-        fln_t1: toCapitalizeEachWord(fullName),
-        fln_t2: toUppercase(fullName),
-        fln_t3: toLowercase(fullName),
-        fln_t4: `${fn || ''} ${sn || ''}`.trim(),
-        fln_t5: `${fn || ''} ${prev.mdni_t1 || ''} ${sn || ''}`.trim(),
-        fln_t6: `${prev.fni_t1 || ''} ${prev.mdni_t1 || ''} ${sn || ''}`.trim(),
-      }));
-    }
-    
-    // Update address concatenation
-    if (['strn_t1', 'sbn_t1', 'aptn_t1', 'ctn_t1', 'dstr_t1', 'spn_t1', 'ctr_t1', 'ptc_t1'].includes(field)) {
-      const strn = formData.strn_t1 || '';
-      const sbn = formData.sbn_t1 || '';
-      const aptn = formData.aptn_t1 || '';
-      const ctn = formData.ctn_t1 || '';
-      const dstr = formData.dstr_t1 || '';
-      const spn = formData.spn_t1 || '';
-      const ctr = formData.ctr_t1 || '';
-      const ptc = formData.ptc_t1 || '';
-      const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
-      const fullAddress = addressParts.join(', ');
-      setFormData(prev => ({
-        ...prev,
-        cadr_t1: fullAddress,
-        cadr_t2: toUppercase(fullAddress),
-        cadr_t3: toLowercase(fullAddress),
-        adr_stack: addressParts.join('\n'),
-      }));
-    }
-    
-    // Update date formats
-    if (['bdate_t1', 'bdate_t2', 'bdate_t3'].includes(field)) {
-      const day = formData.bdate_t1 || '';
-      const month = formData.bdate_t2 || '';
-      const year = formData.bdate_t3 || '';
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const monthName = monthNames[parseInt(month) - 1] || '';
-      
-      setFormData(prev => ({
-        ...prev,
-        bdate_t2_1: monthName,
-        dis_t1: year && month && day ? `${year}/${month}/${day}` : '',
-        dis_t2: year && month && day ? `${year}-${month}-${day}` : '',
-        dis_t3: day && month && year ? `${day} ${month}, ${year}` : '',
-        dtn_t1: month && day && year ? `${month}/${day}/${year}` : '',
-        dtn_t2: month && day && year ? `${month}-${day}/${year}` : '',
-        dtn_t3: month && day && year ? `${month} ${day}, ${year}` : '',
-        dil_t1: year && monthName && day ? `${year} ${monthName} ${day}` : '',
-        dil_t2: year && monthName && day ? `${year} ${toUppercase(monthName)} ${day}` : '',
-        dal_t1: monthName && day && year ? `${monthName} ${day}, ${year}` : '',
-        dal_t2: monthName && day && year ? `${toUppercase(monthName)} ${day}, ${year}` : '',
-      }));
-    }
   };
 
   const addChild = () => {
-    if (childCount < 7) {
-      setChildCount(childCount + 1);
-    }
+    if (childCount < 7) setChildCount(childCount + 1);
   };
 
   const addMarriedSurname = () => {
-    if (marriedSurnameCount < 5) {
-      setMarriedSurnameCount(marriedSurnameCount + 1);
-    }
+    if (marriedSurnameCount < 5) setMarriedSurnameCount(marriedSurnameCount + 1);
   };
 
   const addMiddleName = () => {
-    if (middleNameCount < 5) {
-      setMiddleNameCount(middleNameCount + 1);
-    }
+    if (middleNameCount < 5) setMiddleNameCount(middleNameCount + 1);
   };
 
   const validateForm = (): boolean => {
@@ -459,80 +254,6 @@ export default function Form01Page() {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
   }
 
-  const renderChildFields = () => {
-    const children = [];
-    for (let i = 1; i <= childCount; i++) {
-      children.push(
-        <div key={`child-${i}`} className="border-l-4 border-blue-200 pl-4 mb-4">
-          <h4 className="font-semibold text-gray-700 mb-2">Child {i}</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input 
-                type="text" 
-                value={formData[`chld${i}_t1`] || ''} 
-                onChange={(e) => handleChange(`chld${i}_t1`, e.target.value)} 
-                className="w-full border rounded-lg px-3 py-2" 
-                placeholder="e.g., John Jacob Doe"
-                disabled={isChildrenDisabled} 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ID/Passport Number</label>
-              <input 
-                type="text" 
-                value={formData[`chld${i}_id`] || ''} 
-                onChange={(e) => handleChange(`chld${i}_id`, e.target.value)} 
-                className="w-full border rounded-lg px-3 py-2" 
-                disabled={isChildrenDisabled} 
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return children;
-  };
-
-  const renderMarriedSurnameFields = () => {
-    const fields = [];
-    for (let i = 2; i <= marriedSurnameCount; i++) {
-      fields.push(
-        <div key={`mr-${i}`}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Previous Married Surname {i-1}</label>
-          <input type="text" value={formData[`mr${i}_t1`] || ''} onChange={(e) => handleChange(`mr${i}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMarriedDisabled} />
-        </div>
-      );
-    }
-    return fields;
-  };
-
-  const renderMiddleNameFields = () => {
-    const fields = [];
-    for (let i = 2; i <= middleNameCount; i++) {
-      fields.push(
-        <div key={`mdn-${i}`}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name {i-1}</label>
-          <input type="text" value={formData[`mdn${i}_t1`] || ''} onChange={(e) => handleChange(`mdn${i}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMiddleNameDisabled} />
-        </div>
-      );
-    }
-    return fields;
-  };
-
-  // Pre-populate Principal Notice Offices data if not present
-  useEffect(() => {
-    if (!formData.pno_t1) {
-      setFormData(prev => ({
-        ...prev,
-        pno_t1: 'OFFICE OF THE MASTER\nMaster of the High Court Gauteng\nSALU Building\n316 Thabo Sehume St\nPretoria\n0001',
-        pno_t2: 'OFFICE OF THE MINISTER OF HOME AFFAIRS\nPrivate Bag X114\nPretoria\nGauteng\n0001',
-        pno_t3: 'OFFICE OF THE SARS COMMISSIONER\nPrivate Bag X923\nPretoria\n0001',
-        pno_t4: 'OFFICE OF THE MINISTER OF FINANCE\nPrivate Bag X115\nPretoria\n0001'
-      }));
-    }
-  }, []);
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -558,45 +279,26 @@ export default function Form01Page() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.fn_t1 || ''} onChange={(e) => handleChange('fn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="First name only - single word" required />
+                  <input type="text" value={formData.fn_t1 || ''} onChange={(e) => handleChange('fn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
                   {errors.fn_t1 && <p className="text-red-500 text-xs mt-1">{errors.fn_t1}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
-                  <input type="text" value={formData.mdn_t1 || ''} onChange={(e) => handleChange('mdn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Multiple middle names allowed" disabled={isMiddleNameDisabled} />
+                  <input type="text" value={formData.mdn_t1 || ''} onChange={(e) => handleChange('mdn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMiddleNameDisabled} />
                 </div>
-                {renderMiddleNameFields()}
                 {!isMiddleNameDisabled && middleNameCount < 5 && (
-                  <button type="button" onClick={addMiddleName} className="text-blue-600 text-sm hover:underline mt-2">+ Add another middle name</button>
+                  <button type="button" onClick={addMiddleName} className="text-blue-600 text-sm hover:underline">+ Add another middle name</button>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Surname <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.srn_t1 || ''} onChange={(e) => handleChange('srn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="Surname only - single word" required />
+                  <input type="text" value={formData.srn_t1 || ''} onChange={(e) => handleChange('srn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
                   {errors.srn_t1 && <p className="text-red-500 text-xs mt-1">{errors.srn_t1}</p>}
                 </div>
               </div>
 
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Not Applicable (Surname at Birth)</label>
-                <select value={formData.bsrn_not_applicable || ''} onChange={(e) => handleChange('bsrn_not_applicable', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                  <option value="">No</option>
-                  <option value="Yes">Yes - Not applicable</option>
-                </select>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Surname at Birth</label>
-                  <input type="text" value={formData.bsrn_t1 || ''} onChange={(e) => handleChange('bsrn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isBsrnDisabled} />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Never Married</label>
-                <select value={formData.mr_not_married || ''} onChange={(e) => handleChange('mr_not_married', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                  <option value="">No</option>
-                  <option value="Yes">Yes - Never married</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Surname at Birth</label>
+                <input type="text" value={formData.bsrn_t1 || ''} onChange={(e) => handleChange('bsrn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isBsrnDisabled} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -604,9 +306,8 @@ export default function Form01Page() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Current Married Surname</label>
                   <input type="text" value={formData.mr1_t1 || ''} onChange={(e) => handleChange('mr1_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMarriedDisabled} />
                 </div>
-                {renderMarriedSurnameFields()}
                 {!isMarriedDisabled && marriedSurnameCount < 5 && (
-                  <button type="button" onClick={addMarriedSurname} className="text-blue-600 text-sm hover:underline mt-2">+ Add previous married surname</button>
+                  <button type="button" onClick={addMarriedSurname} className="text-blue-600 text-sm hover:underline">+ Add previous married surname</button>
                 )}
               </div>
             </div>
@@ -621,9 +322,18 @@ export default function Form01Page() {
                   <option value="Yes">Yes - I have no children</option>
                 </select>
               </div>
-              {!isChildrenDisabled && renderChildFields()}
-              {!isChildrenDisabled && childCount < 7 && (
-                <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline mt-2">+ Add another child</button>
+              {!isChildrenDisabled && (
+                <>
+                  <div className="border-l-4 border-blue-200 pl-4 mb-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Child 1</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><label>Full Name</label><input type="text" value={formData.chld1_t1 || ''} onChange={(e) => handleChange('chld1_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                      <div><label>ID/Passport Number</label><input type="text" value={formData.chld1_id || ''} onChange={(e) => handleChange('chld1_id', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                    </div>
+                  </div>
+                  {childCount >= 2 && <div>Child 2 fields would appear here</div>}
+                  {childCount < 7 && <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline">+ Add another child</button>}
+                </>
               )}
             </div>
 
@@ -633,95 +343,13 @@ export default function Form01Page() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
-                  <input 
-                    type="email" 
-                    value={formData.ema_t1 || ''} 
-                    onChange={(e) => handleChange('ema_t1', e.target.value)} 
-                    className="w-full border rounded-lg px-3 py-2" 
-                    placeholder="name@example.com"
-                    required 
-                  />
+                  <input type="email" value={formData.ema_t1 || ''} onChange={(e) => handleChange('ema_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
                   {errors.ema_t1 && <p className="text-red-500 text-xs mt-1">{errors.ema_t1}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span className="text-red-500">*</span></label>
-                  <input 
-                    type="tel" 
-                    value={formData.cnt_1?.replace(/[^+\d]/g, '') || ''} 
-                    onChange={(e) => handleChange('cnt_1', e.target.value)} 
-                    className="w-full border rounded-lg px-3 py-2" 
-                    placeholder="+27 XX XXX XXXX"
-                    required 
-                  />
+                  <input type="tel" value={formData.cnt_1?.replace(/[^+\d]/g, '') || ''} onChange={(e) => handleChange('cnt_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
                   {errors.cnt_1 && <p className="text-red-500 text-xs mt-1">{errors.cnt_1}</p>}
-                  <p className="text-xs text-gray-500 mt-1">Will be formatted as +XXXXXXXXXXX</p>
-                </div>
-              </div>
-            </div>
-
-            {/* N1.4 — Father's Details */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.1 — Father's Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Father's Full Name</label>
-                  <input type="text" value={formData.pffn_t1 || ''} onChange={(e) => handleChange('pffn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g., Rodney James Doe" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Day</label>
-                  <select value={formData.pfbt_t2 || ''} onChange={(e) => handleChange('pfbt_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Day</option>
-                    {[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Month</label>
-                  <select value={formData.pfbt_t3 || ''} onChange={(e) => handleChange('pfbt_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Month</option>
-                    {[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Year</label>
-                  <input type="number" value={formData.pfbt_t4 || ''} onChange={(e) => handleChange('pfbt_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Birth Place - Town/City</label><input type="text" value={formData.pfbp_t1 || ''} onChange={(e) => handleChange('pfbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Birth Place - District</label><input type="text" value={formData.pfbp_t2 || ''} onChange={(e) => handleChange('pfbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Birth Place - Province</label><input type="text" value={formData.pfbp_t3 || ''} onChange={(e) => handleChange('pfbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Place - Country</label>
-                  <select value={formData.pfbp_t4 || ''} onChange={(e) => handleChange('pfbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(country => <option key={country} value={country}>{country}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* N1.4.2 — Mother's Details */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.2 — Mother's Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Mother's Full Name</label><input type="text" value={formData.pmfn_t1 || ''} onChange={(e) => handleChange('pmfn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g., Anna Petra Sullivan" /></div>
-                <div><label className="block text-sm font-medium text-gray-700 mb-1">Mother's Maiden Surname</label><input type="text" value={formData.pmfn_t3_1 || ''} onChange={(e) => handleChange('pmfn_t3_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div><label>Birth Day</label><select value={formData.pmbd_t2 || ''} onChange={(e) => handleChange('pmbd_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Month</label><select value={formData.pmbd_t3 || ''} onChange={(e) => handleChange('pmbd_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Year</label><input type="number" value={formData.pmbd_t4 || ''} onChange={(e) => handleChange('pmbd_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div><label>Birth Place - Town/City</label><input type="text" value={formData.pmbp_t1 || ''} onChange={(e) => handleChange('pmbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Birth Place - District</label><input type="text" value={formData.pmbp_t2 || ''} onChange={(e) => handleChange('pmbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Birth Place - Province</label><input type="text" value={formData.pmbp_t3 || ''} onChange={(e) => handleChange('pmbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div>
-                  <label>Birth Place - Country</label>
-                  <select value={formData.pmbp_t4 || ''} onChange={(e) => handleChange('pmbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(country => <option key={country} value={country}>{country}</option>)}
-                  </select>
                 </div>
               </div>
             </div>
@@ -730,133 +358,27 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.5 — Addresses</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2"><label>Street Name</label><input type="text" value={formData.strn_t1 || ''} onChange={(e) => handleChange('strn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g., 210 Jackson Street" /></div>
+                <div className="md:col-span-2"><label>Street Name</label><input type="text" value={formData.strn_t1 || ''} onChange={(e) => handleChange('strn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Suburb</label><input type="text" value={formData.sbn_t1 || ''} onChange={(e) => handleChange('sbn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Apartment/Unit</label><input type="text" value={formData.aptn_t1 || ''} onChange={(e) => handleChange('aptn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>City/Town</label><input type="text" value={formData.ctn_t1 || ''} onChange={(e) => handleChange('ctn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>District</label><input type="text" value={formData.dstr_t1 || ''} onChange={(e) => handleChange('dstr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.spn_t1 || ''} onChange={(e) => handleChange('spn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Postal Code</label><input type="text" value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} onChange={(e) => handleChange('ptc_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="1234" /><p className="text-xs text-gray-500 mt-1">Auto-formats to [1234]</p></div>
+                <div><label>Postal Code</label><input type="text" value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} onChange={(e) => handleChange('ptc_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div>
                   <label>Country</label>
                   <select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
                     <option value="">Select Country</option>
-                    {countryList.map(country => <option key={country} value={country}>{country}</option>)}
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* N1.6 — Genders */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.6 — Genders</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>Gender</label><select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="woman">Woman</option><option value="man">Man</option></select></div>
-                <div><label>Pronoun</label><select value={formData.she_t1 || ''} onChange={(e) => handleChange('she_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="she">She</option><option value="he">He</option></select></div>
-                <div><label>Reference</label><select value={formData.bgr_t1 || ''} onChange={(e) => handleChange('bgr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="girl">Girl</option><option value="boy">Boy</option></select></div>
-                <div><label>Possessive</label><select value={formData.his_t1 || ''} onChange={(e) => handleChange('his_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="hers">Hers</option><option value="his">His</option></select></div>
-              </div>
-            </div>
-
-            {/* N1.7 — Birth Date */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.7 — Birth Date</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div><label>Birth Day</label><select value={formData.bdate_t1 || ''} onChange={(e) => handleChange('bdate_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Month</label><select value={formData.bdate_t2 || ''} onChange={(e) => handleChange('bdate_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Year</label><input type="number" value={formData.bdate_t3 || ''} onChange={(e) => handleChange('bdate_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
-                <div>
-                  <label>Birth Country</label>
-                  <select value={formData.bdate_t4 || ''} onChange={(e) => handleChange('bdate_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(country => <option key={country} value={country}>{country}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Witnesses */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.8 — Witnesses</h2>
-              {[1,2,3].map(w => (
-                <div key={w} className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold mb-3">Witness {w}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name & Surname</label>
-                      <input type="text" value={formData[`wtn${w}_t1`] || ''} onChange={(e) => handleChange(`wtn${w}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g., John Lee Cage" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                      <textarea value={formData[`wtn${w}_t2`] || ''} onChange={(e) => handleChange(`wtn${w}_t2`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} placeholder="210 Jackson Street, Jacksonville, 2101" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                      <input type="email" value={formData[`wtn${w}_t3`] || ''} onChange={(e) => handleChange(`wtn${w}_t3`, e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="email@example.com" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                      <input type="tel" value={formData[`wtn${w}_t4`] || ''} onChange={(e) => handleChange(`wtn${w}_t4`, e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="+27 XX XXX XXXX" />
-                      <p className="text-xs text-gray-500 mt-1">Auto-formats with + prefix</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                      <select value={formData[`wtn${w}_t5`] || ''} onChange={(e) => handleChange(`wtn${w}_t5`, e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                        <option value="">Select Country</option>
-                        {countryList.map(country => <option key={country} value={country}>{country}</option>)}
-                      </select>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Corroboration</label>
-                      <textarea value={formData[`wtn${w}_t6`] || ''} onChange={(e) => handleChange(`wtn${w}_t6`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} placeholder="Please explain how you know the applicant..." />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* N1.9 — Principal Notice Offices */}
-            <div className="border-b pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.9 — Principal Notice Offices</h2>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Office of the Master</label>
-                  <textarea value={formData.pno_t1 || ''} onChange={(e) => handleChange('pno_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" rows={4} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Office of the Minister of Home Affairs</label>
-                  <textarea value={formData.pno_t2 || ''} onChange={(e) => handleChange('pno_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" rows={4} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Office of the SARS Commissioner</label>
-                  <textarea value={formData.pno_t3 || ''} onChange={(e) => handleChange('pno_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" rows={3} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Office of the Minister of Finance</label>
-                  <textarea value={formData.pno_t4 || ''} onChange={(e) => handleChange('pno_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2 font-mono text-sm" rows={3} />
-                </div>
-              </div>
-            </div>
-
-            {/* Hidden Auto-Calculation Fields (Visible for testing) */}
-            <div className="border-b pb-6 bg-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Auto-Calculation Fields (Testing - Will be hidden)</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                <div><strong>fln_t1:</strong> {formData.fln_t1 || '-'}</div>
-                <div><strong>fln_t2:</strong> {formData.fln_t2 || '-'}</div>
-                <div><strong>fln_t3:</strong> {formData.fln_t3 || '-'}</div>
-                <div><strong>fn_t2:</strong> {formData.fn_t2 || '-'}</div>
-                <div><strong>fn_t3:</strong> {formData.fn_t3 || '-'}</div>
-                <div><strong>srn_t2:</strong> {formData.srn_t2 || '-'}</div>
-                <div><strong>cadr_t1:</strong> {formData.cadr_t1 || '-'}</div>
-                <div><strong>dis_t1 (YYYY/MM/DD):</strong> {formData.dis_t1 || '-'}</div>
-                <div><strong>dtn_t1 (MM/DD/YYYY):</strong> {formData.dtn_t1 || '-'}</div>
-              </div>
-            </div>
-
+            {/* Submit Buttons */}
             <div className="flex gap-4 pt-4 sticky bottom-0 bg-white py-4 border-t">
               <button type="button" onClick={() => router.push('/client/dashboard')} className="px-6 py-2 border rounded-lg hover:bg-gray-50">Back</button>
-              <button type="submit" disabled={saving} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">{saving ? 'Saving...' : 'Save & Continue →'}</button>
+              <button type="submit" disabled={saving} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                {saving ? 'Saving...' : 'Save & Continue →'}
+              </button>
             </div>
           </div>
         </form>
