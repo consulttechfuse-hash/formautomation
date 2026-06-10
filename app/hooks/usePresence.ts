@@ -12,8 +12,14 @@ export function usePresence() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await fetch('/api/presence/heartbeat', { method: 'POST' });
+      // Set status to online when page loads
+      await fetch('/api/presence/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'online' })
+      }).catch(() => {});
 
+      // Set heartbeat every 30 seconds
       intervalRef.current = setInterval(async () => {
         await fetch('/api/presence/heartbeat', { method: 'POST' });
       }, 30000);
@@ -21,10 +27,22 @@ export function usePresence() {
 
     setupPresence();
 
+    // Handle page/tab close
+    const handleBeforeUnload = () => {
+      fetch('/api/presence/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'offline' })
+      }).catch(() => {});
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       fetch('/api/presence/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

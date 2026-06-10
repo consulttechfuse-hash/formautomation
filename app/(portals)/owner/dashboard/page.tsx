@@ -24,6 +24,18 @@ export default function OwnerDashboard() {
   const supabase = createClient();
   const [activeSection, setActiveSection] = useState('stats');
 
+  const handleSignOut = async () => {
+    // Set presence to offline before signing out
+    await fetch('/api/presence/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'offline' })
+    }).catch(() => {});
+    
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   const navItems = [
     { id: 'paymentVerification', name: '💰 Payment Verification' },
     { id: 'stats', name: '📊 Dashboard Stats' },
@@ -40,7 +52,6 @@ export default function OwnerDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <div className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Owner Portal</h1>
@@ -63,10 +74,7 @@ export default function OwnerDashboard() {
         </nav>
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push('/login');
-            }}
+            onClick={handleSignOut}
             className="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-gray-800"
           >
             🚪 Sign Out
@@ -74,27 +82,18 @@ export default function OwnerDashboard() {
         </div>
       </div>
 
-      {/* Main Content - Stacked layout */}
       <div className="flex-1 overflow-auto p-6">
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
             <StatsCards />
-            
-            {/* Stacked charts - full width each */}
-            <div className="mt-6">
-              <RevenueTrendChart />
-            </div>
-            <div className="mt-6">
-              <ClientGrowthChart />
-            </div>
+            <div className="mt-6"><RevenueTrendChart /></div>
+            <div className="mt-6"><ClientGrowthChart /></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
               <TopAgentsChart />
               <RevenueByAdminChart />
             </div>
-            <div className="mt-6">
-              <ConversionGauge />
-            </div>
+            <div className="mt-6"><ConversionGauge /></div>
           </div>
         )}
         {activeSection === 'admins' && <AdminManagement />}
@@ -104,7 +103,7 @@ export default function OwnerDashboard() {
         {activeSection === 'agentPerformance' && <AgentPerformanceReport />}
         {activeSection === 'adminRevenue' && <AdminRevenueReport />}
         {activeSection === 'systemRevenue' && <SystemRevenueReport />}
-        {activeSection === 'paymentVerification' && <div id="paymentVerification">Payment verification section coming soon</div>}
+        {activeSection === 'paymentVerification' && <div>Payment verification coming soon</div>}
         {activeSection === 'clientCommunication' && <EmailLogs role="owner" />}
         {activeSection === 'devops' && <DevOps />}
       </div>

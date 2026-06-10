@@ -7,6 +7,7 @@ import AgentManagement from "../components/AgentManagement";
 import AdminPaymentStatus from '../components/PaymentStatusView';
 import StatsCards from '../components/StatsCards';
 import ClientManagement from '../components/ClientManagement';
+import StatusToggle from '../components/StatusToggle';
 import UserProfile from '../../components/UserProfile';
 import EmailLogs from '../../owner/components/EmailLogs';
 
@@ -31,6 +32,18 @@ export default function AdminDashboard() {
     setAdminEmail(user.email || '');
     setAdminId(user.id);
     setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    // Set presence to offline before signing out
+    await fetch('/api/presence/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'offline' })
+    }).catch(() => {});
+    
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   const navItems = [
@@ -63,6 +76,12 @@ export default function AdminDashboard() {
           </h1>
           <p className="text-sm text-gray-400 mt-1">{adminEmail}</p>
         </div>
+        
+        <div className="px-4 py-3 border-b border-gray-700">
+          <p className="text-xs text-gray-400 mb-2">Online Status</p>
+          <StatusToggle />
+        </div>
+        
         <nav className="flex-1 p-4">
           {navItems.map((item) => (
             <button
@@ -81,10 +100,7 @@ export default function AdminDashboard() {
         </nav>
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              router.push('/login');
-            }}
+            onClick={handleSignOut}
             className="w-full text-left px-4 py-3 rounded-xl text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors flex items-center gap-3"
           >
             <span className="text-xl">🚪</span>

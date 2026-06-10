@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -45,6 +45,18 @@ export default function AgentDashboard() {
     setLoading(false);
   };
 
+  const handleSignOut = async () => {
+    // Set presence to offline before signing out
+    await fetch('/api/presence/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'offline' })
+    }).catch(() => {});
+    
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
   }
@@ -61,7 +73,7 @@ export default function AgentDashboard() {
         </nav>
         <div className="p-4 border-t border-gray-700">
           <div className="mb-3 text-sm text-gray-400 truncate">👋 {agentName}</div>
-          <button onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }} className="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-gray-800">🚪 Sign Out</button>
+          <button onClick={handleSignOut} className="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-gray-800">🚪 Sign Out</button>
         </div>
       </div>
       <div className="flex-1 overflow-auto p-6">
