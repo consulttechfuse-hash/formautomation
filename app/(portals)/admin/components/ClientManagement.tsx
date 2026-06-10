@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Search, Filter, ChevronDown, CheckCircle, XCircle, Clock, Lock, Unlock, Eye, RefreshCw, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Lock, Unlock, Eye, RefreshCw, AlertCircle } from 'lucide-react';
+import PresenceBadge from '../../components/PresenceBadge';
 
 interface Client {
   user_id: string;
@@ -121,7 +122,6 @@ export default function ClientManagement() {
     
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Update client_flow_state to unlock
     const { error } = await supabase
       .from('client_flow_state')
       .update({
@@ -137,7 +137,7 @@ export default function ClientManagement() {
     if (error) {
       alert('Error unlocking client: ' + error.message);
     } else {
-      alert(`Client ${selectedClient.email} has been unlocked. They can now edit Form-01.`);
+      alert(`Client ${selectedClient.email} has been unlocked.`);
       await loadData();
     }
     
@@ -149,7 +149,6 @@ export default function ClientManagement() {
   const handleApproveUnlock = async (request: UnlockRequest) => {
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Update unlock request status
     await supabase
       .from('unlock_requests')
       .update({
@@ -159,7 +158,6 @@ export default function ClientManagement() {
       })
       .eq('id', request.id);
     
-    // Unlock the client flow
     await supabase
       .from('client_flow_state')
       .update({
@@ -215,17 +213,12 @@ export default function ClientManagement() {
   });
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Loading clients...</span>
-      </div>
-    );
+    return <div className="text-center py-8">Loading clients...</div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Pending Unlock Requests Section */}
+      {/* Pending Unlock Requests */}
       {unlockRequests.length > 0 && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center gap-2">
@@ -243,15 +236,15 @@ export default function ClientManagement() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleApproveUnlock(request)}
-                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 flex items-center gap-1"
+                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
                   >
-                    <CheckCircle className="h-4 w-4" /> Approve
+                    Approve
                   </button>
                   <button
                     onClick={() => handleDeclineUnlock(request)}
-                    className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 flex items-center gap-1"
+                    className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
                   >
-                    <XCircle className="h-4 w-4" /> Decline
+                    Decline
                   </button>
                 </div>
               </div>
@@ -260,7 +253,7 @@ export default function ClientManagement() {
         </div>
       )}
 
-      {/* Search and Filter Bar */}
+      {/* Search and Filter */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -276,34 +269,11 @@ export default function ClientManagement() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 ${filterStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus('paid')}
-              className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 ${filterStatus === 'paid' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              <CheckCircle className="h-4 w-4" /> Paid
-            </button>
-            <button
-              onClick={() => setFilterStatus('unpaid')}
-              className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 ${filterStatus === 'unpaid' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              <Clock className="h-4 w-4" /> Unpaid
-            </button>
-            <button
-              onClick={() => setFilterStatus('locked')}
-              className={`px-3 py-2 rounded-lg text-sm flex items-center gap-1 ${filterStatus === 'locked' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              <Lock className="h-4 w-4" /> Locked
-            </button>
-            <button
-              onClick={loadData}
-              className="px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1"
-            >
+            <button onClick={() => setFilterStatus('all')} className="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200">All ({clients.length})</button>
+            <button onClick={() => setFilterStatus('paid')} className="px-3 py-2 rounded-lg text-sm bg-green-100 hover:bg-green-200 text-green-800">Paid</button>
+            <button onClick={() => setFilterStatus('unpaid')} className="px-3 py-2 rounded-lg text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800">Unpaid</button>
+            <button onClick={() => setFilterStatus('locked')} className="px-3 py-2 rounded-lg text-sm bg-red-100 hover:bg-red-200 text-red-800">Locked</button>
+            <button onClick={loadData} className="px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1">
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
           </div>
@@ -317,20 +287,16 @@ export default function ClientManagement() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Client</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Contact</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment Status</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Flow Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Flow</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Agent</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredClients.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    No clients found
-                   </td>
-                </tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No clients found</td></tr>
               ) : (
                 filteredClients.map((client) => {
                   const flowStatus = getFlowStatus(client);
@@ -341,48 +307,42 @@ export default function ClientManagement() {
                     <tr key={client.user_id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         <div className="font-medium">{client.first_name || 'N/A'} {client.last_name || ''}</div>
-                       </td>
+                        <div className="text-xs text-gray-500">{client.email}</div>
+                      </td>
                       <td className="px-4 py-3">
-                        <div className="text-sm">{client.email}</div>
-                       </td>
+                        <PresenceBadge userId={client.user_id} size="sm" showLastSeen={true} />
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${client.has_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {client.has_paid ? 'Paid ✓' : 'Pending'}
+                          {client.has_paid ? 'Paid' : 'Pending'}
                         </span>
-                       </td>
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${flowStatus.color}`}>
-                          <flowStatus.icon className="h-3 w-3 inline mr-1" />
                           {flowStatus.text}
                         </span>
-                       </td>
+                      </td>
                       <td className="px-4 py-3 text-sm">
                         {client.assigned_agent_id ? 'Assigned' : 'Unassigned'}
-                       </td>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           {isLocked && (
-                            <button
-                              onClick={() => handleUnlockClient(client)}
-                              className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 flex items-center gap-1"
-                            >
+                            <button onClick={() => handleUnlockClient(client)} className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 flex items-center gap-1">
                               <Unlock className="h-3 w-3" /> Unlock
                             </button>
                           )}
-                          <button
-                            onClick={() => window.open(`/admin/client/${client.user_id}`, '_blank')}
-                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"
-                          >
+                          <button onClick={() => window.open(`/admin/client/${client.user_id}`, '_blank')} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1">
                             <Eye className="h-3 w-3" /> View
                           </button>
                         </div>
-                       </td>
+                      </td>
                     </tr>
                   );
                 })
               )}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
 
@@ -391,32 +351,14 @@ export default function ClientManagement() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Unlock Client Workflow</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Unlocking <strong>{selectedClient.email}</strong> will allow them to edit Form-01 again.
-            </p>
+            <p className="text-sm text-gray-600 mb-4">Unlocking <strong>{selectedClient.email}</strong> will allow them to edit Form-01 again.</p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Reason for unlocking</label>
-              <textarea
-                value={unlockReason}
-                onChange={(e) => setUnlockReason(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                rows={3}
-                placeholder="Enter reason for overriding the lock..."
-                required
-              />
+              <textarea value={unlockReason} onChange={(e) => setUnlockReason(e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={3} placeholder="Enter reason..." required />
             </div>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowUnlockModal(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitUnlock}
-                disabled={processingUnlock}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
-              >
+              <button onClick={() => setShowUnlockModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+              <button onClick={submitUnlock} disabled={processingUnlock} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
                 {processingUnlock ? 'Processing...' : 'Confirm Unlock'}
               </button>
             </div>
