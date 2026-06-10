@@ -6,8 +6,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     
+    // If not authenticated, return empty array (not an error)
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ users: [] });
     }
 
     const url = new URL(request.url);
@@ -22,11 +23,11 @@ export async function GET(request: Request) {
     const { data, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ users: [] });
     }
 
-    return NextResponse.json({ users: data });
+    return NextResponse.json({ users: data || [] });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ users: [] });
   }
 }
