@@ -10,19 +10,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (userRole?.role !== 'admin' && userRole?.role !== 'owner') {
-      return NextResponse.json({ error: 'Only admins can change status' }, { status: 403 });
-    }
-
     const { status } = await request.json();
     
-    if (!['online', 'away', 'invisible'].includes(status)) {
+    // Allow offline status as well
+    if (!['online', 'away', 'invisible', 'offline'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
@@ -31,6 +22,7 @@ export async function POST(request: Request) {
       .upsert({
         user_id: user.id,
         status: status,
+        last_seen_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id'
