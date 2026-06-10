@@ -37,7 +37,8 @@ const formatPhoneNumber = (str: string) => {
 };
 
 const validateEmail = (email: string) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  // Strict email validation - only allows valid email format with @ and domain
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
 };
 
 const countryList = [
@@ -53,6 +54,7 @@ interface Form01Data {
   user_email?: string;
   fn_t1?: string;
   srn_t1?: string;
+  mr1_t1?: string;
   ema_t1?: string;
   cnt_1?: string;
 }
@@ -63,9 +65,9 @@ export default function Form01Page() {
   const [formData, setFormData] = useState<Form01Data>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string | null>(null);
-  const [childCount, setChildCount] = useState(1);
-  const [marriedSurnameCount, setMarriedSurnameCount] = useState(1);
-  const [middleNameCount, setMiddleNameCount] = useState(1);
+  const [childCount] = useState(1);
+  const [marriedSurnameCount] = useState(1);
+  const [middleNameCount] = useState(1);
   const router = useRouter();
   const supabase = createClient();
 
@@ -116,6 +118,9 @@ export default function Form01Page() {
     
     if (field === 'fn_t1' || field === 'srn_t1' || field === 'bsrn_t1') {
       formattedValue = toSentenceCase(value).replace(/\s/g, '');
+    } else if (field === 'mr1_t1') {
+      // Current Married Surname - capitalize each word
+      formattedValue = toCapitalizeEachWord(value);
     } else if (field === 'mdn_t1' || field === 'mdn2_t1' || field === 'mdn3_t1' || field === 'mdn4_t1' || field === 'mdn5_t1') {
       formattedValue = toCapitalizeEachWord(value);
     } else if (field === 'strn_t1' || field === 'sbn_t1' || field === 'aptn_t1' || field === 'ctn_t1' || field === 'dstr_t1' || field === 'spn_t1') {
@@ -133,6 +138,9 @@ export default function Form01Page() {
       formattedValue = toCapitalizeEachWord(value);
     } else if (field.startsWith('wtn') && (field.endsWith('_t1') || field.endsWith('_t2'))) {
       formattedValue = toCapitalizeEachWord(value);
+    } else if (field === 'ema_t1') {
+      // Email - strip spaces and convert to lowercase
+      formattedValue = value?.toLowerCase().replace(/\s/g, '');
     }
     
     setFormData(prev => ({ ...prev, [field]: formattedValue }));
@@ -187,18 +195,6 @@ export default function Form01Page() {
     }
   };
 
-  const addChild = () => {
-    if (childCount < 7) setChildCount(childCount + 1);
-  };
-
-  const addMarriedSurname = () => {
-    if (marriedSurnameCount < 5) setMarriedSurnameCount(marriedSurnameCount + 1);
-  };
-
-  const addMiddleName = () => {
-    if (middleNameCount < 5) setMiddleNameCount(middleNameCount + 1);
-  };
-
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.fn_t1?.trim()) newErrors.fn_t1 = 'First Name is required';
@@ -206,7 +202,7 @@ export default function Form01Page() {
     if (!formData.ema_t1?.trim()) {
       newErrors.ema_t1 = 'Email is required';
     } else if (!validateEmail(formData.ema_t1)) {
-      newErrors.ema_t1 = 'Valid email address required (e.g., name@domain.com)';
+      newErrors.ema_t1 = 'Valid email address required (e.g., name@domain.com) - no spaces or special characters allowed';
     }
     if (!formData.cnt_1?.trim()) newErrors.cnt_1 = 'Phone number is required';
     setErrors(newErrors);
@@ -268,47 +264,52 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.1 — National Naming Information</h2>
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">No Middle Name/s</label>
-                <select value={formData.no_middle_name || ''} onChange={(e) => handleChange('no_middle_name', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                  <option value="">No</option>
-                  <option value="Yes">Yes - I have no middle name</option>
-                </select>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Name <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.fn_t1 || ''} onChange={(e) => handleChange('fn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
+                  <input 
+                    type="text" 
+                    value={formData.fn_t1 || ''} 
+                    onChange={(e) => handleChange('fn_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="Single word only"
+                    required 
+                  />
                   {errors.fn_t1 && <p className="text-red-500 text-xs mt-1">{errors.fn_t1}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name</label>
-                  <input type="text" value={formData.mdn_t1 || ''} onChange={(e) => handleChange('mdn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMiddleNameDisabled} />
+                  <input 
+                    type="text" 
+                    value={formData.mdn_t1 || ''} 
+                    onChange={(e) => handleChange('mdn_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    disabled={isMiddleNameDisabled} 
+                  />
                 </div>
-                {!isMiddleNameDisabled && middleNameCount < 5 && (
-                  <button type="button" onClick={addMiddleName} className="text-blue-600 text-sm hover:underline">+ Add another middle name</button>
-                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Surname <span className="text-red-500">*</span></label>
-                  <input type="text" value={formData.srn_t1 || ''} onChange={(e) => handleChange('srn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
+                  <input 
+                    type="text" 
+                    value={formData.srn_t1 || ''} 
+                    onChange={(e) => handleChange('srn_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="Single word only"
+                    required 
+                  />
                   {errors.srn_t1 && <p className="text-red-500 text-xs mt-1">{errors.srn_t1}</p>}
                 </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Surname at Birth</label>
-                <input type="text" value={formData.bsrn_t1 || ''} onChange={(e) => handleChange('bsrn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isBsrnDisabled} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Current Married Surname</label>
-                  <input type="text" value={formData.mr1_t1 || ''} onChange={(e) => handleChange('mr1_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={isMarriedDisabled} />
+                  <input 
+                    type="text" 
+                    value={formData.mr1_t1 || ''} 
+                    onChange={(e) => handleChange('mr1_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="Auto-capitalizes each word"
+                    disabled={isMarriedDisabled} 
+                  />
                 </div>
-                {!isMarriedDisabled && marriedSurnameCount < 5 && (
-                  <button type="button" onClick={addMarriedSurname} className="text-blue-600 text-sm hover:underline">+ Add previous married surname</button>
-                )}
               </div>
             </div>
 
@@ -323,17 +324,19 @@ export default function Form01Page() {
                 </select>
               </div>
               {!isChildrenDisabled && (
-                <>
-                  <div className="border-l-4 border-blue-200 pl-4 mb-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">Child 1</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div><label>Full Name</label><input type="text" value={formData.chld1_t1 || ''} onChange={(e) => handleChange('chld1_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                      <div><label>ID/Passport Number</label><input type="text" value={formData.chld1_id || ''} onChange={(e) => handleChange('chld1_id', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div className="border-l-4 border-blue-200 pl-4 mb-4">
+                  <h4 className="font-semibold text-gray-700 mb-2">Child 1</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <input type="text" value={formData.chld1_t1 || ''} onChange={(e) => handleChange('chld1_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ID/Passport Number</label>
+                      <input type="text" value={formData.chld1_id || ''} onChange={(e) => handleChange('chld1_id', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
                     </div>
                   </div>
-                  {childCount >= 2 && <div>Child 2 fields would appear here</div>}
-                  {childCount < 7 && <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline">+ Add another child</button>}
-                </>
+                </div>
               )}
             </div>
 
@@ -343,13 +346,29 @@ export default function Form01Page() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
-                  <input type="email" value={formData.ema_t1 || ''} onChange={(e) => handleChange('ema_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
+                  <input 
+                    type="email" 
+                    value={formData.ema_t1 || ''} 
+                    onChange={(e) => handleChange('ema_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="name@example.com"
+                    pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                    required 
+                  />
                   {errors.ema_t1 && <p className="text-red-500 text-xs mt-1">{errors.ema_t1}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span className="text-red-500">*</span></label>
-                  <input type="tel" value={formData.cnt_1?.replace(/[^+\d]/g, '') || ''} onChange={(e) => handleChange('cnt_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" required />
+                  <input 
+                    type="tel" 
+                    value={formData.cnt_1?.replace(/[^+\d]/g, '') || ''} 
+                    onChange={(e) => handleChange('cnt_1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="+27 XX XXX XXXX"
+                    required 
+                  />
                   {errors.cnt_1 && <p className="text-red-500 text-xs mt-1">{errors.cnt_1}</p>}
+                  <p className="text-xs text-gray-500 mt-1">Auto-formats with + prefix</p>
                 </div>
               </div>
             </div>
@@ -358,13 +377,43 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.5 — Addresses</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2"><label>Street Name</label><input type="text" value={formData.strn_t1 || ''} onChange={(e) => handleChange('strn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Suburb</label><input type="text" value={formData.sbn_t1 || ''} onChange={(e) => handleChange('sbn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>City/Town</label><input type="text" value={formData.ctn_t1 || ''} onChange={(e) => handleChange('ctn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Province</label><input type="text" value={formData.spn_t1 || ''} onChange={(e) => handleChange('spn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Postal Code</label><input type="text" value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} onChange={(e) => handleChange('ptc_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Street Name</label>
+                  <input type="text" value={formData.strn_t1 || ''} onChange={(e) => handleChange('strn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g., 210 Jackson Street" />
+                </div>
                 <div>
-                  <label>Country</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Suburb</label>
+                  <input type="text" value={formData.sbn_t1 || ''} onChange={(e) => handleChange('sbn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Apartment/Unit</label>
+                  <input type="text" value={formData.aptn_t1 || ''} onChange={(e) => handleChange('aptn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City/Town</label>
+                  <input type="text" value={formData.ctn_t1 || ''} onChange={(e) => handleChange('ctn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+                  <input type="text" value={formData.dstr_t1 || ''} onChange={(e) => handleChange('dstr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+                  <input type="text" value={formData.spn_t1 || ''} onChange={(e) => handleChange('spn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                  <input 
+                    type="text" 
+                    value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} 
+                    onChange={(e) => handleChange('ptc_t1', e.target.value)} 
+                    className="w-full border rounded-lg px-3 py-2" 
+                    placeholder="1234" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Auto-formats to [1234]</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
                   <select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
                     <option value="">Select Country</option>
                     {countryList.map(c => <option key={c} value={c}>{c}</option>)}
