@@ -53,18 +53,16 @@ export default function SelectAdminPage() {
     }
 
     // 1. Update user_roles table with assigned_admin_id
-    await supabase
+    const { error: roleError } = await supabase
       .from('user_roles')
       .update({ assigned_admin_id: selectedAdminId })
       .eq('user_id', user.id);
 
-    // 2. Update users table (backward compatibility)
-    await supabase
-      .from('users')
-      .update({ admin_id: selectedAdminId })
-      .eq('id', user.id);
+    if (roleError) {
+      console.error('Error updating user_roles:', roleError);
+    }
 
-    // 3. Update client_flow_state
+    // 2. Update client_flow_state - ONLY use columns that exist
     const { data: existingFlow } = await supabase
       .from('client_flow_state')
       .select('id')
@@ -72,30 +70,36 @@ export default function SelectAdminPage() {
       .single();
 
     if (existingFlow) {
-      await supabase
+      const { error: flowError } = await supabase
         .from('client_flow_state')
         .update({
           step_1_admin_selected: true,
           current_step: 2,
-          step_1_completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('client_id', user.id);
+      
+      if (flowError) {
+        console.error('Error updating flow state:', flowError);
+      }
     } else {
-      await supabase
+      const { error: insertError } = await supabase
         .from('client_flow_state')
         .insert({
           client_id: user.id,
           step_1_admin_selected: true,
           current_step: 2,
-          step_1_completed_at: new Date().toISOString(),
           lock_type: 'unlocked',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+      
+      if (insertError) {
+        console.error('Error inserting flow state:', insertError);
+      }
     }
 
-    // 4. Trigger round-robin agent assignment
+    // 3. Trigger round-robin agent assignment
     try {
       const response = await fetch('/api/agent/assign', {
         method: 'POST',
