@@ -31,11 +31,15 @@ export default function ClientDashboard() {
   }, []);
 
   const handleSignOut = async () => {
+    // Set presence to offline with current timestamp
     await fetch('/api/presence/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'offline' })
     }).catch(() => {});
+    
+    // Small delay to ensure API call completes
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     await supabase.auth.signOut();
     router.push('/login');
