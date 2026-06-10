@@ -27,21 +27,9 @@ interface FlowState {
   locked_reason: string | null;
 }
 
-interface UnlockRequest {
-  id: string;
-  client_id: string;
-  client_email: string;
-  client_name: string;
-  reason: string;
-  status: string;
-  requested_at: string;
-  requested_by: string;
-}
-
 export default function ClientManagement() {
   const [clients, setClients] = useState<Client[]>([]);
   const [flowStates, setFlowStates] = useState<Map<string, FlowState>>(new Map());
-  const [unlockRequests, setUnlockRequests] = useState<UnlockRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'unpaid' | 'locked'>('all');
@@ -61,7 +49,6 @@ export default function ClientManagement() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get admin ID
     const { data: adminRole } = await supabase
       .from('user_roles')
       .select('user_id')
@@ -70,7 +57,6 @@ export default function ClientManagement() {
     
     const adminId = adminRole?.user_id || user.id;
 
-    // Get all clients under this admin
     const { data: clientsData } = await supabase
       .from('user_roles')
       .select('*')
@@ -80,7 +66,6 @@ export default function ClientManagement() {
 
     setClients(clientsData || []);
 
-    // Get flow states for all clients
     if (clientsData && clientsData.length > 0) {
       const clientIds = clientsData.map(c => c.user_id);
       const { data: flowData } = await supabase
@@ -91,16 +76,6 @@ export default function ClientManagement() {
       const flowMap = new Map();
       flowData?.forEach(flow => flowMap.set(flow.client_id, flow));
       setFlowStates(flowMap);
-
-      // Get pending unlock requests
-      const { data: unlockData } = await supabase
-        .from('unlock_requests')
-        .select('*')
-        .in('client_id', clientIds)
-        .eq('status', 'pending')
-        .order('requested_at', { ascending: false });
-      
-      setUnlockRequests(unlockData || []);
     }
 
     setLoading(false);
@@ -146,48 +121,6 @@ export default function ClientManagement() {
     setSelectedClient(null);
   };
 
-  const handleApproveUnlock = async (request: UnlockRequest) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    await supabase
-      .from('unlock_requests')
-      .update({
-        status: 'approved',
-        reviewed_by: user?.id,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', request.id);
-    
-    await supabase
-      .from('client_flow_state')
-      .update({
-        lock_type: 'overridden',
-        locked_step: null,
-        locked_reason: null,
-        overridden_by: user?.id,
-        override_reason: `Unlock request approved: ${request.reason}`,
-        overridden_at: new Date().toISOString()
-      })
-      .eq('client_id', request.client_id);
-    
-    await loadData();
-  };
-
-  const handleDeclineUnlock = async (request: UnlockRequest) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    await supabase
-      .from('unlock_requests')
-      .update({
-        status: 'rejected',
-        reviewed_by: user?.id,
-        reviewed_at: new Date().toISOString()
-      })
-      .eq('id', request.id);
-    
-    await loadData();
-  };
-
   const getFlowStatus = (client: Client) => {
     const flow = flowStates.get(client.user_id);
     if (flow?.step_6_completed) return { text: 'Completed', color: 'bg-green-100 text-green-800', icon: CheckCircle };
@@ -218,41 +151,6 @@ export default function ClientManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Pending Unlock Requests */}
-      {unlockRequests.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Pending Unlock Requests ({unlockRequests.length})
-          </h3>
-          <div className="space-y-2">
-            {unlockRequests.map(request => (
-              <div key={request.id} className="bg-white rounded-lg p-3 border border-yellow-200 flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{request.client_email}</p>
-                  <p className="text-sm text-gray-600">Reason: {request.reason}</p>
-                  <p className="text-xs text-gray-400">Requested: {new Date(request.requested_at).toLocaleString()}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleApproveUnlock(request)}
-                    className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleDeclineUnlock(request)}
-                    className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
-                  >
-                    Decline
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Search and Filter */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex flex-wrap gap-4">
@@ -269,10 +167,10 @@ export default function ClientManagement() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setFilterStatus('all')} className="px-3 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200">All ({clients.length})</button>
-            <button onClick={() => setFilterStatus('paid')} className="px-3 py-2 rounded-lg text-sm bg-green-100 hover:bg-green-200 text-green-800">Paid</button>
-            <button onClick={() => setFilterStatus('unpaid')} className="px-3 py-2 rounded-lg text-sm bg-yellow-100 hover:bg-yellow-200 text-yellow-800">Unpaid</button>
-            <button onClick={() => setFilterStatus('locked')} className="px-3 py-2 rounded-lg text-sm bg-red-100 hover:bg-red-200 text-red-800">Locked</button>
+            <button onClick={() => setFilterStatus('all')} className="px-3 py-2 rounded-lg text-sm bg-blue-600 text-white">All ({clients.length})</button>
+            <button onClick={() => setFilterStatus('paid')} className="px-3 py-2 rounded-lg text-sm bg-green-100 text-green-800 hover:bg-green-200">Paid</button>
+            <button onClick={() => setFilterStatus('unpaid')} className="px-3 py-2 rounded-lg text-sm bg-yellow-100 text-yellow-800 hover:bg-yellow-200">Unpaid</button>
+            <button onClick={() => setFilterStatus('locked')} className="px-3 py-2 rounded-lg text-sm bg-red-100 text-red-800 hover:bg-red-200">Locked</button>
             <button onClick={loadData} className="px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1">
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
@@ -290,13 +188,12 @@ export default function ClientManagement() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Flow</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Agent</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredClients.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500">No clients found</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No clients found</td></tr>
               ) : (
                 filteredClients.map((client) => {
                   const flowStatus = getFlowStatus(client);
@@ -308,23 +205,20 @@ export default function ClientManagement() {
                       <td className="px-4 py-3">
                         <div className="font-medium">{client.first_name || 'N/A'} {client.last_name || ''}</div>
                         <div className="text-xs text-gray-500">{client.email}</div>
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <PresenceBadge userId={client.user_id} size="sm" showLastSeen={true} />
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${client.has_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {client.has_paid ? 'Paid' : 'Pending'}
                         </span>
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${flowStatus.color}`}>
                           {flowStatus.text}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {client.assigned_agent_id ? 'Assigned' : 'Unassigned'}
-                      </td>
+                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           {isLocked && (
@@ -336,8 +230,8 @@ export default function ClientManagement() {
                             <Eye className="h-3 w-3" /> View
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                       </td>
+                     </tr>
                   );
                 })
               )}
