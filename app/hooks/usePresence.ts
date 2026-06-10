@@ -6,13 +6,18 @@ import { createClient } from '@/lib/supabase/client';
 export function usePresence() {
   const supabase = createClient();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     const setupPresence = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Set status to online when page loads
+      // Only initialize once
+      if (initializedRef.current) return;
+      initializedRef.current = true;
+
+      // First, ensure a record exists
       await fetch('/api/presence/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
