@@ -17,33 +17,26 @@ export default function PresenceBadge({ userId, size = 'sm', showLastSeen = fals
 
   useEffect(() => {
     loadPresence();
-
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel(`presence-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'user_presence',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setStatus(payload.new.status);
-            setLastSeen(payload.new.last_seen_at);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [userId]);
 
   const loadPresence = async () => {
+    try {
+      // First, try to get from API
+      const response = await fetch(`/api/presence/users?ids=${userId}`);
+      const data = await response.json();
+      
+      if (data.users && data.users.length > 0) {
+        const presence = data.users[0];
+        setStatus(presence.status || 'offline');
+        setLastSeen(presence.last_seen_at);
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.debug('API fetch failed, trying direct DB');
+    }
+
+    // Fallback: direct DB query
     try {
       const { data, error } = await supabase
         .from('user_presence')
@@ -52,7 +45,6 @@ export default function PresenceBadge({ userId, size = 'sm', showLastSeen = fals
         .maybeSingle();
 
       if (error) {
-        console.debug('Presence not available:', error.message);
         setStatus('offline');
         setLoading(false);
         return;
@@ -62,17 +54,7 @@ export default function PresenceBadge({ userId, size = 'sm', showLastSeen = fals
         setStatus(data.status || 'offline');
         setLastSeen(data.last_seen_at);
       } else {
-        // No record exists, create one
-        await supabase
-          .from('user_presence')
-          .upsert({
-            user_id: userId,
-            status: 'offline',
-            last_seen_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
         setStatus('offline');
-        setLastSeen(new Date().toISOString());
       }
     } catch (err) {
       setStatus('offline');
@@ -111,18 +93,11 @@ export default function PresenceBadge({ userId, size = 'sm', showLastSeen = fals
     return <div className={`${sizeClasses[size]} bg-gray-300 rounded-full animate-pulse`} />;
   }
 
-  // Don't show last seen for offline users if it's more than 1 hour
-  const shouldShowLastSeen = showLastSeen && status !== 'online';
-  const isRecent = lastSeen && (new Date().getTime() - new Date(lastSeen).getTime()) < 3600000;
-
   return (
     <div className="flex items-center gap-2">
       <div className={`${sizeClasses[size]} ${getStatusColor()} rounded-full ring-2 ring-white`} />
-      {shouldShowLastSeen && !isRecent && (
+      {showLastSeen && status !== 'online' && lastSeen && (
         <span className="text-xs text-gray-500">Last seen {getLastSeenText()}</span>
-      )}
-      {shouldShowLastSeen && isRecent && status === 'offline' && (
-        <span className="text-xs text-gray-500">Just now</span>
       )}
       {showLastSeen && status === 'online' && (
         <span className="text-xs text-green-600">Online</span>
