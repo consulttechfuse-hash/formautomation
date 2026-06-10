@@ -12,19 +12,22 @@ export async function POST(request: Request) {
 
     const { status } = await request.json();
     
-    // Allow offline status as well
     if (!['online', 'away', 'invisible', 'offline'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    // Always update last_seen_at to current time
+    // Use SAST (UTC+2)
+    const now = new Date();
+    const sastTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const sastISO = sastTime.toISOString().replace('Z', '+02:00');
+
     const { error } = await supabase
       .from('user_presence')
       .upsert({
         user_id: user.id,
         status: status,
-        last_seen_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        last_seen_at: sastISO,
+        updated_at: sastISO
       }, {
         onConflict: 'user_id'
       });
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, status });
+    return NextResponse.json({ success: true, status, timestamp: sastISO });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
