@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import StatsCards from '../components/StatsCards';
+import PaymentVerification from '../components/PaymentVerification';
 import AdminManagement from '../components/AdminManagement';
 import RequestsStats from '../components/RequestsStats';
 import ClientManagement from '../components/ClientManagement';
@@ -25,7 +26,6 @@ export default function OwnerDashboard() {
   const [activeSection, setActiveSection] = useState('stats');
 
   const handleSignOut = async () => {
-    // Set presence to offline before signing out
     await fetch('/api/presence/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -83,6 +83,7 @@ export default function OwnerDashboard() {
       </div>
 
       <div className="flex-1 overflow-auto p-6">
+        {activeSection === 'paymentVerification' && <PaymentVerification />}
         {activeSection === 'stats' && (
           <div>
             <h1 className="text-2xl font-bold mb-6">Dashboard Overview</h1>
@@ -103,7 +104,6 @@ export default function OwnerDashboard() {
         {activeSection === 'agentPerformance' && <AgentPerformanceReport />}
         {activeSection === 'adminRevenue' && <AdminRevenueReport />}
         {activeSection === 'systemRevenue' && <SystemRevenueReport />}
-        {activeSection === 'paymentVerification' && <div>Payment verification coming soon</div>}
         {activeSection === 'clientCommunication' && <EmailLogs role="owner" />}
         {activeSection === 'devops' && <DevOps />}
       </div>
