@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
+    // Always update last_seen_at to current time
     const { error } = await supabase
       .from('user_presence')
       .upsert({
