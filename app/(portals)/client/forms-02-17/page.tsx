@@ -16,8 +16,9 @@ export default function Forms0217Page() {
   const [forms, setForms] = useState<FormTemplate[]>([]);
   const [selectedForm, setSelectedForm] = useState<FormTemplate | null>(null);
   const [filledHtml, setFilledHtml] = useState('');
-  const [formData, setFormData] = useState<any>(null);
+  const [form01Data, setForm01Data] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -33,6 +34,7 @@ export default function Forms0217Page() {
       router.push('/login');
       return;
     }
+    setUserId(user.id);
 
     // Check if Form-01 is completed
     const { data: flowState } = await supabase
@@ -47,14 +49,14 @@ export default function Forms0217Page() {
     }
 
     // Load Form-01 data for auto-population
-    const { data: form01Data } = await supabase
+    const { data: form01DataResult } = await supabase
       .from('form01_data')
-      .select('form_data')
-      .eq('client_id', user.id)
+      .select('*')
+      .eq('user_id', user.id)
       .single();
 
-    if (form01Data?.form_data) {
-      setFormData(form01Data.form_data);
+    if (form01DataResult) {
+      setForm01Data(form01DataResult);
     }
 
     // Load all form templates from 2 to 17
@@ -76,18 +78,12 @@ export default function Forms0217Page() {
     const submittedMap = new Map();
     generatedForms?.forEach(f => submittedMap.set(f.form_number, { filled_html: f.filled_html, is_submitted: f.is_submitted }));
     
-    // Auto-generate unfilled forms
-    for (const template of (templates || [])) {
-      const existing = submittedMap.get(template.form_number);
-      if (!existing && formData?.form_data) {
-        await generateForm(template, formData.form_data);
-      }
-    }
-    
     setLoading(false);
   };
 
   const generateForm = async (template: FormTemplate, data: any) => {
+    if (!userId) return '';
+    
     let html = template.template_html;
     
     // Replace all placeholders with actual data from Form-01
@@ -104,22 +100,21 @@ export default function Forms0217Page() {
         value = new Date().toLocaleString('default', { month: 'long' });
       } else if (fieldName === 'gen_t1') {
         value = data['gen_t1'] || 'person';
+      } else if (fieldName === 'fln_t1') {
+        value = `${data['fn_t1'] || ''} ${data['mdn_t1'] || ''} ${data['srn_t1'] || ''}`.trim().replace(/\s+/g, ' ');
       }
       
       html = html.replace(new RegExp(`{{${fieldName}}}`, 'g'), value || `[${fieldName}]`);
     }
     
     // Save generated form
-    const { data: { user } } = await supabase.auth.getUser();
-    
     const { error } = await supabase
       .from('generated_forms')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         form_number: template.form_number,
         filled_html: html,
         generated_at: new Date().toISOString(),
-        user_email: user.email,
         is_locked: false,
         is_submitted: false
       }, {
@@ -134,21 +129,21 @@ export default function Forms0217Page() {
   };
 
   const handleViewForm = async (form: FormTemplate) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    if (!userId) return;
     
     // Get existing generated form
     const { data: existing } = await supabase
       .from('generated_forms')
       .select('filled_html')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('form_number', form.form_number)
       .single();
     
     if (existing?.filled_html) {
       setSelectedForm(form);
       setFilledHtml(existing.filled_html);
-    } else if (formData) {
-      const html = await generateForm(form, formData);
+    } else if (form01Data) {
+      const html = await generateForm(form, form01Data);
       setSelectedForm(form);
       setFilledHtml(html);
     }
@@ -164,11 +159,9 @@ export default function Forms0217Page() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedForm) return;
+    if (!selectedForm || !userId) return;
     
     setSubmitting(true);
-    
-    const { data: { user } } = await supabase.auth.getUser();
     
     const { error } = await supabase
       .from('generated_forms')
@@ -176,7 +169,7 @@ export default function Forms0217Page() {
         is_submitted: true,
         submitted_at: new Date().toISOString()
       })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('form_number', selectedForm.form_number);
     
     if (error) {
@@ -190,11 +183,6 @@ export default function Forms0217Page() {
     }
     
     setSubmitting(false);
-  };
-
-  const getFormStatus = (formNumber: number) => {
-    // This would check if form is already submitted
-    return 'pending'; // placeholder
   };
 
   if (loading) {
@@ -282,7 +270,7 @@ export default function Forms0217Page() {
               </button>
               <button
                 onClick={async () => {
-                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!userId) return;
                   await supabase
                     .from('client_flow_state')
                     .update({
@@ -290,7 +278,7 @@ export default function Forms0217Page() {
                       current_step: 6,
                       updated_at: new Date().toISOString()
                     })
-                    .eq('client_id', user.id);
+                    .eq('client_id', userId);
                   router.push('/client/confirm-submit');
                 }}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
