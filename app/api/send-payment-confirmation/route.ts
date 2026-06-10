@@ -1,4 +1,6 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { getSASTISOString } from '@/lib/timezone';
 import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -6,67 +8,56 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: Request) {
   try {
     const { email, clientId, status, adminNotes } = await request.json();
-
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    
+    const supabase = await createClient();
+    
+    // Use SAST timestamp
+    const sastTimestamp = getSASTISOString();
+    
+    // Update payment request with SAST timestamp
+    if (status === 'approved') {
+      await supabase
+        .from('manual_payment_requests')
+        .update({ 
+          status: 'confirmed', 
+          confirmed_at: sastTimestamp
+        })
+        .eq('client_id', clientId);
+      
+      await supabase
+        .from('user_roles')
+        .update({ has_paid: true, paid_at: sastTimestamp })
+        .eq('user_id', clientId);
+    } else if (status === 'rejected') {
+      await supabase
+        .from('manual_payment_requests')
+        .update({ 
+          status: 'rejected', 
+          admin_notes: adminNotes,
+          reviewed_at: sastTimestamp
+        })
+        .eq('client_id', clientId);
     }
-
+    
+    // Send email
     const subject = status === 'approved' 
-      ? 'Form Automation Access Approved' 
-      : 'Payment Verification Failed';
-
-    const html = status === 'approved' ? `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="margin: 0;">Payment Confirmed! ✅</h1>
-        </div>
-        <div style="background-color: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-          <p>Dear Client,</p>
-          <p>Your payment has been successfully confirmed and verified.</p>
-          <p>You can now access all forms and complete your application.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/client/form-01" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-              Start Your Application →
-            </a>
-          </div>
-          <p>Thank you for choosing Techfuse.</p>
-        </div>
-      </div>
-    ` : `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="margin: 0;">Payment Verification Failed ❌</h1>
-        </div>
-        <div style="background-color: #f9fafb; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e5e7eb; border-top: none;">
-          <p>Dear Client,</p>
-          <p>Your proof of payment could not be verified.</p>
-          ${adminNotes ? `<p><strong>Reason:</strong> ${adminNotes}</p>` : ''}
-          <p>Please contact support for assistance or submit a new proof of payment.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/client/select-payment" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-              Try Again →
-            </a>
-          </div>
-        </div>
-      </div>
-    `;
-
-    const { data, error } = await resend.emails.send({
-      from: 'Techfuse <notifications@techfuseconsult.online>',
+      ? 'Payment Confirmed - TechFuse DocControl'
+      : 'Payment Update - TechFuse DocControl';
+    
+    const message = status === 'approved'
+      ? `Your payment has been confirmed on ${new Date(sastTimestamp).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}. You can now proceed with your application.`
+      : `Your payment was not approved on ${new Date(sastTimestamp).toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}. Reason: ${adminNotes || 'Please contact support.'}`;
+    
+    await resend.emails.send({
+      from: 'TechFuse <noreply@techfuseconsult.online>',
       to: email,
       subject: subject,
-      html: html,
+      html: `<p>${message}</p>`
     });
-
-    if (error) {
-      console.error('Email error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data });
+    
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+    console.error('Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-export const dynamic = "force-dynamic";

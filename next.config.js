@@ -18,3 +18,6 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
+// Set timezone to SAST
+process.env.TZ = 'Africa/Johannesburg';

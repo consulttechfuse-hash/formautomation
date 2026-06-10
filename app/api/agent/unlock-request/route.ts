@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { getSASTISOString } from '@/lib/timezone';
 
 export async function POST(request: Request) {
   try {
@@ -10,56 +11,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: userRole } = await supabase
+    const { clientId, reason } = await request.json();
+    
+    // Get client details
+    const { data: client } = await supabase
       .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (userRole?.role !== 'agent') {
-      return NextResponse.json({ error: 'Only agents can submit unlock requests' }, { status: 403 });
-    }
-
-    const { clientId, stepNumber, reason } = await request.json();
-
-    if (!clientId || !stepNumber || !reason) {
-      return NextResponse.json({ error: 'Client ID, step number, and reason are required' }, { status: 400 });
-    }
-
-    const { data: clientCheck } = await supabase
-      .from('user_roles')
-      .select('id')
+      .select('email, first_name, last_name')
       .eq('user_id', clientId)
-      .eq('role', 'client')
-      .eq('assigned_admin_id', user.id)
       .single();
-
-    if (!clientCheck) {
-      return NextResponse.json({ error: 'Client not assigned to you' }, { status: 403 });
+    
+    // Use SAST timestamp
+    const sastTimestamp = getSASTISOString();
+    
+    const { error } = await supabase
+      .from('unlock_requests')
+      .insert({
+        client_id: clientId,
+        client_email: client.email,
+        client_name: `${client.first_name || ''} ${client.last_name || ''}`.trim(),
+        form_number: 1,
+        reason: reason,
+        status: 'pending',
+        requested_by: user.id,
+        requested_at: sastTimestamp
+      });
+    
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    const { error: updateError } = await supabase
+    
+    // Lock the client flow
+    await supabase
       .from('client_flow_state')
       .update({
         lock_type: 'locked_step',
-        locked_step: stepNumber,
+        locked_step: 4,
         locked_reason: reason,
-        locked_by: user.id,
-        locked_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        locked_at: sastTimestamp,
+        locked_by: user.id
       })
       .eq('client_id', clientId);
-
-    if (updateError) {
-      return NextResponse.json({ error: 'Failed to submit unlock request' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Unlock request submitted. Admin will review.' 
-    });
+    
+    return NextResponse.json({ success: true, timestamp: sastTimestamp });
   } catch (error) {
-    console.error('Unlock request error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
