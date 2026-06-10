@@ -9,6 +9,7 @@ export default function SelectAdminPage() {
   const [selectedAdminId, setSelectedAdminId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -45,6 +46,7 @@ export default function SelectAdminPage() {
     }
 
     setSaving(true);
+    setErrorMsg(null);
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -52,38 +54,57 @@ export default function SelectAdminPage() {
       return;
     }
 
+    console.log('=== Starting admin selection for user:', user.id);
+    console.log('Selected admin ID:', selectedAdminId);
+
     // 1. Update user_roles table with assigned_admin_id
-    const { error: roleError } = await supabase
+    const { error: roleError, data: roleData } = await supabase
       .from('user_roles')
       .update({ assigned_admin_id: selectedAdminId })
-      .eq('user_id', user.id);
+      .eq('user_id', user.id)
+      .select();
 
     if (roleError) {
       console.error('Error updating user_roles:', roleError);
+      setErrorMsg(`Role update failed: ${roleError.message}`);
+    } else {
+      console.log('User roles updated successfully:', roleData);
     }
 
-    // 2. Update client_flow_state - ONLY use columns that exist
-    const { data: existingFlow } = await supabase
+    // 2. Update client_flow_state
+    const { data: existingFlow, error: fetchError } = await supabase
       .from('client_flow_state')
-      .select('id')
+      .select('id, step_1_admin_selected, current_step')
       .eq('client_id', user.id)
       .single();
 
+    console.log('Existing flow state:', existingFlow);
+    if (fetchError) {
+      console.log('Fetch error (may not exist):', fetchError);
+    }
+
+    let flowResult;
     if (existingFlow) {
-      const { error: flowError } = await supabase
+      console.log('Updating existing flow state...');
+      flowResult = await supabase
         .from('client_flow_state')
         .update({
           step_1_admin_selected: true,
           current_step: 2,
           updated_at: new Date().toISOString()
         })
-        .eq('client_id', user.id);
+        .eq('client_id', user.id)
+        .select();
       
-      if (flowError) {
-        console.error('Error updating flow state:', flowError);
+      if (flowResult.error) {
+        console.error('Error updating flow state:', flowResult.error);
+        setErrorMsg(`Flow update failed: ${flowResult.error.message}`);
+      } else {
+        console.log('Flow state updated successfully:', flowResult.data);
       }
     } else {
-      const { error: insertError } = await supabase
+      console.log('Creating new flow state...');
+      flowResult = await supabase
         .from('client_flow_state')
         .insert({
           client_id: user.id,
@@ -92,14 +113,27 @@ export default function SelectAdminPage() {
           lock_type: 'unlocked',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        });
+        })
+        .select();
       
-      if (insertError) {
-        console.error('Error inserting flow state:', insertError);
+      if (flowResult.error) {
+        console.error('Error inserting flow state:', flowResult.error);
+        setErrorMsg(`Flow insert failed: ${flowResult.error.message}`);
+      } else {
+        console.log('Flow state created successfully:', flowResult.data);
       }
     }
 
-    // 3. Trigger round-robin agent assignment
+    // 3. Verify the update
+    const { data: verifyFlow } = await supabase
+      .from('client_flow_state')
+      .select('step_1_admin_selected, current_step')
+      .eq('client_id', user.id)
+      .single();
+    
+    console.log('VERIFICATION - After update:', verifyFlow);
+
+    // 4. Trigger round-robin agent assignment
     try {
       const response = await fetch('/api/agent/assign', {
         method: 'POST',
@@ -107,18 +141,18 @@ export default function SelectAdminPage() {
         body: JSON.stringify({ clientId: user.id, adminId: selectedAdminId })
       });
       const result = await response.json();
-      
-      if (result.success && result.assigned_agent_id) {
-        console.log(`Agent assigned: ${result.agent_email}`);
-      } else if (result.message) {
-        console.log(result.message);
-      }
+      console.log('Agent assignment result:', result);
     } catch (error) {
       console.error('Round robin assignment error:', error);
     }
 
     setSaving(false);
-    router.push('/client/select-payment');
+    
+    if (errorMsg) {
+      alert(`Error: ${errorMsg}. Check console for details.`);
+    } else {
+      router.push('/client/select-payment');
+    }
   }
 
   if (loading) {
@@ -132,6 +166,12 @@ export default function SelectAdminPage() {
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Choose Your National Admin</h1>
+      
+      {errorMsg && (
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+          {errorMsg}
+        </div>
+      )}
       
       <div className="border rounded-lg p-6 bg-gray-50 mb-6">
         <p className="text-gray-600 mb-4">Please select an admin who will oversee your case:</p>
