@@ -13,17 +13,25 @@ export async function POST(request: Request) {
 
     const { clientId, reason } = await request.json();
     
+    if (!clientId || !reason) {
+      return NextResponse.json({ error: 'Client ID and reason are required' }, { status: 400 });
+    }
+    
     // Get client details
-    const { data: client } = await supabase
+    const { data: client, error: clientError } = await supabase
       .from('user_roles')
       .select('email, first_name, last_name')
       .eq('user_id', clientId)
       .single();
     
+    if (clientError || !client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+    
     // Use SAST timestamp
     const sastTimestamp = getSASTISOString();
     
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from('unlock_requests')
       .insert({
         client_id: clientId,
@@ -36,8 +44,8 @@ export async function POST(request: Request) {
         requested_at: sastTimestamp
       });
     
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
     
     // Lock the client flow
@@ -54,6 +62,7 @@ export async function POST(request: Request) {
     
     return NextResponse.json({ success: true, timestamp: sastTimestamp });
   } catch (error) {
+    console.error('Unlock request error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
