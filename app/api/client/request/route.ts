@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { getSASTISOString } from '@/lib/timezone';
-import { checkClientRequestLimit } from '@/lib/security/request-limits';
-import { detectAndHandleFraud } from '@/lib/security/fraud-detection';
 
 export async function POST(request: Request) {
   try {
@@ -38,21 +36,44 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Please provide a detailed reason (minimum 10 characters)' }, { status: 400 });
     }
 
-    // Check rate limits
-    const limitCheck = await checkClientRequestLimit(user.id, requestType);
-    if (!limitCheck.allowed) {
-      return NextResponse.json({ error: limitCheck.reason }, { status: 429 });
+    // Check system-wide settings
+    const { data: settings } = await supabase
+      .from('system_request_settings')
+      .select('*');
+
+    const globalEnabled = settings?.find(s => s.setting_key === 'global_requests_enabled')?.setting_value === 'true';
+    if (!globalEnabled) {
+      return NextResponse.json({ error: 'Request system is temporarily disabled. Please contact support.' }, { status: 503 });
+    }
+
+    // Check if client already has a pending request of this type
+    const { data: pendingRequest, count } = await supabase
+      .from('unlock_requests')
+      .select('*', { count: 'exact' })
+      .eq('client_id', user.id)
+      .eq('request_type', requestType)
+      .eq('status', 'pending');
+
+    if (count && count > 0) {
+      return NextResponse.json({ 
+        error: `You already have a pending ${requestType} request. Please wait for it to be processed.`,
+      }, { status: 429 });
     }
 
     // Get client details
     const { data: client, error: clientError } = await supabase
       .from('user_roles')
-      .select('email, first_name, last_name')
+      .select('email, first_name, last_name, assigned_admin_id')
       .eq('user_id', user.id)
       .single();
 
     if (clientError || !client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // For change_admin, validate the new admin is different from current
+    if (requestType === 'change_admin' && newAdminId === client.assigned_admin_id) {
+      return NextResponse.json({ error: 'You are already assigned to this admin. Please select a different admin.' }, { status: 400 });
     }
 
     // Get IP address from headers
@@ -73,7 +94,7 @@ export async function POST(request: Request) {
         reason: reason,
         status: 'pending',
         requested_by: user.id,
-        requested_at: sastTimestamp,
+        created_at: sastTimestamp,
         ip_address: ipAddress,
         user_agent: userAgent
       })
@@ -81,11 +102,22 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
+      console.error('Insert error:', insertError);
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Check for fraud (excessive requests)
-    const fraudCheck = await detectAndHandleFraud(user.id, client.email, requestType, newRequest.id);
+    // Update request count
+    await supabase
+      .from('client_request_counts')
+      .upsert({
+        client_id: user.id,
+        request_type: requestType,
+        request_count: 1,
+        max_allowed: 1,
+        updated_at: sastTimestamp
+      }, {
+        onConflict: 'client_id,request_type'
+      });
 
     // Log to audit
     await supabase
@@ -98,29 +130,10 @@ export async function POST(request: Request) {
         details: { requestType, reason, ipAddress }
       });
 
-    // Send email notification to client
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/email/send-request-confirmation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: client.email,
-          clientName: `${client.first_name || ''} ${client.last_name || ''}`.trim(),
-          requestType,
-          reason,
-          requestId: newRequest.id
-        })
-      }).catch(() => {});
-    } catch (emailError) {
-      console.error('Email error:', emailError);
-    }
-
     return NextResponse.json({ 
       success: true, 
       requestId: newRequest.id,
-      isFraud: fraudCheck.isFraud,
-      fraudCaseId: fraudCheck.caseId,
-      remainingRequests: limitCheck.maxAllowed ? limitCheck.maxAllowed - (limitCheck.currentCount || 0) - 1 : 0
+      message: 'Request submitted successfully. Admin will review it shortly.'
     });
   } catch (error) {
     console.error('Request error:', error);
