@@ -73,9 +73,10 @@ export async function POST(request: Request) {
 
     const sastTimestamp = getSASTISOString();
 
-    // Create the request - only use columns that exist
+    // Create the request - include form_number (required field)
     const insertData: any = {
       client_id: user.id,
+      form_number: 1, // Default form number for requests
       request_type: requestType,
       reason: reason,
       status: 'pending',
