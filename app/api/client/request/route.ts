@@ -36,25 +36,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Please provide a detailed reason (minimum 10 characters)' }, { status: 400 });
     }
 
-    // Check system-wide settings
-    const { data: settings } = await supabase
-      .from('system_request_settings')
-      .select('*');
-
-    const globalEnabled = settings?.find(s => s.setting_key === 'global_requests_enabled')?.setting_value === 'true';
-    if (!globalEnabled) {
-      return NextResponse.json({ error: 'Request system is temporarily disabled. Please contact support.' }, { status: 503 });
-    }
-
     // Check if client already has a pending request of this type
-    const { data: pendingRequest, count } = await supabase
+    const { data: existingRequests, error: checkError } = await supabase
       .from('unlock_requests')
-      .select('*', { count: 'exact' })
+      .select('id, status')
       .eq('client_id', user.id)
       .eq('request_type', requestType)
       .eq('status', 'pending');
 
-    if (count && count > 0) {
+    if (checkError) {
+      console.error('Check error:', checkError);
+      return NextResponse.json({ error: 'Database error checking existing requests' }, { status: 500 });
+    }
+
+    if (existingRequests && existingRequests.length > 0) {
       return NextResponse.json({ 
         error: `You already have a pending ${requestType} request. Please wait for it to be processed.`,
       }, { status: 429 });
@@ -68,6 +63,7 @@ export async function POST(request: Request) {
       .single();
 
     if (clientError || !client) {
+      console.error('Client error:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
@@ -83,21 +79,29 @@ export async function POST(request: Request) {
     const sastTimestamp = getSASTISOString();
 
     // Create the request
+    const insertData = {
+      client_id: user.id,
+      client_email: client.email,
+      client_name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email,
+      request_type: requestType,
+      reason: reason,
+      status: 'pending',
+      requested_by: user.id,
+      created_at: sastTimestamp,
+      ip_address: ipAddress,
+      user_agent: userAgent
+    };
+
+    // Only add new_admin_id if it's a change_admin request
+    if (requestType === 'change_admin') {
+      insertData.new_admin_id = newAdminId;
+    }
+
+    console.log('Inserting request:', JSON.stringify(insertData, null, 2));
+
     const { data: newRequest, error: insertError } = await supabase
       .from('unlock_requests')
-      .insert({
-        client_id: user.id,
-        client_email: client.email,
-        client_name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email,
-        request_type: requestType,
-        new_admin_id: newAdminId || null,
-        reason: reason,
-        status: 'pending',
-        requested_by: user.id,
-        created_at: sastTimestamp,
-        ip_address: ipAddress,
-        user_agent: userAgent
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -107,7 +111,7 @@ export async function POST(request: Request) {
     }
 
     // Update request count
-    await supabase
+    const { error: upsertError } = await supabase
       .from('client_request_counts')
       .upsert({
         client_id: user.id,
@@ -118,6 +122,10 @@ export async function POST(request: Request) {
       }, {
         onConflict: 'client_id,request_type'
       });
+
+    if (upsertError) {
+      console.error('Upsert error:', upsertError);
+    }
 
     // Log to audit
     await supabase
@@ -137,6 +145,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Request error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error: ' + error.message }, { status: 500 });
   }
 }
