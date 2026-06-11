@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Search, Eye, RefreshCw } from 'lucide-react';
-import ViewForm01Data from './ViewForm01Data';
+import { Search, Eye, RefreshCw, FileText } from 'lucide-react';
+import ViewClientForms from './ViewClientForms';
 
 interface Client {
   user_id: string;
@@ -19,7 +19,7 @@ export default function ClientManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [showForm01Modal, setShowForm01Modal] = useState(false);
+  const [showFormsViewer, setShowFormsViewer] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -53,6 +53,20 @@ export default function ClientManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Client Management</h2>
+          <p className="text-sm text-gray-500">View all clients and their form data</p>
+        </div>
+        <button
+          onClick={loadClients}
+          className="px-3 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1"
+        >
+          <RefreshCw className="h-4 w-4" /> Refresh
+        </button>
+      </div>
+
       {/* Search Bar */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="relative">
@@ -75,7 +89,7 @@ export default function ClientManagement() {
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Client</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Contact</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Joined</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
               </tr>
@@ -88,7 +102,7 @@ export default function ClientManagement() {
                   <tr key={client.user_id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium">{client.first_name || 'N/A'} {client.last_name || ''}</div>
-                      <div className="text-xs text-gray-500">{client.user_id}</div>
+                      <div className="text-xs text-gray-500">{client.user_id.substring(0, 8)}...</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm">{client.email}</div>
@@ -102,17 +116,15 @@ export default function ClientManagement() {
                       {new Date(client.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedClient(client);
-                            setShowForm01Modal(true);
-                          }}
-                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"
-                        >
-                          <Eye className="h-3 w-3" /> View Form-01
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedClient(client);
+                          setShowFormsViewer(true);
+                        }}
+                        className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 flex items-center gap-1"
+                      >
+                        <FileText className="h-3 w-3" /> View Forms
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -122,13 +134,13 @@ export default function ClientManagement() {
         </div>
       </div>
 
-      {/* View Form-01 Modal */}
-      {showForm01Modal && selectedClient && (
-        <ViewForm01Data
+      {/* Forms Viewer Modal */}
+      {showFormsViewer && selectedClient && (
+        <ViewClientForms
           clientId={selectedClient.user_id}
           clientName={`${selectedClient.first_name || ''} ${selectedClient.last_name || ''}`.trim() || selectedClient.email}
           onClose={() => {
-            setShowForm01Modal(false);
+            setShowFormsViewer(false);
             setSelectedClient(null);
           }}
         />
