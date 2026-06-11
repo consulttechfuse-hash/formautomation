@@ -7,6 +7,7 @@ import AgentManagement from "../components/AgentManagement";
 import AdminPaymentStatus from '../components/PaymentStatusView';
 import StatsCards from '../components/StatsCards';
 import ClientManagement from '../components/ClientManagement';
+import RequestManagement from '../components/RequestManagement';
 import StatusToggle from '../components/StatusToggle';
 import UserProfile from '../../components/UserProfile';
 import EmailLogs from '../../owner/components/EmailLogs';
@@ -18,9 +19,11 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('stats');
   const [loading, setLoading] = useState(true);
   const [adminEmail, setAdminEmail] = useState('');
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   useEffect(() => {
     checkAuthAndLoad();
+    loadPendingRequestsCount();
   }, []);
 
   const checkAuthAndLoad = async () => {
@@ -34,21 +37,23 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  const handleSignOut = async () => {
-    // Set presence to offline before signing out
-    await fetch('/api/presence/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'offline' })
-    }).catch(() => {});
+  const loadPendingRequestsCount = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Get all pending requests (not filtered by admin for now)
+    const { count } = await supabase
+      .from('unlock_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
     
-    await supabase.auth.signOut();
-    router.push('/login');
+    setPendingRequestsCount(count || 0);
   };
 
   const navItems = [
     { id: 'stats', name: '📊 Dashboard Stats', icon: '📊' },
     { id: 'paymentStatus', name: '💰 Payment Status', icon: '💰' },
+    { id: 'requests', name: `📋 Client Requests ${pendingRequestsCount > 0 ? `(${pendingRequestsCount})` : ''}`, icon: '📋' },
     { id: 'agents', name: '👥 Agent Management', icon: '👥' },
     { id: 'clients', name: '👤 Client Management', icon: '👤' },
     { id: 'clientCommunication', name: '📧 Client Communication', icon: '📧' },
@@ -100,7 +105,10 @@ export default function AdminDashboard() {
         </nav>
         <div className="p-4 border-t border-gray-700">
           <button
-            onClick={handleSignOut}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push('/login');
+            }}
             className="w-full text-left px-4 py-3 rounded-xl text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors flex items-center gap-3"
           >
             <span className="text-xl">🚪</span>
@@ -127,6 +135,7 @@ export default function AdminDashboard() {
           </div>
         )}
         {activeSection === 'paymentStatus' && <AdminPaymentStatus />}
+        {activeSection === 'requests' && <RequestManagement />}
         {activeSection === 'agents' && <AgentManagement />}
         {activeSection === 'clients' && <ClientManagement />}
         {activeSection === 'clientCommunication' && <EmailLogs role="admin" />}

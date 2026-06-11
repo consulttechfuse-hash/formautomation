@@ -2,38 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { CheckCircle, XCircle, AlertCircle, Eye, Clock, Flag, User, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Eye, Clock, Flag, RefreshCw } from 'lucide-react';
 
 interface Request {
   id: string;
   client_id: string;
-  client_email: string;
-  client_name: string;
+  client_email?: string;
+  client_name?: string;
   request_type: 'change_admin' | 'unlock_form01';
   new_admin_id: string | null;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
   is_fraud_case: boolean;
   investigation_status: string;
-  requested_at: string;
+  created_at: string;
   admin_notes?: string;
   new_admin?: {
     email: string;
     first_name: string;
     last_name: string;
   };
-}
-
-interface Admin {
-  user_id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
+  client?: {
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export default function RequestManagement() {
   const [requests, setRequests] = useState<Request[]>([]);
-  const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
@@ -44,25 +41,16 @@ export default function RequestManagement() {
 
   useEffect(() => {
     loadRequests();
-    loadAdmins();
   }, []);
-
-  const loadAdmins = async () => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('user_id, email, first_name, last_name')
-      .eq('role', 'admin');
-    
-    if (data) {
-      setAdmins(data);
-    }
-  };
 
   const loadRequests = async () => {
     setLoading(true);
     
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     // Get admin ID
     const { data: adminRole } = await supabase
@@ -73,32 +61,33 @@ export default function RequestManagement() {
     
     const adminId = adminRole?.user_id || user.id;
 
-    // Get all requests for clients under this admin
-    const { data: clientsUnderAdmin } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'client')
-      .eq('assigned_admin_id', adminId);
-
-    const clientIds = clientsUnderAdmin?.map(c => c.user_id) || [];
-
-    if (clientIds.length === 0) {
-      setRequests([]);
-      setLoading(false);
-      return;
-    }
-
+    // Get all pending requests - simplified query
     const { data: requestsData } = await supabase
       .from('unlock_requests')
       .select(`
         *,
         new_admin:new_admin_id (email, first_name, last_name)
       `)
-      .in('client_id', clientIds)
-      .order('requested_at', { ascending: false });
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
 
     if (requestsData) {
-      setRequests(requestsData as Request[]);
+      // Enrich with client data
+      const enrichedRequests = await Promise.all(requestsData.map(async (req) => {
+        const { data: client } = await supabase
+          .from('user_roles')
+          .select('email, first_name, last_name')
+          .eq('user_id', req.client_id)
+          .single();
+        
+        return {
+          ...req,
+          client_email: client?.email,
+          client_name: `${client?.first_name || ''} ${client?.last_name || ''}`.trim() || client?.email,
+          client
+        };
+      }));
+      setRequests(enrichedRequests);
     }
     
     setLoading(false);
@@ -154,17 +143,6 @@ export default function RequestManagement() {
         .eq('client_id', request.client_id);
     }
 
-    // Log to audit
-    await supabase
-      .from('request_audit_log')
-      .insert({
-        request_id: request.id,
-        action: 'approved',
-        performed_by: user?.id,
-        performed_by_role: 'admin',
-        details: { request_type: request.request_type }
-      });
-
     await loadRequests();
     setProcessingId(null);
   };
@@ -189,16 +167,6 @@ export default function RequestManagement() {
         admin_notes: rejectionReason
       })
       .eq('id', request.id);
-
-    await supabase
-      .from('request_audit_log')
-      .insert({
-        request_id: request.id,
-        action: 'declined',
-        performed_by: user?.id,
-        performed_by_role: 'admin',
-        details: { reason: rejectionReason }
-      });
 
     setShowRejectModal(false);
     setRejectionReason('');
@@ -225,8 +193,14 @@ export default function RequestManagement() {
   const filteredRequests = requests.filter(r => {
     if (filter === 'all') return true;
     if (filter === 'fraud') return r.is_fraud_case;
-    return r.status === filter;
+    if (filter === 'pending') return r.status === 'pending';
+    if (filter === 'approved') return r.status === 'approved';
+    if (filter === 'rejected') return r.status === 'rejected';
+    return true;
   });
+
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const fraudCount = requests.filter(r => r.is_fraud_case).length;
 
   if (loading) {
     return <div className="text-center py-8">Loading requests...</div>;
@@ -245,13 +219,13 @@ export default function RequestManagement() {
             onClick={() => setFilter('pending')}
             className={`px-3 py-1 rounded-lg text-sm ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}
           >
-            Pending ({requests.filter(r => r.status === 'pending').length})
+            Pending ({pendingCount})
           </button>
           <button 
             onClick={() => setFilter('fraud')}
             className={`px-3 py-1 rounded-lg text-sm ${filter === 'fraud' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}
           >
-            Fraud ({requests.filter(r => r.is_fraud_case).length})
+            Fraud ({fraudCount})
           </button>
           <button 
             onClick={() => setFilter('approved')}
@@ -269,7 +243,7 @@ export default function RequestManagement() {
             onClick={() => setFilter('all')}
             className={`px-3 py-1 rounded-lg text-sm ${filter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}
           >
-            All
+            All ({requests.length})
           </button>
           <button 
             onClick={loadRequests}
@@ -279,20 +253,6 @@ export default function RequestManagement() {
           </button>
         </div>
       </div>
-
-      {/* Fraud Alert Summary */}
-      {requests.filter(r => r.is_fraud_case && r.status === 'pending').length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-800 mb-2">
-            <AlertCircle className="h-5 w-5" />
-            <h3 className="font-semibold">Fraud Alerts</h3>
-          </div>
-          <p className="text-sm text-red-700">
-            {requests.filter(r => r.is_fraud_case && r.status === 'pending').length} client(s) have exceeded request limits. 
-            Please review these cases carefully.
-          </p>
-        </div>
-      )}
 
       {/* Requests Table */}
       {filteredRequests.length === 0 ? (
@@ -317,8 +277,8 @@ export default function RequestManagement() {
                 {filteredRequests.map((request) => (
                   <tr key={request.id} className={`hover:bg-gray-50 ${request.is_fraud_case ? 'bg-red-50' : ''}`}>
                     <td className="px-4 py-3">
-                      <div className="font-medium">{request.client_name}</div>
-                      <div className="text-xs text-gray-500">{request.client_email}</div>
+                      <div className="font-medium">{request.client_name || 'Unknown'}</div>
+                      <div className="text-xs text-gray-500">{request.client_email || 'No email'}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -340,7 +300,7 @@ export default function RequestManagement() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      {new Date(request.requested_at).toLocaleString()}
+                      {new Date(request.created_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-3">
                       {getStatusBadge(request)}
