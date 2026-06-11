@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Search, Eye, RefreshCw, FileText } from 'lucide-react';
+import { Search, RefreshCw, Eye } from 'lucide-react';
 import ViewClientForms from './ViewClientForms';
 
 interface Client {
@@ -81,7 +81,7 @@ export default function ClientManagement() {
         </div>
       </div>
 
-      {/* Clients Table */}
+      {/* Clients Table - No Actions column, View Forms is the only action */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -89,14 +89,13 @@ export default function ClientManagement() {
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Client</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Contact</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Payment</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Joined</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">View Forms</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredClients.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No clients found</td></tr>
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500">No clients found</td></tr>
               ) : (
                 filteredClients.map((client) => (
                   <tr key={client.user_id} className="hover:bg-gray-50">
@@ -112,9 +111,6 @@ export default function ClientManagement() {
                         {client.has_paid ? 'Paid' : 'Pending'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      {new Date(client.created_at).toLocaleDateString()}
-                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => {
@@ -123,7 +119,7 @@ export default function ClientManagement() {
                         }}
                         className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 flex items-center gap-1"
                       >
-                        <FileText className="h-3 w-3" /> View Forms
+                        <Eye className="h-3 w-3" /> View Forms
                       </button>
                     </td>
                   </tr>
