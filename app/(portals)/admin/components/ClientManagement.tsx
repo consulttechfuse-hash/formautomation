@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Search, CheckCircle, XCircle, Clock, Lock, Unlock, Eye, RefreshCw, AlertCircle, Calendar, UserCheck } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Lock, Unlock, RefreshCw, AlertCircle } from 'lucide-react';
 import PresenceBadge from '../../components/PresenceBadge';
 
 interface Client {
@@ -98,7 +98,6 @@ export default function ClientManagement() {
       flowData?.forEach(flow => flowMap.set(flow.client_id, flow));
       setFlowStates(flowMap);
 
-      // Load request history for each client
       const { data: requestsData } = await supabase
         .from('unlock_requests')
         .select(`
@@ -124,9 +123,7 @@ export default function ClientManagement() {
   const getLatestRequestInfo = (clientId: string) => {
     const requests = requestHistory.get(clientId);
     if (!requests || requests.length === 0) return null;
-    
-    const latest = requests[0];
-    return latest;
+    return requests[0];
   };
 
   const getRequestSummary = (clientId: string) => {
@@ -320,29 +317,21 @@ export default function ClientManagement() {
                         )}
                        </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-2">
-                          {isLocked && (
-                            <button
-                              onClick={() => handleUnlockClient(client)}
-                              className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 flex items-center gap-1"
-                            >
-                              <Unlock className="h-3 w-3" /> Unlock
-                            </button>
-                          )}
+                        {isLocked && (
                           <button
-                            onClick={() => window.open(`/admin/client/${client.user_id}`, '_blank')}
-                            className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"
+                            onClick={() => handleUnlockClient(client)}
+                            className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 flex items-center gap-1"
                           >
-                            <Eye className="h-3 w-3" /> View
+                            <Unlock className="h-3 w-3" /> Unlock
                           </button>
-                        </div>
-                       </td>
-                     </tr>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })
               )}
             </tbody>
-           </table>
+          </table>
         </div>
       </div>
 
