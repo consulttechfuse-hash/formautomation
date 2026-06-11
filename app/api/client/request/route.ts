@@ -73,11 +73,9 @@ export async function POST(request: Request) {
 
     const sastTimestamp = getSASTISOString();
 
-    // Create the request - build object dynamically
+    // Create the request - only use columns that exist
     const insertData: any = {
       client_id: user.id,
-      client_email: client.email,
-      client_name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email,
       request_type: requestType,
       reason: reason,
       status: 'pending',
