@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { CheckCircle, XCircle, AlertCircle, Eye, Clock, Flag, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Eye, Clock, Flag, RefreshCw, Search } from 'lucide-react';
 
 interface Request {
   id: string;
@@ -16,7 +16,9 @@ interface Request {
   is_fraud_case: boolean;
   investigation_status: string;
   created_at: string;
+  reviewed_at: string;
   admin_notes?: string;
+  reviewed_by_admin_id?: string;
   new_admin?: {
     email: string;
     first_name: string;
@@ -30,20 +32,26 @@ interface Request {
 }
 
 export default function RequestManagement() {
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [allRequests, setAllRequests] = useState<Request[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'fraud'>('pending');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'fraud'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
-    loadRequests();
+    loadAllRequests();
   }, []);
 
-  const loadRequests = async () => {
+  useEffect(() => {
+    applyFilters();
+  }, [allRequests, filter, searchTerm]);
+
+  const loadAllRequests = async () => {
     setLoading(true);
     
     const { data: { user } } = await supabase.auth.getUser();
@@ -52,23 +60,13 @@ export default function RequestManagement() {
       return;
     }
 
-    // Get admin ID
-    const { data: adminRole } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .single();
-    
-    const adminId = adminRole?.user_id || user.id;
-
-    // Get all pending requests - simplified query
+    // Get ALL requests (no status filter)
     const { data: requestsData } = await supabase
       .from('unlock_requests')
       .select(`
         *,
         new_admin:new_admin_id (email, first_name, last_name)
       `)
-      .eq('status', 'pending')
       .order('created_at', { ascending: false });
 
     if (requestsData) {
@@ -87,10 +85,37 @@ export default function RequestManagement() {
           client
         };
       }));
-      setRequests(enrichedRequests);
+      setAllRequests(enrichedRequests);
     }
     
     setLoading(false);
+  };
+
+  const applyFilters = () => {
+    let filtered = [...allRequests];
+    
+    // Apply status filter
+    if (filter === 'pending') {
+      filtered = filtered.filter(r => r.status === 'pending');
+    } else if (filter === 'approved') {
+      filtered = filtered.filter(r => r.status === 'approved');
+    } else if (filter === 'rejected') {
+      filtered = filtered.filter(r => r.status === 'rejected');
+    } else if (filter === 'fraud') {
+      filtered = filtered.filter(r => r.is_fraud_case === true);
+    }
+    
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.client_name?.toLowerCase().includes(term) ||
+        r.client_email?.toLowerCase().includes(term) ||
+        r.reason?.toLowerCase().includes(term)
+      );
+    }
+    
+    setFilteredRequests(filtered);
   };
 
   const handleApprove = async (request: Request) => {
@@ -99,7 +124,6 @@ export default function RequestManagement() {
     const { data: { user } } = await supabase.auth.getUser();
     const sastTimestamp = new Date().toISOString();
 
-    // Update request status
     await supabase
       .from('unlock_requests')
       .update({
@@ -110,7 +134,6 @@ export default function RequestManagement() {
       .eq('id', request.id);
 
     if (request.request_type === 'change_admin' && request.new_admin_id) {
-      // Update client's assigned admin
       await supabase
         .from('user_roles')
         .update({ 
@@ -119,7 +142,6 @@ export default function RequestManagement() {
         })
         .eq('user_id', request.client_id);
       
-      // Re-run round-robin agent assignment for new admin
       await fetch('/api/agent/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -129,7 +151,6 @@ export default function RequestManagement() {
         })
       });
     } else if (request.request_type === 'unlock_form01') {
-      // Unlock Form-01 for client
       await supabase
         .from('client_flow_state')
         .update({
@@ -143,7 +164,7 @@ export default function RequestManagement() {
         .eq('client_id', request.client_id);
     }
 
-    await loadRequests();
+    await loadAllRequests();
     setProcessingId(null);
   };
 
@@ -170,7 +191,7 @@ export default function RequestManagement() {
 
     setShowRejectModal(false);
     setRejectionReason('');
-    await loadRequests();
+    await loadAllRequests();
     setProcessingId(null);
   };
 
@@ -190,17 +211,13 @@ export default function RequestManagement() {
     }
   };
 
-  const filteredRequests = requests.filter(r => {
-    if (filter === 'all') return true;
-    if (filter === 'fraud') return r.is_fraud_case;
-    if (filter === 'pending') return r.status === 'pending';
-    if (filter === 'approved') return r.status === 'approved';
-    if (filter === 'rejected') return r.status === 'rejected';
-    return true;
-  });
-
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const fraudCount = requests.filter(r => r.is_fraud_case).length;
+  const counts = {
+    all: allRequests.length,
+    pending: allRequests.filter(r => r.status === 'pending').length,
+    approved: allRequests.filter(r => r.status === 'approved').length,
+    rejected: allRequests.filter(r => r.status === 'rejected').length,
+    fraud: allRequests.filter(r => r.is_fraud_case).length,
+  };
 
   if (loading) {
     return <div className="text-center py-8">Loading requests...</div>;
@@ -208,51 +225,78 @@ export default function RequestManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Filters */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Client Requests</h2>
-          <p className="text-sm text-gray-500">Review and manage client requests</p>
+          <h2 className="text-2xl font-bold text-gray-800">Client Requests History</h2>
+          <p className="text-sm text-gray-500">View and manage all client requests</p>
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setFilter('pending')}
-            className={`px-3 py-1 rounded-lg text-sm ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Pending ({pendingCount})
-          </button>
-          <button 
-            onClick={() => setFilter('fraud')}
-            className={`px-3 py-1 rounded-lg text-sm ${filter === 'fraud' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Fraud ({fraudCount})
-          </button>
-          <button 
-            onClick={() => setFilter('approved')}
-            className={`px-3 py-1 rounded-lg text-sm ${filter === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Approved
-          </button>
-          <button 
-            onClick={() => setFilter('rejected')}
-            className={`px-3 py-1 rounded-lg text-sm ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}
-          >
-            Rejected
-          </button>
-          <button 
-            onClick={() => setFilter('all')}
-            className={`px-3 py-1 rounded-lg text-sm ${filter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            All ({requests.length})
-          </button>
-          <button 
-            onClick={loadRequests}
-            className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1"
-          >
-            <RefreshCw className="h-3 w-3" /> Refresh
-          </button>
-        </div>
+        <button 
+          onClick={loadAllRequests}
+          className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1"
+        >
+          <RefreshCw className="h-3 w-3" /> Refresh
+        </button>
       </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search by client name, email, or reason..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b pb-2 flex-wrap">
+        <button 
+          onClick={() => setFilter('all')}
+          className={`px-3 py-1 rounded-lg text-sm ${filter === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600'}`}
+        >
+          All ({counts.all})
+        </button>
+        <button 
+          onClick={() => setFilter('pending')}
+          className={`px-3 py-1 rounded-lg text-sm ${filter === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}
+        >
+          Pending ({counts.pending})
+        </button>
+        <button 
+          onClick={() => setFilter('approved')}
+          className={`px-3 py-1 rounded-lg text-sm ${filter === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}
+        >
+          Approved ({counts.approved})
+        </button>
+        <button 
+          onClick={() => setFilter('rejected')}
+          className={`px-3 py-1 rounded-lg text-sm ${filter === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}
+        >
+          Rejected ({counts.rejected})
+        </button>
+        <button 
+          onClick={() => setFilter('fraud')}
+          className={`px-3 py-1 rounded-lg text-sm ${filter === 'fraud' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}
+        >
+          Fraud ({counts.fraud})
+        </button>
+      </div>
+
+      {/* Fraud Alert Summary */}
+      {counts.fraud > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-800 mb-2">
+            <AlertCircle className="h-5 w-5" />
+            <h3 className="font-semibold">Fraud Alerts</h3>
+          </div>
+          <p className="text-sm text-red-700">
+            {counts.fraud} client(s) have been flagged for unusual activity. Please review these cases carefully.
+          </p>
+        </div>
+      )}
 
       {/* Requests Table */}
       {filteredRequests.length === 0 ? (
@@ -269,6 +313,7 @@ export default function RequestManagement() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Request Type</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Details</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Requested</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Reviewed</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
                 </tr>
@@ -291,7 +336,7 @@ export default function RequestManagement() {
                       {request.request_type === 'change_admin' && request.new_admin && (
                         <div className="text-sm">
                           <span className="text-gray-500">New Admin:</span>{' '}
-                          {request.new_admin.first_name} {request.new_admin.last_name} ({request.new_admin.email})
+                          {request.new_admin.first_name} {request.new_admin.last_name}
                         </div>
                       )}
                       <div className="text-sm mt-1">
@@ -301,6 +346,9 @@ export default function RequestManagement() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {new Date(request.created_at).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {request.reviewed_at ? new Date(request.reviewed_at).toLocaleString() : '-'}
                     </td>
                     <td className="px-4 py-3">
                       {getStatusBadge(request)}
@@ -327,7 +375,7 @@ export default function RequestManagement() {
                           </button>
                         </div>
                       )}
-                      {request.status !== 'pending' && (
+                      {(request.status === 'approved' || request.status === 'rejected') && (
                         <button
                           onClick={() => setSelectedRequest(request)}
                           className="px-3 py-1 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 flex items-center gap-1"
@@ -350,7 +398,7 @@ export default function RequestManagement() {
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Decline Request</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Declining request from <strong>{selectedRequest.client_name}</strong> for {selectedRequest.request_type === 'change_admin' ? 'admin change' : 'Form-01 unlock'}.
+              Declining request from <strong>{selectedRequest.client_name}</strong>.
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Reason for declining</label>
@@ -404,7 +452,7 @@ export default function RequestManagement() {
               {selectedRequest.request_type === 'change_admin' && selectedRequest.new_admin && (
                 <div>
                   <span className="text-sm text-gray-500">Requested New Admin:</span>
-                  <p>{selectedRequest.new_admin.first_name} {selectedRequest.new_admin.last_name} ({selectedRequest.new_admin.email})</p>
+                  <p>{selectedRequest.new_admin.first_name} {selectedRequest.new_admin.last_name}</p>
                 </div>
               )}
               <div>
@@ -415,6 +463,12 @@ export default function RequestManagement() {
                 <span className="text-sm text-gray-500">Status:</span>
                 <p className="capitalize">{selectedRequest.status}</p>
               </div>
+              {selectedRequest.reviewed_at && (
+                <div>
+                  <span className="text-sm text-gray-500">Reviewed At:</span>
+                  <p>{new Date(selectedRequest.reviewed_at).toLocaleString()}</p>
+                </div>
+              )}
               {selectedRequest.admin_notes && (
                 <div>
                   <span className="text-sm text-gray-500">Admin Notes:</span>
