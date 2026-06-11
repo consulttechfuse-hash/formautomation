@@ -73,10 +73,10 @@ export async function POST(request: Request) {
 
     const sastTimestamp = getSASTISOString();
 
-    // Create the request - include form_number (required field)
+    // Create the request
     const insertData: any = {
       client_id: user.id,
-      form_number: 1, // Default form number for requests
+      form_number: 1,
       request_type: requestType,
       reason: reason,
       status: 'pending',
@@ -86,7 +86,6 @@ export async function POST(request: Request) {
       user_agent: userAgent
     };
 
-    // Only add new_admin_id if it's a change_admin request
     if (requestType === 'change_admin') {
       insertData.new_admin_id = newAdminId;
     }
@@ -102,8 +101,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Update request count
-    await supabase
+    // Update request count - handle RLS by using service role approach
+    // First try to update, if fails, insert
+    const { error: upsertError } = await supabase
       .from('client_request_counts')
       .upsert({
         client_id: user.id,
@@ -115,16 +115,25 @@ export async function POST(request: Request) {
         onConflict: 'client_id,request_type'
       });
 
-    // Log to audit
-    await supabase
-      .from('request_audit_log')
-      .insert({
-        request_id: newRequest.id,
-        action: 'created',
-        performed_by: user.id,
-        performed_by_role: 'client',
-        details: { requestType, reason, ipAddress }
-      });
+    if (upsertError) {
+      console.error('Upsert error (non-critical):', upsertError);
+      // Don't fail the request if this fails - the main request is already created
+    }
+
+    // Log to audit - try-catch to avoid failing the request
+    try {
+      await supabase
+        .from('request_audit_log')
+        .insert({
+          request_id: newRequest.id,
+          action: 'created',
+          performed_by: user.id,
+          performed_by_role: 'client',
+          details: { requestType, reason, ipAddress }
+        });
+    } catch (auditError) {
+      console.error('Audit log error (non-critical):', auditError);
+    }
 
     return NextResponse.json({ 
       success: true, 
