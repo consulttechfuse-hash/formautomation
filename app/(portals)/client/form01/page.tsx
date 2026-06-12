@@ -57,9 +57,12 @@ const countryList = [
 export default function Form01Page() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userId, setUserId] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Dynamic section counters
   const [childCount, setChildCount] = useState(1);
@@ -122,6 +125,84 @@ export default function Form01Page() {
     }
 
     setLoading(false);
+  };
+
+  const saveData = async (dataToSave: any) => {
+    const { data: existing } = await supabase
+      .from('form01_data')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('form01_data')
+        .update({
+          user_email: formData.user_email,
+          updated_at: new Date().toISOString(),
+          ...dataToSave
+        })
+        .eq('user_id', userId);
+      return error;
+    } else {
+      const { error } = await supabase
+        .from('form01_data')
+        .insert({
+          user_id: userId,
+          user_email: formData.user_email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ...dataToSave
+        });
+      return error;
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    const error = await saveData(formData);
+    
+    if (error) {
+      alert('Error saving draft: ' + error.message);
+    } else {
+      setLastSaved(new Date());
+      alert('Draft saved successfully!');
+    }
+    setSaving(false);
+  };
+
+  const handleSubmitLock = async () => {
+    if (!validateForm()) return;
+    setShowConfirmModal(true);
+  };
+
+  const confirmSubmit = async () => {
+    setShowConfirmModal(false);
+    setSubmitting(true);
+    
+    // Save final data
+    const error = await saveData(formData);
+    
+    if (error) {
+      alert('Error saving form: ' + error.message);
+      setSubmitting(false);
+      return;
+    }
+
+    // Lock Form-01 and move to next step
+    await supabase
+      .from('client_flow_state')
+      .update({
+        step_4_form01_completed: true,
+        current_step: 5,
+        lock_type: 'locked_step',
+        locked_step: 4,
+        locked_reason: 'Form-01 completed. To edit, request unlock from agent.',
+        updated_at: new Date().toISOString()
+      })
+      .eq('client_id', userId);
+
+    router.push('/client/forms-02-17');
   };
 
   const handleChange = (field: string, value: any) => {
@@ -213,18 +294,15 @@ export default function Form01Page() {
 
   // Dynamic section handlers
   const addChild = () => {
-    const newCount = childCount + 1;
-    setChildCount(newCount);
+    setChildCount(childCount + 1);
   };
 
   const addMiddleName = () => {
-    const newCount = middleNameCount + 1;
-    setMiddleNameCount(newCount);
+    setMiddleNameCount(middleNameCount + 1);
   };
 
   const addPrevMarriedSurname = () => {
-    const newCount = prevMarriedSurnameCount + 1;
-    setPrevMarriedSurnameCount(newCount);
+    setPrevMarriedSurnameCount(prevMarriedSurnameCount + 1);
   };
 
   const validateForm = (): boolean => {
@@ -241,67 +319,7 @@ export default function Form01Page() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setSaving(true);
-    
-    const { data: existing } = await supabase
-      .from('form01_data')
-      .select('id')
-      .eq('user_id', userId)
-      .single();
-
-    let error;
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('form01_data')
-        .update({
-          user_email: formData.user_email,
-          updated_at: new Date().toISOString(),
-          ...formData
-        })
-        .eq('user_id', userId);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase
-        .from('form01_data')
-        .insert({
-          user_id: userId,
-          user_email: formData.user_email,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          ...formData
-        });
-      error = insertError;
-    }
-
-    if (error) {
-      alert('Error saving form: ' + error.message);
-      setSaving(false);
-      return;
-    }
-
-    await supabase
-      .from('client_flow_state')
-      .update({
-        step_4_form01_completed: true,
-        current_step: 5,
-        lock_type: 'locked_step',
-        locked_step: 4,
-        locked_reason: 'Form-01 completed. To edit, request unlock from agent.',
-        updated_at: new Date().toISOString()
-      })
-      .eq('client_id', userId);
-
-    router.push('/client/forms-02-17');
-  };
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-  }
-
-  // Render dynamic children fields
+  // Render dynamic sections (same as before)
   const renderChildFields = () => {
     const children = [];
     for (let i = 1; i <= childCount; i++) {
@@ -324,7 +342,6 @@ export default function Form01Page() {
     return children;
   };
 
-  // Render dynamic middle name fields
   const renderMiddleNameFields = () => {
     const fields = [];
     for (let i = 2; i <= middleNameCount; i++) {
@@ -338,7 +355,6 @@ export default function Form01Page() {
     return fields;
   };
 
-  // Render dynamic previous married surname fields
   const renderPrevMarriedSurnameFields = () => {
     const fields = [];
     for (let i = 1; i <= prevMarriedSurnameCount; i++) {
@@ -353,13 +369,20 @@ export default function Form01Page() {
     return fields;
   };
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <form onSubmit={(e) => e.preventDefault()} className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="bg-blue-600 px-6 py-4 sticky top-0 z-10">
             <h1 className="text-2xl font-bold text-white">Form-01: Application Form</h1>
             <p className="text-blue-100 mt-1">Complete all required fields (*)</p>
+            {lastSaved && (
+              <p className="text-blue-100 text-xs mt-1">Last saved: {lastSaved.toLocaleTimeString()}</p>
+            )}
           </div>
 
           <div className="p-6 space-y-8 max-h-[calc(100vh-120px)] overflow-y-auto">
@@ -379,7 +402,7 @@ export default function Form01Page() {
                 </div>
                 {renderMiddleNameFields()}
                 <div>
-                  <button type="button" onClick={addMiddleName} className="text-blue-600 text-sm hover:underline mt-2">
+                  <button type="button" onClick={addMiddleName} className="text-blue-600 text-sm hover:underline">
                     + Add another middle name
                   </button>
                 </div>
@@ -398,7 +421,7 @@ export default function Form01Page() {
                 </div>
                 {renderPrevMarriedSurnameFields()}
                 <div>
-                  <button type="button" onClick={addPrevMarriedSurname} className="text-blue-600 text-sm hover:underline mt-2">
+                  <button type="button" onClick={addPrevMarriedSurname} className="text-blue-600 text-sm hover:underline">
                     + Add previous married surname
                   </button>
                 </div>
@@ -409,7 +432,7 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.2 — Children</h2>
               {renderChildFields()}
-              <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline mt-2">
+              <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline">
                 + Add another child
               </button>
             </div>
@@ -435,40 +458,16 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.1 — Father's Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Father's Full Name</label>
-                  <input type="text" value={formData.pffn_t1 || ''} onChange={(e) => handleChange('pffn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Day</label>
-                  <select value={formData.pfbt_t2 || ''} onChange={(e) => handleChange('pfbt_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Day</option>
-                    {[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Month</label>
-                  <select value={formData.pfbt_t3 || ''} onChange={(e) => handleChange('pfbt_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Month</option>
-                    {[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Year</label>
-                  <input type="number" value={formData.pfbt_t4 || ''} onChange={(e) => handleChange('pfbt_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" />
-                </div>
+                <div className="md:col-span-2"><label>Father's Full Name</label><input type="text" value={formData.pffn_t1 || ''} onChange={(e) => handleChange('pffn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div><label>Birth Day</label><select value={formData.pfbt_t2 || ''} onChange={(e) => handleChange('pfbt_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
+                <div><label>Birth Month</label><select value={formData.pfbt_t3 || ''} onChange={(e) => handleChange('pfbt_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
+                <div><label>Birth Year</label><input type="number" value={formData.pfbt_t4 || ''} onChange={(e) => handleChange('pfbt_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div><label>Town/City</label><input type="text" value={formData.pfbp_t1 || ''} onChange={(e) => handleChange('pfbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>District</label><input type="text" value={formData.pfbp_t2 || ''} onChange={(e) => handleChange('pfbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.pfbp_t3 || ''} onChange={(e) => handleChange('pfbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div>
-                  <label>Country</label>
-                  <select value={formData.pfbp_t4 || ''} onChange={(e) => handleChange('pfbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                <div><label>Country</label><select value={formData.pfbp_t4 || ''} onChange={(e) => handleChange('pfbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               </div>
             </div>
 
@@ -476,14 +475,8 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.2 — Mother's Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Full Name</label>
-                  <input type="text" value={formData.pmfn_t1 || ''} onChange={(e) => handleChange('pmfn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Maiden Surname</label>
-                  <input type="text" value={formData.pmfn_t3_1 || ''} onChange={(e) => handleChange('pmfn_t3_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
-                </div>
+                <div className="md:col-span-2"><label>Mother's Full Name</label><input type="text" value={formData.pmfn_t1 || ''} onChange={(e) => handleChange('pmfn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div><label>Maiden Surname</label><input type="text" value={formData.pmfn_t3_1 || ''} onChange={(e) => handleChange('pmfn_t3_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div><label>Birth Day</label><select value={formData.pmbd_t2 || ''} onChange={(e) => handleChange('pmbd_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
@@ -494,13 +487,7 @@ export default function Form01Page() {
                 <div><label>Town/City</label><input type="text" value={formData.pmbp_t1 || ''} onChange={(e) => handleChange('pmbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>District</label><input type="text" value={formData.pmbp_t2 || ''} onChange={(e) => handleChange('pmbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.pmbp_t3 || ''} onChange={(e) => handleChange('pmbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div>
-                  <label>Country</label>
-                  <select value={formData.pmbp_t4 || ''} onChange={(e) => handleChange('pmbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                <div><label>Country</label><select value={formData.pmbp_t4 || ''} onChange={(e) => handleChange('pmbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               </div>
             </div>
 
@@ -515,13 +502,7 @@ export default function Form01Page() {
                 <div><label>District</label><input type="text" value={formData.dstr_t1 || ''} onChange={(e) => handleChange('dstr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.spn_t1 || ''} onChange={(e) => handleChange('spn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Postal Code</label><input type="text" value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} onChange={(e) => handleChange('ptc_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div>
-                  <label>Country</label>
-                  <select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                <div><label>Country</label><select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               </div>
             </div>
 
@@ -529,26 +510,10 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.6 — Genders</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender Type</label>
-                  <select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select</option>
-                    <option value="man">Man</option>
-                    <option value="woman">Woman</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Pronoun (Auto-filled)</label>
-                  <input type="text" value={formData.she_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reference (Auto-filled)</label>
-                  <input type="text" value={formData.bgr_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Possessive (Auto-filled)</label>
-                  <input type="text" value={formData.his_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
-                </div>
+                <div><label>Gender Type</label><select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="man">Man</option><option value="woman">Woman</option></select></div>
+                <div><label>Pronoun (Auto-filled)</label><input type="text" value={formData.she_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
+                <div><label>Reference (Auto-filled)</label><input type="text" value={formData.bgr_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
+                <div><label>Possessive (Auto-filled)</label><input type="text" value={formData.his_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
               </div>
             </div>
 
@@ -559,13 +524,7 @@ export default function Form01Page() {
                 <div><label>Birth Day</label><select value={formData.bdate_t1 || ''} onChange={(e) => handleChange('bdate_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Month</label><select value={formData.bdate_t2 || ''} onChange={(e) => handleChange('bdate_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Year</label><input type="number" value={formData.bdate_t3 || ''} onChange={(e) => handleChange('bdate_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
-                <div>
-                  <label>Birth Country</label>
-                  <select value={formData.bdate_t4 || ''} onChange={(e) => handleChange('bdate_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                    <option value="">Select Country</option>
-                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
+                <div><label>Birth Country</label><select value={formData.bdate_t4 || ''} onChange={(e) => handleChange('bdate_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
               </div>
             </div>
 
@@ -580,13 +539,7 @@ export default function Form01Page() {
                     <div className="md:col-span-2"><label>Full Address</label><textarea value={formData[`wtn${w}_t2`] || ''} onChange={(e) => handleChange(`wtn${w}_t2`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} /></div>
                     <div><label>Email</label><input type="email" value={formData[`wtn${w}_t3`] || ''} onChange={(e) => handleChange(`wtn${w}_t3`, e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                     <div><label>Phone Number</label><input type="tel" value={formData[`wtn${w}_t4`]?.replace(/\D/g, '') || ''} onChange={(e) => handleChange(`wtn${w}_t4`, e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                    <div>
-                      <label>Country</label>
-                      <select value={formData[`wtn${w}_t5`] || ''} onChange={(e) => handleChange(`wtn${w}_t5`, e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                        <option value="">Select Country</option>
-                        {countryList.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
+                    <div><label>Country</label><select value={formData[`wtn${w}_t5`] || ''} onChange={(e) => handleChange(`wtn${w}_t5`, e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
                     <div className="md:col-span-2"><label>Corroboration</label><textarea value={formData[`wtn${w}_t6`] || ''} onChange={(e) => handleChange(`wtn${w}_t6`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} /></div>
                   </div>
                 </div>
@@ -604,15 +557,63 @@ export default function Form01Page() {
               </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-4 pt-4 sticky bottom-0 bg-white py-4 border-t">
-              <button type="button" onClick={() => router.push('/client/dashboard')} className="px-6 py-2 border rounded-lg hover:bg-gray-50">Back</button>
-              <button type="submit" disabled={saving} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                {saving ? 'Saving...' : 'Save & Continue →'}
+              <button type="button" onClick={() => router.push('/client/dashboard')} className="px-6 py-2 border rounded-lg hover:bg-gray-50">
+                Back
+              </button>
+              <button 
+                type="button" 
+                onClick={handleSaveDraft} 
+                disabled={saving}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Draft'}
+              </button>
+              <button 
+                type="button" 
+                onClick={handleSubmitLock} 
+                disabled={submitting}
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {submitting ? 'Processing...' : 'Submit & Lock →'}
               </button>
             </div>
           </div>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-4">
+              <div className="text-yellow-600 text-5xl mb-3">⚠️</div>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Confirm Submission</h2>
+              <p className="text-gray-600">Are you sure all your information is correct and complete?</p>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                Once you submit, Form-01 will be locked and you cannot make changes unless you request an unlock from your agent.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={confirmSubmit}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Yes, Submit & Lock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
