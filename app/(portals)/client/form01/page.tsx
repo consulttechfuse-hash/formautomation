@@ -64,7 +64,6 @@ export default function Form01Page() {
   const [userId, setUserId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
-  // Dynamic section counters
   const [childCount, setChildCount] = useState(1);
   const [middleNameCount, setMiddleNameCount] = useState(1);
   const [prevMarriedSurnameCount, setPrevMarriedSurnameCount] = useState(0);
@@ -202,6 +201,93 @@ export default function Form01Page() {
     router.push('/client/forms-02-17');
   };
 
+  // Central function to update all derived fields
+  const updateAllDerivedFields = () => {
+    setFormData((prev: any) => {
+      const fn = prev.fn_t1 || '';
+      const mn = prev.mdn_t1 || '';
+      const sn = prev.srn_t1 || '';
+      const mdni = prev.mdni_t1 || '';
+      const fni = prev.fni_t1 || '';
+      const day = prev.bdate_t1 || '';
+      const month = prev.bdate_t2 || '';
+      const year = prev.bdate_t3 || '';
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1] || '';
+      const nextYear = year ? parseInt(year) + 21 : '';
+      const strn = prev.strn_t1 || '';
+      const sbn = prev.sbn_t1 || '';
+      const aptn = prev.aptn_t1 || '';
+      const ctn = prev.ctn_t1 || '';
+      const dstr = prev.dstr_t1 || '';
+      const spn = prev.spn_t1 || '';
+      const ctr = prev.ctr_t1 || '';
+      const ptc = prev.ptc_t1 || '';
+      const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
+      
+      // Generate all name variants
+      const allNames = [
+        `${fn} ${mn} ${sn}`.trim(),
+        toUppercase(`${fn} ${mn} ${sn}`.trim()),
+        toLowercase(`${fn} ${mn} ${sn}`.trim()),
+        `${fn} ${sn}`.trim(),
+        `${fn} ${mdni} ${sn}`.trim(),
+        `${fni} ${mdni} ${sn}`.trim(),
+        toUppercase(`${fn} ${sn}`.trim()),
+        toUppercase(`${fn} ${mdni} ${sn}`.trim()),
+        toUppercase(`${fni} ${mdni} ${sn}`.trim()),
+        `${sn}, ${fn} ${mn}`.trim()
+      ];
+      
+      return {
+        ...prev,
+        // Full name concatenations
+        fln_t1: `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' '),
+        fln_t2: toUppercase(`${fn} ${mn} ${sn}`.trim()),
+        fln_t3: toLowercase(`${fn} ${mn} ${sn}`.trim()),
+        fln_t4: `${fn} ${sn}`.trim(),
+        fln_t5: `${fn} ${mdni} ${sn}`.trim(),
+        fln_t6: `${fni} ${mdni} ${sn}`.trim(),
+        fln_t7: toUppercase(`${fn} ${sn}`.trim()),
+        fln_t8: toUppercase(`${fn} ${mdni} ${sn}`.trim()),
+        fln_t10: toUppercase(`${fni} ${mdni} ${sn}`.trim()),
+        fln_t11: `${sn}, ${fn} ${mn}`.trim(),
+        // All names in one line
+        flnline_t1: allNames.join(', '),
+        // All names stacked
+        flnstk_t1: allNames.join('\n'),
+        
+        // Address
+        cadr_t1: addressParts.join(', '),
+        adr_stack: addressParts.join('\n'),
+        
+        // District auto-completes
+        dstr_t2: toUppercase(dstr),
+        dstr_t3: toLowercase(dstr),
+        
+        // Birth month name
+        bdate_t2_1: monthName,
+        
+        // Date formats
+        dis_t1: year && month && day ? `${year}/${month}/${day}` : '',
+        dis_t2: year && month && day ? `${year}-${month}-${day}` : '',
+        dis_t3: day && month && year ? `${day} ${month}, ${year}` : '',
+        dtn_t1: month && day && year ? `${month}/${day}/${year}` : '',
+        dtn_t2: month && day && year ? `${month}-${day}-${year}` : '',
+        dtn_t3: month && day && year ? `${month} ${day}, ${year}` : '',
+        dil_t1: year && monthName && day ? `${year} ${monthName} ${day}` : '',
+        dil_t2: year && monthName && day ? `${year} ${toUppercase(monthName)} ${day}` : '',
+        dal_t1: monthName && day && year ? `${monthName} ${day}, ${year}` : '',
+        
+        // 21st Birthday
+        "21st_t1": day,
+        "21st_t2": month,
+        "21st_t3": nextYear ? String(nextYear) : '',
+        "21st_t4": month && day && nextYear ? `${day} ${month}, ${nextYear}` : '',
+      };
+    });
+  };
+
   const handleChange = (field: string, value: any) => {
     let formattedValue = value;
     
@@ -236,7 +322,6 @@ export default function Form01Page() {
     } else if (field.startsWith('wtn') && field.endsWith('_t6')) {
       formattedValue = toSentenceCaseWitness(value);
     } else if (field === 'gen_t1') {
-      formattedValue = value;
       if (value === 'man') {
         setFormData((prev: any) => ({
           ...prev,
@@ -249,6 +334,7 @@ export default function Form01Page() {
           bgr_t2: 'BOY',
           his_t2: 'HIS'
         }));
+        setTimeout(() => updateAllDerivedFields(), 0);
         return;
       } else if (value === 'woman') {
         setFormData((prev: any) => ({
@@ -262,6 +348,7 @@ export default function Form01Page() {
           bgr_t2: 'GIRL',
           his_t2: 'HER'
         }));
+        setTimeout(() => updateAllDerivedFields(), 0);
         return;
       }
     } else if (field === 'ema_t1') {
@@ -270,7 +357,7 @@ export default function Form01Page() {
     
     setFormData((prev: any) => ({ ...prev, [field]: formattedValue }));
     
-    // Auto-calculate derived fields
+    // Auto-calculate basic derived fields
     if (field === 'fn_t1') {
       setFormData((prev: any) => ({
         ...prev,
@@ -341,29 +428,6 @@ export default function Form01Page() {
       }));
     }
     
-    // Full name concatenations
-    if (field === 'fn_t1' || field === 'mdn_t1' || field === 'srn_t1' || field === 'mdni_t1' || field === 'fni_t1') {
-      const fn = formData.fn_t1 || '';
-      const mn = formData.mdn_t1 || '';
-      const sn = formData.srn_t1 || '';
-      const mdni = formData.mdni_t1 || '';
-      const fni = formData.fni_t1 || '';
-      
-      setFormData((prev: any) => ({
-        ...prev,
-        fln_t1: `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' '),
-        fln_t2: toUppercase(`${fn} ${mn} ${sn}`.trim()),
-        fln_t3: toLowercase(`${fn} ${mn} ${sn}`.trim()),
-        fln_t4: `${fn} ${sn}`.trim(),
-        fln_t5: `${fn} ${mdni} ${sn}`.trim(),
-        fln_t6: `${fni} ${mdni} ${sn}`.trim(),
-        fln_t7: toUppercase(`${fn} ${sn}`.trim()),
-        fln_t8: toUppercase(`${fn} ${mdni} ${sn}`.trim()),
-        fln_t10: toUppercase(`${fni} ${mdni} ${sn}`.trim()),
-        fln_t11: `${sn}, ${fn} ${mn}`.trim(),
-      }));
-    }
-    
     // Address auto-completes
     const addressInputFields = ['strn_t1', 'sbn_t1', 'aptn_t1', 'ctn_t1', 'dstr_t1', 'spn_t1', 'ctr_t1'];
     if (addressInputFields.includes(field)) {
@@ -376,53 +440,8 @@ export default function Form01Page() {
       }));
     }
     
-    // Date calculations
-    if (field === 'bdate_t1' || field === 'bdate_t2' || field === 'bdate_t3') {
-      const day = field === 'bdate_t1' ? formattedValue : formData.bdate_t1;
-      const month = field === 'bdate_t2' ? formattedValue : formData.bdate_t2;
-      const year = field === 'bdate_t3' ? formattedValue : formData.bdate_t3;
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const monthName = monthNames[parseInt(month) - 1] || '';
-      const nextYear = year ? parseInt(year) + 21 : '';
-      
-      setFormData((prev: any) => ({
-        ...prev,
-        bdate_t2_1: monthName,
-        dis_t1: year && month && day ? `${year}/${month}/${day}` : '',
-        dis_t2: year && month && day ? `${year}-${month}-${day}` : '',
-        dis_t3: day && month && year ? `${day} ${month}, ${year}` : '',
-        dtn_t1: month && day && year ? `${month}/${day}/${year}` : '',
-        dtn_t2: month && day && year ? `${month}-${day}-${year}` : '',
-        dtn_t3: month && day && year ? `${month} ${day}, ${year}` : '',
-        dil_t1: year && monthName && day ? `${year} ${monthName} ${day}` : '',
-        dil_t2: year && monthName && day ? `${year} ${toUppercase(monthName)} ${day}` : '',
-        dal_t1: monthName && day && year ? `${monthName} ${day}, ${year}` : '',
-        dal_t2: monthName && day && year ? `${toUppercase(monthName)} ${day}, ${year}` : '',
-        "21st_t1": day,
-        "21st_t2": month,
-        "21st_t3": nextYear ? String(nextYear) : '',
-        "21st_t4": month && day && nextYear ? `${day} ${month}, ${nextYear}` : '',
-      }));
-    }
-    
-    // Stacked address
-    if (field === 'strn_t1' || field === 'sbn_t1' || field === 'aptn_t1' || field === 'ctn_t1' || 
-        field === 'dstr_t1' || field === 'spn_t1' || field === 'ctr_t1' || field === 'ptc_t1') {
-      const strn = formData.strn_t1 || '';
-      const sbn = formData.sbn_t1 || '';
-      const aptn = formData.aptn_t1 || '';
-      const ctn = formData.ctn_t1 || '';
-      const dstr = formData.dstr_t1 || '';
-      const spn = formData.spn_t1 || '';
-      const ctr = formData.ctr_t1 || '';
-      const ptc = formData.ptc_t1 || '';
-      const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
-      setFormData((prev: any) => ({
-        ...prev,
-        cadr_t1: addressParts.join(', '),
-        adr_stack: addressParts.join('\n'),
-      }));
-    }
+    // Trigger full update for all derived fields
+    setTimeout(() => updateAllDerivedFields(), 0);
   };
 
   const addChild = () => {
@@ -723,7 +742,7 @@ export default function Form01Page() {
             {/* N1.7 — Birth Date */}
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.7 — Birth Date</h2>
-              <div className="grid grid-cots-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div><label>Birth Day</label><select value={formData.bdate_t1 || ''} onChange={(e) => handleChange('bdate_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Month</label><select value={formData.bdate_t2 || ''} onChange={(e) => handleChange('bdate_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Year</label><input type="number" value={formData.bdate_t3 || ''} onChange={(e) => handleChange('bdate_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
@@ -761,7 +780,7 @@ export default function Form01Page() {
               ))}
             </div>
 
-            {/* Parents Marriage Place (NEW VISIBLE SECTION) */}
+            {/* Parents Marriage Place */}
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Parents Marriage Place</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
