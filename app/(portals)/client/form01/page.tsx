@@ -64,6 +64,8 @@ const countryList = [
   'Eswatini', 'Other'
 ];
 
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 export default function Form01Page() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -132,6 +134,7 @@ export default function Form01Page() {
       });
     }
 
+    setTimeout(() => calculateAllDerivedFields(), 100);
     setLoading(false);
   };
 
@@ -168,6 +171,7 @@ export default function Form01Page() {
 
   const handleSaveDraft = async () => {
     setSaving(true);
+    calculateAllDerivedFields();
     const error = await saveData(formData);
     
     if (error) {
@@ -188,6 +192,7 @@ export default function Form01Page() {
     setShowConfirmModal(false);
     setSubmitting(true);
     
+    calculateAllDerivedFields();
     const error = await saveData(formData);
     
     if (error) {
@@ -211,8 +216,7 @@ export default function Form01Page() {
     router.push('/client/forms-02-17');
   };
 
-  // Update all derived fields based on current form data
-  const updateAllDerivedFields = () => {
+  const calculateAllDerivedFields = () => {
     setFormData((prev: any) => {
       // Name fields
       const fn = prev.fn_t1 || '';
@@ -221,29 +225,46 @@ export default function Form01Page() {
       const bsrn = prev.bsrn_t1 || '';
       const mr1 = prev.mr1_t1 || '';
       
+      // First name initial
+      const fnInitialLower = fn.charAt(0)?.toLowerCase() || '';
+      const fnInitialUpper = fn.charAt(0)?.toUpperCase() || '';
+      
+      // Surname initial (FIXED)
+      const snInitialLower = sn.charAt(0)?.toLowerCase() || '';
+      const snInitialUpper = sn.charAt(0)?.toUpperCase() || '';
+      
       // Middle name initials
       const mnInitialsLower = getInitialsLowercase(mn);
       const mnInitialsUpper = getInitialsUppercase(mn);
       
-      // Full name concatenations
+      // Full name variants for stacking
       const fullName = `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' ');
+      const fullNameUpper = toUppercase(fullName);
+      const fullNameLower = toLowercase(fullName);
       const firstNameLast = `${fn} ${sn}`.trim();
       const firstInitialLast = `${fn} ${mnInitialsLower} ${sn}`.trim();
-      const initialsLast = `${getInitialsLowercase(fn)} ${mnInitialsLower} ${sn}`.trim();
+      const initialsLast = `${fnInitialLower} ${mnInitialsLower} ${sn}`.trim();
+      const firstNameLastUpper = toUppercase(firstNameLast);
+      const firstInitialLastUpper = toUppercase(firstInitialLast);
+      const initialsLastUpper = toUppercase(initialsLast);
+      const surnameFirstLast = `${sn}, ${fn} ${mn}`.trim();
       
-      // All name variants for flnline and flnstk
-      const allNames = [
+      // Stacked names (each on new line)
+      const stackedNames = [
         fullName,
-        toUppercase(fullName),
-        toLowercase(fullName),
+        fullNameUpper,
+        fullNameLower,
         firstNameLast,
         firstInitialLast,
         initialsLast,
-        toUppercase(firstNameLast),
-        toUppercase(firstInitialLast),
-        toUppercase(initialsLast),
-        `${sn}, ${fn} ${mn}`.trim()
-      ];
+        firstNameLastUpper,
+        firstInitialLastUpper,
+        initialsLastUpper,
+        surnameFirstLast
+      ].join('\n');
+      
+      // Inline names (comma separated)
+      const inlineNames = stackedNames.replace(/\n/g, ', ');
       
       // Address fields
       const strn = prev.strn_t1 || '';
@@ -254,20 +275,35 @@ export default function Form01Page() {
       const spn = prev.spn_t1 || '';
       const ctr = prev.ctr_t1 || '';
       const ptc = prev.ptc_t1 || '';
+      
+      // Stacked address (each part on new line)
       const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
-      const fullAddress = addressParts.join(', ');
       const stackedAddress = addressParts.join('\n');
+      
+      // Inline address (comma separated)
+      const inlineAddress = addressParts.join(', ');
       
       // Date fields
       const day = prev.bdate_t1 || '';
       const month = prev.bdate_t2 || '';
       const year = prev.bdate_t3 || '';
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const monthName = monthNames[parseInt(month) - 1] || '';
       const nextYear = year ? parseInt(year) + 21 : '';
       
       return {
         ...prev,
+        // First Name auto-completes
+        fn_t2: toUppercase(fn),
+        fn_t3: toLowercase(fn),
+        fni_t1: fnInitialLower,
+        fni_t2: fnInitialUpper,
+        
+        // Surname auto-completes (FIXED)
+        srn_t2: toUppercase(sn),
+        srn_t3: toLowercase(sn),
+        srni_t1: snInitialLower,
+        srni_t2: snInitialUpper,
+        
         // Middle Name auto-completes
         mdn_t2: toUppercase(mn),
         mdn_t3: toLowercase(mn),
@@ -292,20 +328,22 @@ export default function Form01Page() {
         
         // Full name concatenations
         fln_t1: fullName,
-        fln_t2: toUppercase(fullName),
-        fln_t3: toLowercase(fullName),
+        fln_t2: fullNameUpper,
+        fln_t3: fullNameLower,
         fln_t4: firstNameLast,
         fln_t5: firstInitialLast,
         fln_t6: initialsLast,
-        fln_t7: toUppercase(firstNameLast),
-        fln_t8: toUppercase(firstInitialLast),
-        fln_t10: toUppercase(initialsLast),
-        fln_t11: `${sn}, ${fn} ${mn}`.trim(),
-        flnline_t1: allNames.join(', '),
-        flnstk_t1: allNames.join('\n'),
+        fln_t7: firstNameLastUpper,
+        fln_t8: firstInitialLastUpper,
+        fln_t10: initialsLastUpper,
+        fln_t11: surnameFirstLast,
+        
+        // All names stacked and inline
+        flnstk_t1: stackedNames,
+        flnline_t1: inlineNames,
         
         // Address
-        cadr_t1: fullAddress,
+        cadr_t1: inlineAddress,
         adr_stack: stackedAddress,
         
         // Address auto-completes
@@ -392,7 +430,7 @@ export default function Form01Page() {
           bgr_t1: 'boy',
           his_t1: 'his',
         }));
-        setTimeout(() => updateAllDerivedFields(), 0);
+        setTimeout(() => calculateAllDerivedFields(), 0);
         return;
       } else if (value === 'woman') {
         setFormData((prev: any) => ({
@@ -402,7 +440,7 @@ export default function Form01Page() {
           bgr_t1: 'girl',
           his_t1: 'her',
         }));
-        setTimeout(() => updateAllDerivedFields(), 0);
+        setTimeout(() => calculateAllDerivedFields(), 0);
         return;
       }
     } else if (field === 'ema_t1') {
@@ -411,31 +449,7 @@ export default function Form01Page() {
     
     setFormData((prev: any) => ({ ...prev, [field]: formattedValue }));
     
-    // Basic auto-calculations
-    if (field === 'fn_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        fn_t2: toUppercase(formattedValue),
-        fn_t3: toLowercase(formattedValue),
-        fni_t1: formattedValue.charAt(0)?.toLowerCase() || '',
-        fni_t2: formattedValue.charAt(0)?.toUpperCase() || '',
-      }));
-    }
-    
-    if (field === 'srn_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        srn_t2: toUppercase(formattedValue),
-        srn_t3: toLowercase(formattedValue),
-        srni_t1: formattedValue.charAt(0)?.toLowerCase() || '',
-        srni_t2: formattedValue.charAt(0)?.toUpperCase() || '',
-      }));
-    }
-    
-    // Trigger full update for all derived fields
-    setTimeout(() => updateAllDerivedFields(), 0);
+    setTimeout(() => calculateAllDerivedFields(), 0);
   };
 
   const addChild = () => {
