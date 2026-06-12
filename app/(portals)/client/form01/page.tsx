@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-// Helper functions (same as before)
+// Helper functions
 const toSentenceCase = (str: string) => {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -64,6 +64,7 @@ export default function Form01Page() {
   const [userId, setUserId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
+  // Dynamic section counters
   const [childCount, setChildCount] = useState(1);
   const [middleNameCount, setMiddleNameCount] = useState(1);
   const [prevMarriedSurnameCount, setPrevMarriedSurnameCount] = useState(0);
@@ -106,7 +107,6 @@ export default function Form01Page() {
       }
       setMiddleNameCount(Math.max(1, midIdx - 1));
       
-      // FIX: Start from 1, not 2
       let prevIdx = 1;
       while (data[`pmr${prevIdx}_t1`]) {
         prevIdx++;
@@ -115,6 +115,7 @@ export default function Form01Page() {
     } else {
       setFormData({ 
         user_email: user.email,
+        no_children: false,
         pno_t1: 'OFFICE OF THE MASTER\nMaster of the High Court Gauteng\nSALU Building\n316 Thabo Sehume St\nPretoria\n0001',
         pno_t2: 'OFFICE OF THE MINISTER OF HOME AFFAIRS\nPrivate Bag X114\nPretoria\nGauteng\n0001',
         pno_t3: 'OFFICE OF THE SARS COMMISSIONER\nPrivate Bag X923\nPretoria\n0001',
@@ -204,6 +205,7 @@ export default function Form01Page() {
   const handleChange = (field: string, value: any) => {
     let formattedValue = value;
     
+    // Input formatting
     if (field === 'fn_t1' || field === 'srn_t1') {
       formattedValue = toSentenceCase(value).replace(/\s/g, '');
     } else if (field === 'bsrn_t1') {
@@ -225,6 +227,8 @@ export default function Form01Page() {
     } else if (field === 'pfbp_t1' || field === 'pfbp_t2' || field === 'pfbp_t3' || 
                field === 'pmbp_t1' || field === 'pmbp_t2' || field === 'pmbp_t3') {
       formattedValue = toCapitalizeEachWord(value);
+    } else if (field === 'pmp_t1' || field === 'pmp_t2' || field === 'pmp_t3' || field === 'pmp_t4') {
+      formattedValue = toCapitalizeEachWord(value);
     } else if (field.startsWith('chld') && field.endsWith('_t1')) {
       formattedValue = toCapitalizeEachWord(value);
     } else if (field.startsWith('wtn') && (field.endsWith('_t1') || field.endsWith('_t2'))) {
@@ -240,6 +244,7 @@ export default function Form01Page() {
           she_t1: 'he',
           bgr_t1: 'boy',
           his_t1: 'his',
+          gen_t2: 'MAN',
           she_t2: 'HE',
           bgr_t2: 'BOY',
           his_t2: 'HIS'
@@ -252,6 +257,7 @@ export default function Form01Page() {
           she_t1: 'she',
           bgr_t1: 'girl',
           his_t1: 'her',
+          gen_t2: 'WOMAN',
           she_t2: 'SHE',
           bgr_t2: 'GIRL',
           his_t2: 'HER'
@@ -264,6 +270,7 @@ export default function Form01Page() {
     
     setFormData((prev: any) => ({ ...prev, [field]: formattedValue }));
     
+    // Auto-calculate derived fields
     if (field === 'fn_t1') {
       setFormData((prev: any) => ({
         ...prev,
@@ -283,6 +290,142 @@ export default function Form01Page() {
         srn_t3: toLowercase(formattedValue),
         srni_t1: formattedValue.charAt(0)?.toLowerCase() || '',
         srni_t2: formattedValue.charAt(0)?.toUpperCase() || '',
+      }));
+    }
+    
+    if (field === 'mdn_t1') {
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        mdn_t2: toUppercase(formattedValue),
+        mdn_t3: toLowercase(formattedValue),
+        mdni_t1: formattedValue.split(' ').map(w => w.charAt(0).toLowerCase()).join(' ') || '',
+      }));
+      // Also update mdni2_t2 (uppercase initials)
+      setTimeout(() => {
+        setFormData((prev: any) => ({
+          ...prev,
+          mdni2_t2: toUppercase(prev.mdni_t1 || ''),
+        }));
+      }, 0);
+    }
+    
+    if (field === 'bsrn_t1') {
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        bsrn_t2: toUppercase(formattedValue),
+        bsrn_t3: toLowercase(formattedValue),
+      }));
+    }
+    
+    if (field === 'mr1_t1') {
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        mr1_t2: toUppercase(formattedValue),
+        mr1_t3: toLowercase(formattedValue),
+      }));
+    }
+    
+    if (field === 'pffn_t1') {
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        pffn_t2: toUppercase(formattedValue),
+        pffn_t3: toLowercase(formattedValue),
+      }));
+    }
+    
+    if (field === 'pmfn_t1') {
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        pmfn_t2: toUppercase(formattedValue),
+        pmfn_t3: toLowercase(formattedValue),
+      }));
+    }
+    
+    // Full name concatenations
+    if (field === 'fn_t1' || field === 'mdn_t1' || field === 'srn_t1' || field === 'mdni_t1' || field === 'fni_t1') {
+      const fn = formData.fn_t1 || '';
+      const mn = formData.mdn_t1 || '';
+      const sn = formData.srn_t1 || '';
+      const mdni = formData.mdni_t1 || '';
+      const fni = formData.fni_t1 || '';
+      
+      setFormData((prev: any) => ({
+        ...prev,
+        fln_t1: `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' '),
+        fln_t2: toUppercase(`${fn} ${mn} ${sn}`.trim()),
+        fln_t3: toLowercase(`${fn} ${mn} ${sn}`.trim()),
+        fln_t4: `${fn} ${sn}`.trim(),
+        fln_t5: `${fn} ${mdni} ${sn}`.trim(),
+        fln_t6: `${fni} ${mdni} ${sn}`.trim(),
+        fln_t7: toUppercase(`${fn} ${sn}`.trim()),
+        fln_t8: toUppercase(`${fn} ${mdni} ${sn}`.trim()),
+        fln_t10: toUppercase(`${fni} ${mdni} ${sn}`.trim()),
+        fln_t11: `${sn}, ${fn} ${mn}`.trim(),
+      }));
+    }
+    
+    // Address auto-completes
+    const addressInputFields = ['strn_t1', 'sbn_t1', 'aptn_t1', 'ctn_t1', 'dstr_t1', 'spn_t1', 'ctr_t1'];
+    if (addressInputFields.includes(field)) {
+      const baseField = field.replace('_t1', '');
+      setFormData((prev: any) => ({
+        ...prev,
+        [field]: formattedValue,
+        [`${baseField}_t2`]: toUppercase(formattedValue),
+        [`${baseField}_t3`]: toLowercase(formattedValue),
+      }));
+    }
+    
+    // Date calculations
+    if (field === 'bdate_t1' || field === 'bdate_t2' || field === 'bdate_t3') {
+      const day = field === 'bdate_t1' ? formattedValue : formData.bdate_t1;
+      const month = field === 'bdate_t2' ? formattedValue : formData.bdate_t2;
+      const year = field === 'bdate_t3' ? formattedValue : formData.bdate_t3;
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1] || '';
+      const nextYear = year ? parseInt(year) + 21 : '';
+      
+      setFormData((prev: any) => ({
+        ...prev,
+        bdate_t2_1: monthName,
+        dis_t1: year && month && day ? `${year}/${month}/${day}` : '',
+        dis_t2: year && month && day ? `${year}-${month}-${day}` : '',
+        dis_t3: day && month && year ? `${day} ${month}, ${year}` : '',
+        dtn_t1: month && day && year ? `${month}/${day}/${year}` : '',
+        dtn_t2: month && day && year ? `${month}-${day}-${year}` : '',
+        dtn_t3: month && day && year ? `${month} ${day}, ${year}` : '',
+        dil_t1: year && monthName && day ? `${year} ${monthName} ${day}` : '',
+        dil_t2: year && monthName && day ? `${year} ${toUppercase(monthName)} ${day}` : '',
+        dal_t1: monthName && day && year ? `${monthName} ${day}, ${year}` : '',
+        dal_t2: monthName && day && year ? `${toUppercase(monthName)} ${day}, ${year}` : '',
+        "21st_t1": day,
+        "21st_t2": month,
+        "21st_t3": nextYear ? String(nextYear) : '',
+        "21st_t4": month && day && nextYear ? `${day} ${month}, ${nextYear}` : '',
+      }));
+    }
+    
+    // Stacked address
+    if (field === 'strn_t1' || field === 'sbn_t1' || field === 'aptn_t1' || field === 'ctn_t1' || 
+        field === 'dstr_t1' || field === 'spn_t1' || field === 'ctr_t1' || field === 'ptc_t1') {
+      const strn = formData.strn_t1 || '';
+      const sbn = formData.sbn_t1 || '';
+      const aptn = formData.aptn_t1 || '';
+      const ctn = formData.ctn_t1 || '';
+      const dstr = formData.dstr_t1 || '';
+      const spn = formData.spn_t1 || '';
+      const ctr = formData.ctr_t1 || '';
+      const ptc = formData.ptc_t1 || '';
+      const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
+      setFormData((prev: any) => ({
+        ...prev,
+        cadr_t1: addressParts.join(', '),
+        adr_stack: addressParts.join('\n'),
       }));
     }
   };
@@ -315,18 +458,19 @@ export default function Form01Page() {
 
   const renderChildFields = () => {
     const children = [];
-    for (let i = 1; i <= childCount; i++) {
+    const maxChildren = formData.no_children ? 0 : childCount;
+    for (let i = 1; i <= maxChildren; i++) {
       children.push(
         <div key={`child-${i}`} className="border-l-4 border-blue-200 pl-4 mb-4">
           <h4 className="font-semibold text-gray-700 mb-2">Child {i}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input type="text" value={formData[`chld${i}_t1`] || ''} onChange={(e) => handleChange(`chld${i}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              <input type="text" value={formData[`chld${i}_t1`] || ''} onChange={(e) => handleChange(`chld${i}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={formData.no_children} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ID/Passport Number</label>
-              <input type="text" value={formData[`chld${i}_id`] || ''} onChange={(e) => handleChange(`chld${i}_id`, e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+              <input type="text" value={formData[`chld${i}_id`] || ''} onChange={(e) => handleChange(`chld${i}_id`, e.target.value)} className="w-full border rounded-lg px-3 py-2" disabled={formData.no_children} />
             </div>
           </div>
         </div>
@@ -348,7 +492,6 @@ export default function Form01Page() {
     return fields;
   };
 
-  // FIX: Start from i = 1
   const renderPrevMarriedSurnameFields = () => {
     const fields = [];
     for (let i = 1; i <= prevMarriedSurnameCount; i++) {
@@ -425,10 +568,23 @@ export default function Form01Page() {
             {/* N1.2 — Children */}
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.2 — Children</h2>
-              {renderChildFields()}
-              <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline">
-                + Add another child
-              </button>
+              <div className="mb-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.no_children === true}
+                    onChange={(e) => handleChange('no_children', e.target.checked)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">No Children</span>
+                </label>
+              </div>
+              {!formData.no_children && renderChildFields()}
+              {!formData.no_children && (
+                <button type="button" onClick={addChild} className="text-blue-600 text-sm hover:underline">
+                  + Add another child
+                </button>
+              )}
             </div>
 
             {/* N1.3 — Contact Information */}
@@ -452,16 +608,40 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.1 — Father's Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2"><label>Father's Full Name</label><input type="text" value={formData.pffn_t1 || ''} onChange={(e) => handleChange('pffn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Birth Day</label><select value={formData.pfbt_t2 || ''} onChange={(e) => handleChange('pfbt_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Month</label><select value={formData.pfbt_t3 || ''} onChange={(e) => handleChange('pfbt_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
-                <div><label>Birth Year</label><input type="number" value={formData.pfbt_t4 || ''} onChange={(e) => handleChange('pfbt_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Father's Full Name</label>
+                  <input type="text" value={formData.pffn_t1 || ''} onChange={(e) => handleChange('pffn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Day</label>
+                  <select value={formData.pfbt_t2 || ''} onChange={(e) => handleChange('pfbt_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Day</option>
+                    {[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Month</label>
+                  <select value={formData.pfbt_t3 || ''} onChange={(e) => handleChange('pfbt_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Month</option>
+                    {[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Birth Year</label>
+                  <input type="number" value={formData.pfbt_t4 || ''} onChange={(e) => handleChange('pfbt_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" />
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div><label>Town/City</label><input type="text" value={formData.pfbp_t1 || ''} onChange={(e) => handleChange('pfbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>District</label><input type="text" value={formData.pfbp_t2 || ''} onChange={(e) => handleChange('pfbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.pfbp_t3 || ''} onChange={(e) => handleChange('pfbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Country</label><select value={formData.pfbp_t4 || ''} onChange={(e) => handleChange('pfbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div>
+                  <label>Country</label>
+                  <select value={formData.pfbp_t4 || ''} onChange={(e) => handleChange('pfbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select Country</option>
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -469,8 +649,14 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.4.2 — Mother's Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2"><label>Mother's Full Name</label><input type="text" value={formData.pmfn_t1 || ''} onChange={(e) => handleChange('pmfn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Maiden Surname</label><input type="text" value={formData.pmfn_t3_1 || ''} onChange={(e) => handleChange('pmfn_t3_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mother's Full Name</label>
+                  <input type="text" value={formData.pmfn_t1 || ''} onChange={(e) => handleChange('pmfn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Maiden Surname</label>
+                  <input type="text" value={formData.pmfn_t3_1 || ''} onChange={(e) => handleChange('pmfn_t3_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" />
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                 <div><label>Birth Day</label><select value={formData.pmbd_t2 || ''} onChange={(e) => handleChange('pmbd_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
@@ -481,7 +667,13 @@ export default function Form01Page() {
                 <div><label>Town/City</label><input type="text" value={formData.pmbp_t1 || ''} onChange={(e) => handleChange('pmbp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>District</label><input type="text" value={formData.pmbp_t2 || ''} onChange={(e) => handleChange('pmbp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.pmbp_t3 || ''} onChange={(e) => handleChange('pmbp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Country</label><select value={formData.pmbp_t4 || ''} onChange={(e) => handleChange('pmbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div>
+                  <label>Country</label>
+                  <select value={formData.pmbp_t4 || ''} onChange={(e) => handleChange('pmbp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select Country</option>
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -496,7 +688,13 @@ export default function Form01Page() {
                 <div><label>District</label><input type="text" value={formData.dstr_t1 || ''} onChange={(e) => handleChange('dstr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Province</label><input type="text" value={formData.spn_t1 || ''} onChange={(e) => handleChange('spn_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                 <div><label>Postal Code</label><input type="text" value={formData.ptc_t1?.replace(/[\[\]]/g, '') || ''} onChange={(e) => handleChange('ptc_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                <div><label>Country</label><select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div>
+                  <label>Country</label>
+                  <select value={formData.ctr_t1 || ''} onChange={(e) => handleChange('ctr_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select Country</option>
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -504,10 +702,26 @@ export default function Form01Page() {
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.6 — Genders</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>Gender Type</label><select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select</option><option value="man">Man</option><option value="woman">Woman</option></select></div>
-                <div><label>Pronoun (Auto-filled)</label><input type="text" value={formData.she_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
-                <div><label>Reference (Auto-filled)</label><input type="text" value={formData.bgr_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
-                <div><label>Possessive (Auto-filled)</label><input type="text" value={formData.his_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" /></div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gender Type</label>
+                  <select value={formData.gen_t1 || ''} onChange={(e) => handleChange('gen_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select</option>
+                    <option value="man">Man</option>
+                    <option value="woman">Woman</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pronoun (Auto-filled)</label>
+                  <input type="text" value={formData.she_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Reference (Auto-filled)</label>
+                  <input type="text" value={formData.bgr_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Possessive (Auto-filled)</label>
+                  <input type="text" value={formData.his_t1 || ''} disabled className="w-full border rounded-lg px-3 py-2 bg-gray-100" />
+                </div>
               </div>
             </div>
 
@@ -518,7 +732,13 @@ export default function Form01Page() {
                 <div><label>Birth Day</label><select value={formData.bdate_t1 || ''} onChange={(e) => handleChange('bdate_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Month</label><select value={formData.bdate_t2 || ''} onChange={(e) => handleChange('bdate_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Year</label><input type="number" value={formData.bdate_t3 || ''} onChange={(e) => handleChange('bdate_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
-                <div><label>Birth Country</label><select value={formData.bdate_t4 || ''} onChange={(e) => handleChange('bdate_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div>
+                  <label>Birth Country</label>
+                  <select value={formData.bdate_t4 || ''} onChange={(e) => handleChange('bdate_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select Country</option>
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -533,11 +753,39 @@ export default function Form01Page() {
                     <div className="md:col-span-2"><label>Full Address</label><textarea value={formData[`wtn${w}_t2`] || ''} onChange={(e) => handleChange(`wtn${w}_t2`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} /></div>
                     <div><label>Email</label><input type="email" value={formData[`wtn${w}_t3`] || ''} onChange={(e) => handleChange(`wtn${w}_t3`, e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
                     <div><label>Phone Number</label><input type="tel" value={formData[`wtn${w}_t4`]?.replace(/\D/g, '') || ''} onChange={(e) => handleChange(`wtn${w}_t4`, e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
-                    <div><label>Country</label><select value={formData[`wtn${w}_t5`] || ''} onChange={(e) => handleChange(`wtn${w}_t5`, e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Select Country</option>{countryList.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+                    <div>
+                      <label>Country</label>
+                      <select value={formData[`wtn${w}_t5`] || ''} onChange={(e) => handleChange(`wtn${w}_t5`, e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                        <option value="">Select Country</option>
+                        {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
                     <div className="md:col-span-2"><label>Corroboration</label><textarea value={formData[`wtn${w}_t6`] || ''} onChange={(e) => handleChange(`wtn${w}_t6`, e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} /></div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Parents Marriage Place (NEW VISIBLE SECTION) */}
+            <div className="border-b pb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Parents Marriage Place</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label>Suburb</label><input type="text" value={formData.pmp_t1 || ''} onChange={(e) => handleChange('pmp_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div><label>Town/City</label><input type="text" value={formData.pmp_t2 || ''} onChange={(e) => handleChange('pmp_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div><label>District</label><input type="text" value={formData.pmp_t3 || ''} onChange={(e) => handleChange('pmp_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div><label>Province</label><input type="text" value={formData.pmp_t4 || ''} onChange={(e) => handleChange('pmp_t4', e.target.value)} className="w-full border rounded-lg px-3 py-2" /></div>
+                <div>
+                  <label>Country</label>
+                  <select value={formData.pmp_t5 || ''} onChange={(e) => handleChange('pmp_t5', e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                    <option value="">Select Country</option>
+                    {countryList.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label>Parents/Family Full Address</label>
+                  <textarea value={formData.pfadr_1 || ''} onChange={(e) => handleChange('pfadr_1', e.target.value)} className="w-full border rounded-lg px-3 py-2" rows={2} />
+                </div>
+              </div>
             </div>
 
             {/* N1.9 — Principal Notice Offices */}
