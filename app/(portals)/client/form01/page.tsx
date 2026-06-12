@@ -12,7 +12,7 @@ const toSentenceCase = (str: string) => {
 
 const toCapitalizeEachWord = (str: string) => {
   if (!str) return '';
-  return str.split(' ').map(word => {
+  return str.split(' ').map((word: string) => {
     if (word.length === 0) return word;
     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   }).join(' ');
@@ -294,20 +294,15 @@ export default function Form01Page() {
     }
     
     if (field === 'mdn_t1') {
+      const initials = formattedValue.split(' ').map((word: string) => word.charAt(0).toLowerCase()).join(' ');
       setFormData((prev: any) => ({
         ...prev,
         [field]: formattedValue,
         mdn_t2: toUppercase(formattedValue),
         mdn_t3: toLowercase(formattedValue),
-        mdni_t1: formattedValue.split(' ').map(w => w.charAt(0).toLowerCase()).join(' ') || '',
+        mdni_t1: initials,
+        mdni2_t2: toUppercase(initials),
       }));
-      // Also update mdni2_t2 (uppercase initials)
-      setTimeout(() => {
-        setFormData((prev: any) => ({
-          ...prev,
-          mdni2_t2: toUppercase(prev.mdni_t1 || ''),
-        }));
-      }, 0);
     }
     
     if (field === 'bsrn_t1') {
@@ -728,7 +723,7 @@ export default function Form01Page() {
             {/* N1.7 — Birth Date */}
             <div className="border-b pb-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">N1.7 — Birth Date</h2>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cots-1 md:grid-cols-4 gap-4">
                 <div><label>Birth Day</label><select value={formData.bdate_t1 || ''} onChange={(e) => handleChange('bdate_t1', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Day</option>{[...Array(31)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Month</label><select value={formData.bdate_t2 || ''} onChange={(e) => handleChange('bdate_t2', e.target.value)} className="w-full border rounded-lg px-3 py-2"><option value="">Month</option>{[...Array(12)].map((_, i) => <option key={i+1} value={String(i+1).padStart(2,'0')}>{(i+1).toString().padStart(2,'0')}</option>)}</select></div>
                 <div><label>Birth Year</label><input type="number" value={formData.bdate_t3 || ''} onChange={(e) => handleChange('bdate_t3', e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="YYYY" /></div>
