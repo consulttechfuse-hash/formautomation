@@ -21,6 +21,16 @@ const toCapitalizeEachWord = (str: string) => {
 const toUppercase = (str: string) => str?.toUpperCase() || '';
 const toLowercase = (str: string) => str?.toLowerCase() || '';
 
+const getInitialsLowercase = (str: string) => {
+  if (!str) return '';
+  return str.split(' ').map(word => word.charAt(0).toLowerCase()).join(' ');
+};
+
+const getInitialsUppercase = (str: string) => {
+  if (!str) return '';
+  return str.split(' ').map(word => word.charAt(0).toUpperCase()).join(' ');
+};
+
 const formatPostalCode = (str: string) => {
   if (!str) return '';
   const cleaned = str.replace(/[\[\]]/g, '');
@@ -201,20 +211,41 @@ export default function Form01Page() {
     router.push('/client/forms-02-17');
   };
 
-  // Central function to update all derived fields
+  // Update all derived fields based on current form data
   const updateAllDerivedFields = () => {
     setFormData((prev: any) => {
+      // Name fields
       const fn = prev.fn_t1 || '';
       const mn = prev.mdn_t1 || '';
       const sn = prev.srn_t1 || '';
-      const mdni = prev.mdni_t1 || '';
-      const fni = prev.fni_t1 || '';
-      const day = prev.bdate_t1 || '';
-      const month = prev.bdate_t2 || '';
-      const year = prev.bdate_t3 || '';
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const monthName = monthNames[parseInt(month) - 1] || '';
-      const nextYear = year ? parseInt(year) + 21 : '';
+      const bsrn = prev.bsrn_t1 || '';
+      const mr1 = prev.mr1_t1 || '';
+      
+      // Middle name initials
+      const mnInitialsLower = getInitialsLowercase(mn);
+      const mnInitialsUpper = getInitialsUppercase(mn);
+      
+      // Full name concatenations
+      const fullName = `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' ');
+      const firstNameLast = `${fn} ${sn}`.trim();
+      const firstInitialLast = `${fn} ${mnInitialsLower} ${sn}`.trim();
+      const initialsLast = `${getInitialsLowercase(fn)} ${mnInitialsLower} ${sn}`.trim();
+      
+      // All name variants for flnline and flnstk
+      const allNames = [
+        fullName,
+        toUppercase(fullName),
+        toLowercase(fullName),
+        firstNameLast,
+        firstInitialLast,
+        initialsLast,
+        toUppercase(firstNameLast),
+        toUppercase(firstInitialLast),
+        toUppercase(initialsLast),
+        `${sn}, ${fn} ${mn}`.trim()
+      ];
+      
+      // Address fields
       const strn = prev.strn_t1 || '';
       const sbn = prev.sbn_t1 || '';
       const aptn = prev.aptn_t1 || '';
@@ -224,51 +255,82 @@ export default function Form01Page() {
       const ctr = prev.ctr_t1 || '';
       const ptc = prev.ptc_t1 || '';
       const addressParts = [strn, sbn, aptn, ctn, dstr, spn, ctr, ptc].filter(p => p);
+      const fullAddress = addressParts.join(', ');
+      const stackedAddress = addressParts.join('\n');
       
-      // Generate all name variants
-      const allNames = [
-        `${fn} ${mn} ${sn}`.trim(),
-        toUppercase(`${fn} ${mn} ${sn}`.trim()),
-        toLowercase(`${fn} ${mn} ${sn}`.trim()),
-        `${fn} ${sn}`.trim(),
-        `${fn} ${mdni} ${sn}`.trim(),
-        `${fni} ${mdni} ${sn}`.trim(),
-        toUppercase(`${fn} ${sn}`.trim()),
-        toUppercase(`${fn} ${mdni} ${sn}`.trim()),
-        toUppercase(`${fni} ${mdni} ${sn}`.trim()),
-        `${sn}, ${fn} ${mn}`.trim()
-      ];
+      // Date fields
+      const day = prev.bdate_t1 || '';
+      const month = prev.bdate_t2 || '';
+      const year = prev.bdate_t3 || '';
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1] || '';
+      const nextYear = year ? parseInt(year) + 21 : '';
       
       return {
         ...prev,
+        // Middle Name auto-completes
+        mdn_t2: toUppercase(mn),
+        mdn_t3: toLowercase(mn),
+        mdni_t1: mnInitialsLower,
+        mdni2_t2: mnInitialsUpper,
+        
+        // Surname at Birth auto-completes
+        bsrn_t2: toUppercase(bsrn),
+        bsrn_t3: toLowercase(bsrn),
+        
+        // Married Surname auto-completes
+        mr1_t2: toUppercase(mr1),
+        mr1_t3: toLowercase(mr1),
+        
+        // Father's Name auto-completes
+        pffn_t2: toUppercase(prev.pffn_t1 || ''),
+        pffn_t3: toLowercase(prev.pffn_t1 || ''),
+        
+        // Mother's Name auto-completes
+        pmfn_t2: toUppercase(prev.pmfn_t1 || ''),
+        pmfn_t3: toLowercase(prev.pmfn_t1 || ''),
+        
         // Full name concatenations
-        fln_t1: `${fn} ${mn} ${sn}`.trim().replace(/\s+/g, ' '),
-        fln_t2: toUppercase(`${fn} ${mn} ${sn}`.trim()),
-        fln_t3: toLowercase(`${fn} ${mn} ${sn}`.trim()),
-        fln_t4: `${fn} ${sn}`.trim(),
-        fln_t5: `${fn} ${mdni} ${sn}`.trim(),
-        fln_t6: `${fni} ${mdni} ${sn}`.trim(),
-        fln_t7: toUppercase(`${fn} ${sn}`.trim()),
-        fln_t8: toUppercase(`${fn} ${mdni} ${sn}`.trim()),
-        fln_t10: toUppercase(`${fni} ${mdni} ${sn}`.trim()),
+        fln_t1: fullName,
+        fln_t2: toUppercase(fullName),
+        fln_t3: toLowercase(fullName),
+        fln_t4: firstNameLast,
+        fln_t5: firstInitialLast,
+        fln_t6: initialsLast,
+        fln_t7: toUppercase(firstNameLast),
+        fln_t8: toUppercase(firstInitialLast),
+        fln_t10: toUppercase(initialsLast),
         fln_t11: `${sn}, ${fn} ${mn}`.trim(),
-        // All names in one line
         flnline_t1: allNames.join(', '),
-        // All names stacked
         flnstk_t1: allNames.join('\n'),
         
         // Address
-        cadr_t1: addressParts.join(', '),
-        adr_stack: addressParts.join('\n'),
+        cadr_t1: fullAddress,
+        adr_stack: stackedAddress,
         
-        // District auto-completes
+        // Address auto-completes
+        strn_t2: toUppercase(strn),
+        sbn_t2: toUppercase(sbn),
+        sbn_t3: toLowercase(sbn),
+        aptn_t2: toUppercase(aptn),
+        aptn_t3: toLowercase(aptn),
+        ctn_t2: toUppercase(ctn),
+        ctn_t3: toLowercase(ctn),
         dstr_t2: toUppercase(dstr),
         dstr_t3: toLowercase(dstr),
+        spn_t2: toUppercase(spn),
+        spn_t3: toLowercase(spn),
+        ctr_t2: toUppercase(ctr),
+        ctr_t3: toLowercase(ctr),
         
-        // Birth month name
-        bdate_t2_1: monthName,
+        // Gender auto-completes
+        gen_t2: toUppercase(prev.gen_t1 || ''),
+        she_t2: toUppercase(prev.she_t1 || ''),
+        bgr_t2: toUppercase(prev.bgr_t1 || ''),
+        his_t2: toUppercase(prev.his_t1 || ''),
         
         // Date formats
+        bdate_t2_1: monthName,
         dis_t1: year && month && day ? `${year}/${month}/${day}` : '',
         dis_t2: year && month && day ? `${year}-${month}-${day}` : '',
         dis_t3: day && month && year ? `${day} ${month}, ${year}` : '',
@@ -329,10 +391,6 @@ export default function Form01Page() {
           she_t1: 'he',
           bgr_t1: 'boy',
           his_t1: 'his',
-          gen_t2: 'MAN',
-          she_t2: 'HE',
-          bgr_t2: 'BOY',
-          his_t2: 'HIS'
         }));
         setTimeout(() => updateAllDerivedFields(), 0);
         return;
@@ -343,10 +401,6 @@ export default function Form01Page() {
           she_t1: 'she',
           bgr_t1: 'girl',
           his_t1: 'her',
-          gen_t2: 'WOMAN',
-          she_t2: 'SHE',
-          bgr_t2: 'GIRL',
-          his_t2: 'HER'
         }));
         setTimeout(() => updateAllDerivedFields(), 0);
         return;
@@ -357,7 +411,7 @@ export default function Form01Page() {
     
     setFormData((prev: any) => ({ ...prev, [field]: formattedValue }));
     
-    // Auto-calculate basic derived fields
+    // Basic auto-calculations
     if (field === 'fn_t1') {
       setFormData((prev: any) => ({
         ...prev,
@@ -377,66 +431,6 @@ export default function Form01Page() {
         srn_t3: toLowercase(formattedValue),
         srni_t1: formattedValue.charAt(0)?.toLowerCase() || '',
         srni_t2: formattedValue.charAt(0)?.toUpperCase() || '',
-      }));
-    }
-    
-    if (field === 'mdn_t1') {
-      const initials = formattedValue.split(' ').map((word: string) => word.charAt(0).toLowerCase()).join(' ');
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        mdn_t2: toUppercase(formattedValue),
-        mdn_t3: toLowercase(formattedValue),
-        mdni_t1: initials,
-        mdni2_t2: toUppercase(initials),
-      }));
-    }
-    
-    if (field === 'bsrn_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        bsrn_t2: toUppercase(formattedValue),
-        bsrn_t3: toLowercase(formattedValue),
-      }));
-    }
-    
-    if (field === 'mr1_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        mr1_t2: toUppercase(formattedValue),
-        mr1_t3: toLowercase(formattedValue),
-      }));
-    }
-    
-    if (field === 'pffn_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        pffn_t2: toUppercase(formattedValue),
-        pffn_t3: toLowercase(formattedValue),
-      }));
-    }
-    
-    if (field === 'pmfn_t1') {
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        pmfn_t2: toUppercase(formattedValue),
-        pmfn_t3: toLowercase(formattedValue),
-      }));
-    }
-    
-    // Address auto-completes
-    const addressInputFields = ['strn_t1', 'sbn_t1', 'aptn_t1', 'ctn_t1', 'dstr_t1', 'spn_t1', 'ctr_t1'];
-    if (addressInputFields.includes(field)) {
-      const baseField = field.replace('_t1', '');
-      setFormData((prev: any) => ({
-        ...prev,
-        [field]: formattedValue,
-        [`${baseField}_t2`]: toUppercase(formattedValue),
-        [`${baseField}_t3`]: toLowercase(formattedValue),
       }));
     }
     
