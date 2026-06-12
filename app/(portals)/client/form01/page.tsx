@@ -64,7 +64,6 @@ export default function Form01Page() {
   const [userId, setUserId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
-  // Dynamic section counters
   const [childCount, setChildCount] = useState(1);
   const [middleNameCount, setMiddleNameCount] = useState(1);
   const [prevMarriedSurnameCount, setPrevMarriedSurnameCount] = useState(0);
@@ -94,26 +93,25 @@ export default function Form01Page() {
 
     if (data && !error) {
       setFormData(data);
-      // Count existing children
+      
       let childIdx = 1;
       while (data[`chld${childIdx}_t1`]) {
         childIdx++;
       }
       setChildCount(Math.max(1, childIdx - 1));
       
-      // Count existing middle names
       let midIdx = 2;
       while (data[`mdn${midIdx}_t1`]) {
         midIdx++;
       }
       setMiddleNameCount(Math.max(1, midIdx - 1));
       
-      // Count existing previous married surnames
-      let prevIdx = 2;
+      // FIX: Start from 1, not 2
+      let prevIdx = 1;
       while (data[`pmr${prevIdx}_t1`]) {
         prevIdx++;
       }
-      setPrevMarriedSurnameCount(Math.max(0, prevIdx - 2));
+      setPrevMarriedSurnameCount(Math.max(0, prevIdx - 1));
     } else {
       setFormData({ 
         user_email: user.email,
@@ -180,7 +178,6 @@ export default function Form01Page() {
     setShowConfirmModal(false);
     setSubmitting(true);
     
-    // Save final data
     const error = await saveData(formData);
     
     if (error) {
@@ -189,7 +186,6 @@ export default function Form01Page() {
       return;
     }
 
-    // Lock Form-01 and move to next step
     await supabase
       .from('client_flow_state')
       .update({
@@ -268,7 +264,6 @@ export default function Form01Page() {
     
     setFormData((prev: any) => ({ ...prev, [field]: formattedValue }));
     
-    // Auto-calculate derived fields
     if (field === 'fn_t1') {
       setFormData((prev: any) => ({
         ...prev,
@@ -292,7 +287,6 @@ export default function Form01Page() {
     }
   };
 
-  // Dynamic section handlers
   const addChild = () => {
     setChildCount(childCount + 1);
   };
@@ -319,7 +313,6 @@ export default function Form01Page() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Render dynamic sections (same as before)
   const renderChildFields = () => {
     const children = [];
     for (let i = 1; i <= childCount; i++) {
@@ -347,7 +340,7 @@ export default function Form01Page() {
     for (let i = 2; i <= middleNameCount; i++) {
       fields.push(
         <div key={`mdn-${i}`}>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name {i}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Middle Name {i-1}</label>
           <input type="text" value={formData[`mdn${i}_t1`] || ''} onChange={(e) => handleChange(`mdn${i}_t1`, e.target.value)} className="w-full border rounded-lg px-3 py-2" />
         </div>
       );
@@ -355,6 +348,7 @@ export default function Form01Page() {
     return fields;
   };
 
+  // FIX: Start from i = 1
   const renderPrevMarriedSurnameFields = () => {
     const fields = [];
     for (let i = 1; i <= prevMarriedSurnameCount; i++) {
