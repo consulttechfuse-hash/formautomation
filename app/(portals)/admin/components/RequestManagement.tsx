@@ -120,9 +120,9 @@ export default function RequestManagement() {
     const { data: { user } } = await supabase.auth.getUser();
     const sastTimestamp = new Date().toISOString();
 
-    console.log('Approving request:', request.id, 'Type:', request.request_type, 'New Admin ID:', request.new_admin_id);
+    console.log('Approving request:', request.id, 'Type:', request.request_type);
 
-    // Update request status first
+    // Update request status
     const { error: updateError } = await supabase
       .from('unlock_requests')
       .update({
@@ -139,27 +139,20 @@ export default function RequestManagement() {
       return;
     }
 
-    // Handle change_admin request - update client's assigned admin
+    // Handle change_admin request
     if (request.request_type === 'change_admin' && request.new_admin_id) {
-      console.log('Updating client', request.client_id, 'to new admin', request.new_admin_id);
-      
-      const { data: updatedClient, error: clientUpdateError } = await supabase
+      const { error: clientUpdateError } = await supabase
         .from('user_roles')
         .update({ 
           assigned_admin_id: request.new_admin_id,
           updated_at: sastTimestamp
         })
-        .eq('user_id', request.client_id)
-        .select();
+        .eq('user_id', request.client_id);
 
       if (clientUpdateError) {
         console.error('Error updating client admin:', clientUpdateError);
-        alert('Request approved but failed to update client admin. Error: ' + clientUpdateError.message);
+        alert('Request approved but failed to update client admin.');
       } else {
-        console.log('Client updated successfully:', updatedClient);
-        alert(`Client ${request.client_email} has been migrated to new admin.`);
-        
-        // Re-run round-robin agent assignment for new admin
         await fetch('/api/agent/assign', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -168,27 +161,36 @@ export default function RequestManagement() {
             adminId: request.new_admin_id 
           })
         });
+        alert(`Client ${request.client_email} has been migrated to new admin.`);
       }
     } 
-    // Handle unlock_form01 request
+    // Handle unlock_form01 request - RESET step_4_form01_completed to false
     else if (request.request_type === 'unlock_form01') {
-      const { error: unlockError } = await supabase
+      console.log('Unlocking Form-01 for client:', request.client_id);
+      
+      // Update client_flow_state to unlock Form-01 AND reset completed flag
+      const { error: unlockError, data: updatedFlow } = await supabase
         .from('client_flow_state')
         .update({
           lock_type: 'overridden',
           locked_step: null,
           locked_reason: null,
+          step_4_form01_completed: false,  // CRITICAL: Reset to allow editing
+          current_step: 4,  // Set back to Form-01 step
           overridden_by: user?.id,
           override_reason: `Admin approved unlock request: ${request.reason}`,
-          overridden_at: sastTimestamp
+          overridden_at: sastTimestamp,
+          updated_at: sastTimestamp
         })
-        .eq('client_id', request.client_id);
+        .eq('client_id', request.client_id)
+        .select();
 
       if (unlockError) {
         console.error('Error unlocking form:', unlockError);
-        alert('Request approved but failed to unlock form. Error: ' + unlockError.message);
+        alert('Request approved but failed to unlock Form-01. Error: ' + unlockError.message);
       } else {
-        alert(`Form-01 has been unlocked for ${request.client_email}.`);
+        console.log('Form-01 unlocked successfully:', updatedFlow);
+        alert(`Form-01 has been unlocked for ${request.client_email}. The client can now edit and resubmit.`);
       }
     }
 
