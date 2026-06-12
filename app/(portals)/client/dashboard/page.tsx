@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { FileText, Download, Eye } from 'lucide-react';
+import RequestModal from '../components/RequestModal';
 
 interface FlowState {
   id: string;
@@ -26,6 +27,8 @@ export default function ClientDashboard() {
   const [flowState, setFlowState] = useState<FlowState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showViewForms, setShowViewForms] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestType, setRequestType] = useState<'change_admin' | 'unlock_form01' | null>(null);
   const [consentDate, setConsentDate] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -126,6 +129,11 @@ export default function ClientDashboard() {
     }
   };
 
+  const openRequestModal = (type: 'change_admin' | 'unlock_form01') => {
+    setRequestType(type);
+    setShowRequestModal(true);
+  };
+
   const [adminName, setAdminName] = useState('');
   useEffect(() => {
     const getAdminName = async () => {
@@ -163,6 +171,9 @@ export default function ClientDashboard() {
     { id: 6, name: 'Confirm & Submit', path: '/client/confirm-submit', completed: flowState?.step_6_completed || false, locked: !flowState?.step_5_form_submitted, description: 'Final review and submission' },
   ];
 
+  const isForm01Locked = flowState?.step_4_form01_completed === true && flowState?.lock_type !== 'overridden';
+  const isStep1Locked = flowState?.step_1_admin_selected === true;
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -195,47 +206,82 @@ export default function ClientDashboard() {
         </div>
       </div>
       
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <p className="text-gray-600 mb-8">Complete all steps to submit your application</p>
-        
-        <div className="space-y-4">
-          {steps.map((step) => (
-            <div key={step.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    step.completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {step.completed ? '✓' : step.id === 3 ? '1' : step.id === 4 ? '2' : step.id === 2 ? '3' : step.id === 5 ? '4' : '5'}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{step.name}</h3>
-                    {step.description && <p className="text-sm text-gray-500">{step.description}</p>}
-                    {step.warning && !step.completed && step.locked && (
-                      <p className="text-sm text-amber-600 mt-1">{step.warning}</p>
-                    )}
-                    {step.paymentNote && !step.completed && step.id === 2 && !step.locked && (
-                      <p className="text-sm text-blue-600 mt-1">{step.paymentNote}</p>
-                    )}
-                    {step.completed && <p className="text-sm text-green-600 mt-1">Complete</p>}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex gap-6">
+          {/* Main Steps */}
+          <div className="flex-1">
+            <p className="text-gray-600 mb-8">Complete all steps to submit your application</p>
+            
+            <div className="space-y-4">
+              {steps.map((step) => (
+                <div key={step.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                        step.completed ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {step.completed ? '✓' : step.id === 3 ? '1' : step.id === 4 ? '2' : step.id === 2 ? '3' : step.id === 5 ? '4' : '5'}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{step.name}</h3>
+                        {step.description && <p className="text-sm text-gray-500">{step.description}</p>}
+                        {step.warning && !step.completed && step.locked && (
+                          <p className="text-sm text-amber-600 mt-1">{step.warning}</p>
+                        )}
+                        {step.paymentNote && !step.completed && step.id === 2 && !step.locked && (
+                          <p className="text-sm text-blue-600 mt-1">{step.paymentNote}</p>
+                        )}
+                        {step.completed && <p className="text-sm text-green-600 mt-1">Complete</p>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleStepClick(step.id, step.path)}
+                      disabled={step.locked}
+                      className={`px-6 py-2 rounded-lg transition-colors ${
+                        step.completed 
+                          ? 'bg-gray-100 text-gray-500 cursor-default'
+                          : step.locked 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {step.completed ? 'Completed' : 'Start'}
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleStepClick(step.id, step.path)}
-                  disabled={step.locked}
-                  className={`px-6 py-2 rounded-lg transition-colors ${
-                    step.completed 
-                      ? 'bg-gray-100 text-gray-500 cursor-default'
-                      : step.locked 
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {step.completed ? 'Completed' : 'Start'}
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Request Sidebar */}
+          <div className="w-80">
+            <div className="bg-white rounded-lg shadow p-4 sticky top-4">
+              <h3 className="font-semibold text-gray-800 mb-3">Need Help?</h3>
+              <div className="space-y-2">
+                {isStep1Locked && (
+                  <button
+                    onClick={() => openRequestModal('change_admin')}
+                    className="w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-lg">🔄</span>
+                    <span>Request Admin Change</span>
+                  </button>
+                )}
+                {isForm01Locked && (
+                  <button
+                    onClick={() => openRequestModal('unlock_form01')}
+                    className="w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span className="text-lg">🔓</span>
+                    <span>Request Form-01 Unlock</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-3 border-t pt-3">
+                You have 1 request available for each type.
+              </p>
+            </div>
+          </div>
         </div>
         
         {error && (
@@ -298,6 +344,19 @@ export default function ClientDashboard() {
           </div>
         </div>
       )}
+
+      {/* Request Modal */}
+      <RequestModal
+        isOpen={showRequestModal}
+        onClose={() => {
+          setShowRequestModal(false);
+          setRequestType(null);
+        }}
+        requestType={requestType}
+        onSuccess={() => {
+          loadFlowState();
+        }}
+      />
     </div>
   );
 }
