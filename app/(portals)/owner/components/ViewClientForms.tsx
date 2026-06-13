@@ -177,7 +177,7 @@ export default function ViewClientForms({ clientId, clientName, onClose }: ViewC
         { name: 'fln_t10', label: 'Initials + Surname - Uppercase', visible: false },
         { name: 'fln_t11', label: 'Surname, First, Middle - Normal', visible: false },
         { name: 'flnline_t1', label: 'All Names - In Line', visible: false },
-        { name: 'flnstk_t1', label: 'All Names - Stacked', visible: false }
+        { name: 'flnstk_t1', label: 'All Names - Stacked', visible: true }
       ]},
       { title: 'N1.2 — Children', fields: [
         { name: 'chld1_t1', label: 'Child 1 Full Name', visible: true },
@@ -261,7 +261,7 @@ export default function ViewClientForms({ clientId, clientName, onClose }: ViewC
         { name: 'cadr_t1', label: 'Full Address - Normal', visible: false },
         { name: 'cadr_t2', label: 'Full Address - Uppercase', visible: false },
         { name: 'cadr_t3', label: 'Full Address - Lowercase', visible: false },
-        { name: 'adr_stack', label: 'Stacked Address', visible: false }
+        { name: 'adr_stack', label: 'Stacked Address', visible: true }
       ]},
       { title: 'N1.6 — Genders', fields: [
         { name: 'gen_t1', label: 'Gender Type', visible: true },
