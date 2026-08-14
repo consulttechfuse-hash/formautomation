@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test tests/node-smoke.test.js",
+    "test:ci": "vitest",
+    "lint:ci": "next lint"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.2",
@@ -14,8 +17,8 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@sparticuz/chromium": "^149.0.0",
-    "@stripe/react-stripe-js": "^6.4.0",
-    "@stripe/stripe-js": "^9.7.0",
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^9.8.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
     "@tailwindcss/postcss": "^4.3.0",
@@ -39,6 +42,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5"
+    "eslint": "^10.8.1",
+    "eslint-config-next": "^16.2.6",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

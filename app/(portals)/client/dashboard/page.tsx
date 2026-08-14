@@ -171,8 +171,9 @@ export default function ClientDashboard() {
     { id: 6, name: 'Confirm & Submit', path: '/client/confirm-submit', completed: flowState?.step_6_completed || false, locked: !flowState?.step_5_form_submitted, description: 'Final review and submission' },
   ];
 
-  const isForm01Locked = flowState?.step_4_form01_completed === true && flowState?.lock_type !== 'overridden';
-  const isStep1Locked = flowState?.step_1_admin_selected === true;
+const isStep1Locked = true;
+const isForm01Locked = true;
+ 
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;

@@ -115,7 +115,7 @@ export default function ConsentPage() {
         })
         .eq('client_id', user.id);
 
-      router.push('/client/form-01');
+      router.push('/client/form01');
     } catch (err) {
       setError('An error occurred. Please try again.');
       setSaving(false);

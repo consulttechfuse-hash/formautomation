@@ -212,9 +212,6 @@ export default function ViewClientForms({ clientId, clientName, onClose }: ViewC
         { name: 'pfbp_t2', label: 'Father\'s Birth Place - District', visible: true },
         { name: 'pfbp_t3', label: 'Father\'s Birth Place - Province', visible: true },
         { name: 'pfbp_t4', label: 'Father\'s Birth Place - Country', visible: true },
-        { name: 'pfbt_t1', label: 'Father\'s Birth Date Long ETSI', visible: false },
-        { name: 'pfbt_t1_1', label: 'Father\'s Birth Date Long ANSI', visible: false },
-        { name: 'pfbt_t1_2', label: 'Father\'s Birth Date Short ETSI', visible: false },
         { name: 'pfbt_t1_3', label: 'Father\'s Birth Date Short ANSI', visible: false }
       ]},
       { title: 'N1.4.2 — Mother\'s Details', fields: [
@@ -321,15 +318,20 @@ export default function ViewClientForms({ clientId, clientName, onClose }: ViewC
       ]}
     ];
 
-    const formatValue = (value: any) => {
-      if (value === null || value === undefined || value === '') {
-        return '<span class="text-gray-400 italic">— not provided —</span>';
-      }
-      if (typeof value === 'boolean') return value ? '✓ Yes' : '✗ No';
-      if (Array.isArray(value)) return value.join(', ');
-      if (typeof value === 'object') return JSON.stringify(value);
-      return String(value);
-    };
+ const formatValue = (value: any) => {
+  if (value === null || value === undefined || value === '') {
+    return '<span class="text-gray-400 italic">— not provided —</span>';
+  }
+  if (typeof value === 'boolean') return value ? '✓ Yes' : '✗ No';
+  if (Array.isArray(value)) return value.join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  const str = String(value);
+  // Preserve line breaks for stacked fields (flnstk_t1 and adr_stack)
+  if (str.includes('\n')) {
+    return '<div style="white-space: pre-line;">' + str + '</div>';
+  }
+  return str;
+};
 
     let html = `
       <div class="form01-view">
