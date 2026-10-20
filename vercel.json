@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/ghd-calculator",
-      "destination": "https://ghd-converter-23qye7v7s-consulttechfuse-hashs-projects.vercel.app"
+      "destination": "https://ghd-converter.vercel.app"
     },
     {
       "source": "/ghd-calculator/:path*",
-      "destination": "https://ghd-converter-23qye7v7s-consulttechfuse-hashs-projects.vercel.app/:path*"
+      "destination": "https://ghd-converter.vercel.app/:path*"
     }
   ]
 }
