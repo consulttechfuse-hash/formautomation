@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/ghd-calculator",
-      "destination": "https://ghd-converter.vercel.app"
+      "destination": "https://ghd-converter.vercel.app/ghd-calculator"
     },
     {
       "source": "/ghd-calculator/:path*",
-      "destination": "https://ghd-converter.vercel.app/:path*"
+      "destination": "https://ghd-converter.vercel.app/ghd-calculator/:path*"
     }
   ]
 }
